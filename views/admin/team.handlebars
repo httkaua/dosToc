@@ -1,0 +1,27 @@
+<h4>Minha equipe</h4>
+<a class="btn btn-dark" href="/admin/team/new-member">Adicionar membro</a>
+<table class="table table-hover mt-4">
+  <thead>
+    <tr>
+        <th class="bg-primary text-white">Membro</th>
+        <th class="bg-primary text-white">Função</th>
+        <th class="bg-primary text-white">ID</th>
+        <th class="bg-primary text-white">Opções</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each members}}
+    <tr>
+        <td>{{this.name}}</td>
+        <td>{{this.position}}</td>
+        <td>{{this.id}}</td>
+        <td>
+          <button class="btn btn-info">Ver atividade</button>
+          <button class="btn btn-dark">Gerenciar</button>
+          <a href="/admin/team/{{this.id}}/hidden" class="btn btn-danger">🗑</a>
+        </td>
+    </tr>
+    {{/each}}
+  </tbody>
+</table>
+<a href="/admin" class="btn btn-secondary">Voltar</a>

@@ -1,0 +1,20 @@
+<table class="table table-hover">
+  <thead>
+    <tr>
+        <th class="bg-primary text-white">Data</th>
+        <th class="bg-primary text-white">Usuário</th>
+        <th class="bg-primary text-white">Descrição</th>
+        <th class="bg-primary text-white">Categoria</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each records}}
+    <tr>
+        <td>{{this.createdAt}}</td>
+        <td>{{this.userWhoChanged}}</td>
+        <td>{{this.message}}</td>
+        <td>{{this.category}}</td>
+    </tr>
+    {{/each}}
+  </tbody>
+</table>

@@ -1,0 +1,151 @@
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+        <div class="card shadow-lg">
+            <div class="card-header bg-primary text-white text-center">
+            <h5>Novo cliente</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/admin/leads/new-lead/create">
+                    <h4>Dados essenciais</h4>
+                    <div class="form-group">
+                        <label for="name">Nome</label>
+                        <input type="text" class="form-control" id="name" name="name" placeholder="Jessie" required>
+                    </div>
+                    <div class="form-group mt-4">
+                        <label for="phone">Telefone</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" placeholder="+ 55 41 99999-9999" required>
+                    </div>
+                    <div class="form-group mt-4">
+                        <label for="document">CPF</label>
+                        <input type="text" class="form-control" id="document" name="document" placeholder="000.000.000-00">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" aria-describedby="emailHelp" placeholder="example@gmail.com" required>
+                    </div>
+                    <div class="dropdownMenus col-md-12">
+                        <div class='form-field'>
+                            <label for='pTypeInterested'>Tipo de imóvel interessado</label>
+                            <select id='pTypeInterested' name="pTypeInterested" class='form-control'>
+                            <option value="Casa">Casa</option>
+                            <option value="Terreno">Terreno</option>
+                            <option value="Apartamento">Apartamento</option>
+                            <option value="Sobrado">Sobrado</option>
+                            <option value="Sítio">Sítio</option>
+                            <option value="Galpão">Galpão</option>
+                            <option value="Studio/Sala comercial">Studio/Sala comercial</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h4 class="mt-5">Localização</h4>            
+                    <div class="form-group">
+                        <label for="currentCity">Cidade atual</label>
+                        <input type="text" class="form-control" id="currentCity" name="currentCity" placeholder="Apucarana">
+                    </div>
+                    <div class="form-group">
+                        <label for="currentState">Estado atual</label>
+                        <input type="text" class="form-control" id="currentState" name="currentState"  placeholder="Paraná">
+                    </div>
+                    <div class="form-group">
+                        <label for="currentCountry">País atual</label>
+                        <input type="text" class="form-control" id="currentCountry" name="currentCountry" placeholder="Brasil">
+                    </div>
+                    <div class="form-group">
+                        <label for="pCityInterested">Cidade (interessado)</label>
+                        <input type="text" class="form-control" id="pCityInterested" name="pCityInterested" placeholder="Vespasiano">
+                    </div>
+                    <div class="form-group">
+                        <label for="pStateInterested">Estado (interessado)</label>
+                        <input type="text" class="form-control" id="pStateInterested" name="pStateInterested" placeholder="Minas Gerais">
+                    </div>
+                    <div class="form-group">
+                        <label for="pCountryInterested">País (interessado)</label>
+                        <input type="text" class="form-control" id="pCountryInterested" name="pCountryInterested" placeholder="Brasil">
+                    </div>
+                    <div class="form-group">
+                        <label for="condominiumInterested">Condomínio (interessado)</label>
+                        <input type="text" class="form-control" id="condominiumInterested" name="condominiumInterested" placeholder="Residencial Rosa dos Ventos">
+                    </div>
+
+                    <h4 class="mt-5">Dados financeiros</h4>
+                    <div class="form-group">
+                        <label for="familyIncome">Renda Familiar Bruta</label>
+                        <input type="number" class="form-control" id="familyIncome" name="familyIncome" placeholder="R$ 8500,00">
+                    </div>
+                    <div class="form-group">
+                        <label for="inputValue">Valor de entrada disponível</label>
+                        <input type="number" class="form-control" id="inputValue" name="inputValue" placeholder="R$ 55.000,00">
+                        <small>Valor de FGTS (se houver) deve ser incluso aqui</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="pMaxValue">Valor máximo de imóvel</label>
+                        <input type="number" class="form-control" id="pMaxValue" name="pMaxValue" placeholder="R$ 400.000,00">
+                        <small>Caso seu lead tenha estabelecido um valor total máximo que pode pagar.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="pMaxMonthlyPortion">Valor máximo de parcela</label>
+                        <input type="number" class="form-control" id="pMaxMonthlyPortion" name="pMaxMonthlyPortion" placeholder="R$ 2.300,00">
+                        <small>Caso seu lead tenha estabelecido uma parcela máxima que pode pagar.</small>
+                    </div>
+                    <div class="dropdownMenus col-md-12">
+                        <div class='form-field'>
+                            <label for='sourceOfIncome'>Fonte de renda</label>
+                            <select id='sourceOfIncome' name="sourceOfIncome" class='form-control'>
+                            <option value="Desconhecido">Desconhecido</option>
+                            <option value="Emprego em CLT">Emprego em CLT</option>
+                            <option value="Autônomo">Autônomo</option>
+                            <option value="Funcionário público">Funcionário público</option>
+                            <option value="Pró-Labore">Pró-Labore</option>
+                            <option value="Previdência/Aposentadoria">Previdência/Aposentadoria</option>
+                            <option value="Misto">Misto</option>
+                            <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h4 class="mt-5">Dados auxiliares</h4>
+                    <div class="dropdownMenus col-md-12">
+                        <div class='form-field'>
+                            <label for='status'>Status de negócio</label>
+                            <select id='status' name="status" class='form-control'>
+                            <option value="Primeiro contato">Primeiro contato</option>
+                            <option value="Em conversa">Em conversa</option>
+                            <option value="Visita marcada">Visita marcada</option>
+                            <option value="Com restrição">Com restrição</option>
+                            <option value="Cliente futuro">Cliente futuro</option>
+                            <option value="Encerrado">Encerrado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="dropdownMenus col-md-12 mt-3">
+                        <div class='form-field'>
+                            <label for='sourceOfLead'>Origem do lead</label>
+                            <select id='sourceOfLead' name="sourceOfLead" class='form-control'>
+                            <option value="Facebook">Facebook</option>
+                            <option value="Instagram">Instagram</option>
+                            <option value="Internet">Internet</option>
+                            <option value="Visita à loja">Visita à loja</option>
+                            <option value="Indicação">Indicação</option>
+                            <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!--
+                    <div class="form-group">
+                        <label for="tags">Tags</label>
+                        <input type="text" class="form-control" id="tags" name="tags" placeholder="">
+                    </div>
+                    -->
+                    <div class="form-group mt-3">
+                        <label for="observations">Observações</label>
+                        <input type="text" class="form-control" id="observations" name="observations" placeholder="'Gostaria de condomínio com cancha de futebol para os filhos...'">
+                    </div>
+                    <button type="submit" class="btn btn-success mt-5">Adicionar lead</button>
+                </form>
+            </div>
+        </div>
+        </div>
+    </div>
+</div>
