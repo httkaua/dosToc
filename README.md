@@ -29,7 +29,7 @@ Show the image in the realStates page (table)
 - Record page are showing all records (company independent) for all user levels;
 - User company in Users collection are storing the name, not the company ID;
 
-### Future ideas
+## Future ideas
 - Simplify the collections (leads: actual city can be just a string with the address), (users: managers can be just a number);
 - Smart filter for properties or leads;
 - Improve the records, creating a dedicated helper, with json file as a method;
