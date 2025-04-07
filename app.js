@@ -5,7 +5,6 @@ const app = express();
 
 const Handlebars = require('handlebars');
 const { engine } = require('express-handlebars')
-const { allowInsecurePrototypeAccess } = require('@handlebars/allow-prototype-access');
 
 const mongoose = require('mongoose');
 
@@ -13,7 +12,6 @@ const User = require('./routes/User');
 const Admin = require('./routes/Admin');
 
 const passport = require('passport');
-const bodyParser = require('body-parser');
 require('./helpers/Auth')(passport);
 
 require("dotenv").config()
@@ -23,7 +21,7 @@ require("dotenv").config()
         // Session
         app.use(
             session({
-                secret: 'isso ai eu resolv0 em dostoc',
+                secret: process.env.SESSION_SECRET,
                 resave: true,
                 saveUninitialized: true
             })
@@ -57,15 +55,14 @@ require("dotenv").config()
             
         // Handlebars
         app.engine('handlebars', engine({
-            defaultLayout: 'main', // in views/layouts
-            handlebars: allowInsecurePrototypeAccess(Handlebars)
+            defaultLayout: 'main' // in views/layouts
         }));
         app.set('view engine', 'handlebars');
         app.set('views', './views');
 
         // Body-parser
-        app.use(bodyParser.urlencoded({extended: true}));
         app.use(express.json());
+        app.use(express.urlencoded({extended: true}));
 
 
 
