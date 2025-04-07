@@ -47,7 +47,7 @@ require("dotenv").config()
         app.use('/uploads', express.static('uploads'));
         
         // Mongoose
-        mongoose.connect(process.env.DATABASE_URL).then(() => {
+        await mongoose.connect(process.env.DATABASE_URL).then(() => {
             console.log('connected to mongodb with success')
         }).catch((err) => {
             console.log(`There was an error connecting to mongoDB: ${err}`);
