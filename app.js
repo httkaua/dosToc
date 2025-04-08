@@ -1,20 +1,20 @@
-const express = require('express');
-const flash = require('express-flash');
-const session = require('express-session');
+import express from "express"
+import flash from "express-flash"
+import session from "express-session"
 const app = express();
 
-const Handlebars = require('handlebars');
-const { engine } = require('express-handlebars')
+import Handlebars from "handlebars"
+import { engine } from "express-handlebars"
 
-const mongoose = require('mongoose');
+import mongoose from "mongoose"
 
-const User = require('./routes/User');
-const Admin = require('./routes/Admin');
+import User from "./routes/User.js"
+import Admin from "./routes/Admin.js"
 
-const passport = require('passport');
-require('./helpers/Auth')(passport);
+import passport from "passport"
+import { passport } from "./helpers/Auth"
 
-require("dotenv").config()
+import dotenv from "dotenv/config"
 
     // Config
 
