@@ -1,20 +1,24 @@
-const express = require('express');
+import express from "express"
 const router = express.Router();
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt')
-const passport = require('passport');
+import mongoose from "mongoose"
+import bcrypt from "bcrypt"
+import passport from "passport"
 
-const { ensureAuthenticated, ensureRole } = require('../helpers/Auth');
-const positionsI = require('../helpers/positionsI');
-const { createRecord } = require('../helpers/newRecord');
-const { create: uploadMedia } = require('../helpers/uploadMedia');
-const upload = require("../helpers/Multer");
+/* separated in 2 lines because in es6 are sending
+error with both in the same line */
+import { ensureAuthenticated } from "../helpers/Auth"
+import { ensureRole } from "../helpers/Auth"
+import positionsI from "../helpers/positionsI"
+import { createRecord } from "../helpers/newRecord"
+// changed: { create: uploadMedia } to { uploadMedia }
+import { uploadMedia } from "../helpers/uploadMedia"
+import upload from "../helpers/Multer"
 
-require ('../models/CompanySchema');
-require ('../models/UserSchema');
-require ('../models/RecordsSchema');
-require ('../models/RealStateSchema');
-require ('../models/LeadSchema');
+import "../models/CompanySchema"
+import "../models/UserSchema"
+import "../models/RecordsSchema"
+import "../models/RealStateSchema"
+import "../models/LeadSchema"
 
 const Companies = mongoose.model('companies');
 const Users = mongoose.model('users');
@@ -1233,4 +1237,4 @@ router.get('/real-states/:realStateID/hidden',
     }
 );
 
-module.exports = router;
+export default router

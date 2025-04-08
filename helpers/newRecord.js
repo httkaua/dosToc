@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose"
 
-require('../models/UserSchema');
-require('../models/CompanySchema');
-require('../models/LeadSchema');
-require('../models/RealStateSchema');
-require('../models/RecordsSchema');
+import "../models/UserSchema"
+import "../models/CompanySchema"
+import "../models/LeadSchema"
+import "../models/RealStateSchema"
+import "../models/RecordsSchema"
 
 const Users = mongoose.model('users');
 const Companies = mongoose.model('companies');
@@ -103,4 +103,4 @@ const createRecord = async (recordInfo) => {
     }
 };
 
-module.exports = { createRecord };
+export default { createRecord }

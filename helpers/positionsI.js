@@ -7,4 +7,4 @@ const positionsI = [
     'Angariador de imóveis' // index 5
 ];
 
-module.exports = positionsI;
+export default positionsI

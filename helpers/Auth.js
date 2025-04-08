@@ -1,8 +1,8 @@
-const localStrategy = require('passport-local').Strategy;
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import localStrategy from "passport-local"
+import mongoose from "mongoose"
+import bcrypt from "bcryptjs"
 
-require('../models/UserSchema');
+import "../models/UserSchema"
 const User = mongoose.model('users');
 
 function ensureAuthenticated(req, res, next) {
@@ -31,7 +31,7 @@ function ensureRole(allowedRoles) {
     };
 }
 
-module.exports = function (passport) {
+export default function (passport) {
     passport.use(new localStrategy({
         usernameField: 'signUserEmail',
         passwordField: 'signUserPassword'
@@ -58,7 +58,7 @@ module.exports = function (passport) {
     passport.deserializeUser((id, done) => {
         User.findById(id).then(user => done(null, user)).catch(err => done(err));
     });
-};
+}
 
-module.exports.ensureAuthenticated = ensureAuthenticated;
-module.exports.ensureRole = ensureRole;
+export const ensureAuthenticated = ensureAuthenticated
+export const nsureRole = ensureRole
