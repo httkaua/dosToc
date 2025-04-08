@@ -13,7 +13,7 @@
   "keywords": [],
   "author": "kaua-hamilton",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/httkaua/dosToc/issues"
   },

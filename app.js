@@ -12,7 +12,8 @@ import User from "./routes/User.js"
 import Admin from "./routes/Admin.js"
 
 import passport from "passport"
-import { passport } from "./helpers/Auth"
+import authHelper from "./helpers/Auth.js"
+authHelper(passport)
 
 import dotenv from "dotenv/config"
 

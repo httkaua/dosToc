@@ -1,4 +1,4 @@
-export const create = async (file, objWithMedia) => {
+export default async (file, objWithMedia) => {
     try {
         if (!file || !file.path) {
             throw new Error("Nenhum arquivo enviado ou caminho inválido.");

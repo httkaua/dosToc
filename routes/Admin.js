@@ -6,19 +6,21 @@ import passport from "passport"
 
 /* separated in 2 lines because in es6 are sending
 error with both in the same line */
-import { ensureAuthenticated } from "../helpers/Auth"
-import { ensureRole } from "../helpers/Auth"
-import positionsI from "../helpers/positionsI"
-import { createRecord } from "../helpers/newRecord"
+import { ensureAuthenticated } from "../helpers/Auth.js"
+import { ensureRole } from "../helpers/Auth.js"
+import positionsI from "../helpers/positionsI.js"
+import createRec from "../helpers/newRecord.js"
+createRec(recordInfo)
 // changed: { create: uploadMedia } to { uploadMedia }
-import { uploadMedia } from "../helpers/uploadMedia"
-import upload from "../helpers/Multer"
+import "../helpers/uploadMedia.js"
+uploadMedia(file, objWithMedia)
+import upload from "../helpers/Multer.js"
 
-import "../models/CompanySchema"
-import "../models/UserSchema"
-import "../models/RecordsSchema"
-import "../models/RealStateSchema"
-import "../models/LeadSchema"
+import "../models/CompanySchema.js"
+import "../models/UserSchema.js"
+import "../models/RecordsSchema.js"
+import "../models/RealStateSchema.js"
+import "../models/LeadSchema.js"
 
 const Companies = mongoose.model('companies');
 const Users = mongoose.model('users');

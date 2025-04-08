@@ -3,12 +3,13 @@ const router = express.Router();
 import bcrypt from "bcrypt"
 import passport from "passport"
 import mongoose from "mongoose"
-import { createRecord } from "../helpers/newRecord"
+import createRec from "../helpers/newRecord.js"
+createRec(recordInfo)
 
-import "../models/UserSchema"
+import "../models/UserSchema.js"
 const Users = mongoose.model('users');
 
-import "../models/RecordsSchema"
+import "../models/RecordsSchema.js"
 const Records = mongoose.model('records');
 
 
