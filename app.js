@@ -60,6 +60,7 @@ import dotenv from "dotenv/config"
         }));
         app.set('view engine', 'handlebars');
         app.set('views', './views');
+        
 
         // Body-parser
         app.use(express.json());

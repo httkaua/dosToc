@@ -9,11 +9,9 @@ error with both in the same line */
 import { ensureAuthenticated } from "../helpers/Auth.js"
 import { ensureRole } from "../helpers/Auth.js"
 import positionsI from "../helpers/positionsI.js"
-import createRec from "../helpers/newRecord.js"
-createRec(recordInfo)
+import createRecord from "../helpers/newRecord.js"
 // changed: { create: uploadMedia } to { uploadMedia }
-import "../helpers/uploadMedia.js"
-uploadMedia(file, objWithMedia)
+import uploadMedia from "../helpers/uploadMedia.js"
 import upload from "../helpers/Multer.js"
 
 import "../models/CompanySchema.js"
@@ -31,7 +29,8 @@ const Leads = mongoose.model('leads');
 router.get('/',
     ensureAuthenticated,
     async (req, res, next) => {
-    res.render('admin/home');
+    console.log(req.user)
+    res.render('admin/home', {user: req.user});
 });
 
 
