@@ -29,8 +29,7 @@ const Leads = mongoose.model('leads');
 router.get('/',
     ensureAuthenticated,
     async (req, res, next) => {
-    console.log(req.user)
-    res.render('admin/home', {user: req.user});
+    res.render('admin/home', {user: req.user.toObject()});
 });
 
 
@@ -80,7 +79,7 @@ router.get('/records',
 router.get('/my-account/:userID',
     ensureAuthenticated,
     async (req, res, next) => {
-    res.render('admin/my-account');
+    res.render('admin/my-account', { user: req.user.toObject() });
 });
 
 router.post('/my-account/:userID/update',
@@ -174,12 +173,20 @@ router.get('/company',
         const userOwner = req.user.userID;
 
         const userCompany = await Companies.findOne({ owner: userOwner }) || null
-        return userCompany
+        return userCompany.toObject()
     }
 
-    const company = await searchCompanyByUser()
+    let companyPl = null
 
-    res.render('admin/company', { company: company })
+    try {
+        companyPl = await searchCompanyByUser()
+        
+    } catch(err) {
+        req.flash('errorMsg', `There was an error searching company: ${err}`)
+        return res.redirect('./')
+    }
+
+    res.render('admin/company', { company: companyPl })
 });
 
 router.post('/newcompany',
@@ -805,13 +812,14 @@ router.get('/leads/:leadID',
             const leadID = req.params.leadID;
 
             const lead = await Leads.findOne({ leadID: leadID });
-
+            
             if (!lead) {
                 req.flash(`Lead não encontrado em sua base.`);
-                res.redirect('./');
+                return res.redirect('./');
             }
 
-            res.render('admin/leads/leadinfo', { lead });
+            const leadPlained = lead.toObject()
+            res.render('admin/leads/leadinfo', { lead: leadPlained });
 
         } catch (err) {
             req.flash(`Houve um erro interno no servidor ao buscar o lead: ${err}`);
