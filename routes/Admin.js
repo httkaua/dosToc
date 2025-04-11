@@ -345,7 +345,7 @@ router.get('/team',
                     position: pick.position
                 };
 
-                members.push(member);
+                members.push(member.toObject());
             }
 
             res.render('admin/team', { members });
@@ -611,15 +611,19 @@ router.get('/leads',
     ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
     async (req, res, next) => {
 
-    async function searchLeads(req) {
+    async function searchLeads() {
         try {
             const userR = req.user.userID;
             
-            const leads = await Leads.find({ responsibleAgent: userR }).exec();
+            const leads = await Leads.find({ responsibleAgent: userR }).lean().exec();
+            if (leads.length < 1) {
+                return null
+            }
 
             const visibleLeads = leads.filter(lead => !lead.hidden);
             
             const formattedLeads = visibleLeads.map(lead => ({
+                ...lead.toObject ? lead.toObject() : lead,
                 id: lead.leadID,
                 name: lead.name,
                 phone: lead.phone,
@@ -628,12 +632,12 @@ router.get('/leads',
             
             return formattedLeads;
         } catch (err) {
-            console.error(`Houve um erro ao buscar os dados: ${err}`);
-            throw err;
+            req.flash('errorMsg', `Houve um erro ao buscar os dados: ${err}`)
+            return res.redirect('/admin')
         }
     }
 
-    const leadsByUser = await searchLeads(req);
+    const leadsByUser = await searchLeads();
 
     res.render('admin/leads', { lead: leadsByUser })
 });
@@ -960,7 +964,10 @@ router.get('/real-states',
         try {
             const userCompany = req.user.company;
             
-            const realStates = await RealStates.find({ company: userCompany }).exec();
+            const realStates = await RealStates.find({ company: userCompany }).lean().exec();
+            if (realStates.length > 1) {
+                return null
+            }
 
             const visibleRealStates = realStates.filter(realstate => !realstate.hidden);
             
@@ -1065,7 +1072,6 @@ router.post('/real-states/new-real-state/create',
         try {
             await uploadMedia(req.file, newRealState);
         } catch (err) {
-            console.error('Erro ao acessar uploadMedia:', err);
             req.flash('errorMsg', `Erro ao salvar imagem: ${err.message}`);
             return res.redirect('./');
         }
