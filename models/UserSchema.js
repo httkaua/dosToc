@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose"
 
 const userSchema = new mongoose.Schema({
     userID: {type: Number, required: true, immutable: true, unique: true},
@@ -21,4 +21,4 @@ const userSchema = new mongoose.Schema({
 })
 
 // Setting the Schema for users collection in mongoDB
-module.exports = mongoose.model('users', userSchema);
+export default mongoose.model('users', userSchema);

@@ -10,20 +10,25 @@
     </tr>
   </thead>
   <tbody>
-    {{#each lead}}
-    <tr>
-        <td>{{this.name}}</td>
-        <td>{{this.phone}}</td>
-        <td>{{this.status}}</td>
-        <td>
-          <div class="d-grid gap-2 d-md-block">
-            <button class="btn btn-success" type="button">Agendar tarefa</button>
-            <a href="/admin/leads/{{this.id}}" class="btn btn-info">Detalhes</a>
-            <a href="/admin/leads/{{this.id}}/hidden" class="btn btn-danger">🗑</a>
-          </div>
-        </td>
-    </tr>
-    {{/each}}
+    {{#if lead}}
+      {{#each lead}}
+      <tr>
+          <td>{{this.name}}</td>
+          <td>{{this.phone}}</td>
+          <td>{{this.status}}</td>
+          <td>
+            <div class="d-grid gap-2 d-md-block">
+              <button class="btn btn-success" type="button">Agendar tarefa</button>
+              <a href="/admin/leads/{{this.id}}" class="btn btn-info">Detalhes</a>
+              <a href="/admin/leads/{{this.id}}/hidden" class="btn btn-danger">🗑</a>
+            </div>
+          </td>
+      </tr>
+      {{/each}}
+    {{else}}
+        <p class="mt-2">Você não possui nenhum lead. Cadastre seu primeiro!</p>
+    {{/if}}
+
   </tbody>
 </table>
 <a href="/admin" class="btn btn-secondary">Voltar</a>

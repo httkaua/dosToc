@@ -1,14 +1,14 @@
-const express = require('express');
+import express from "express"
 const router = express.Router();
-const bcrypt = require('bcrypt')
-const passport = require('passport');
-const mongoose = require('mongoose');
-const { createRecord } = require('../helpers/newRecord');
+import bcrypt from "bcrypt"
+import passport from "passport"
+import mongoose from "mongoose"
+import createRecord from "../helpers/newRecord.js"
 
-require ('../models/UserSchema');
+import "../models/UserSchema.js"
 const Users = mongoose.model('users');
 
-require ('../models/RecordsSchema');
+import "../models/RecordsSchema.js"
 const Records = mongoose.model('records');
 
 
@@ -232,4 +232,4 @@ router.get('/forgot-password', async (req, res, next) => {
     res.render('admin/forgot-password');
 });
 
-module.exports = router;
+export default router

@@ -1,11 +1,11 @@
-const localStrategy = require('passport-local').Strategy;
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import { Strategy as localStrategy } from "passport-local"
+import mongoose from "mongoose"
+import bcrypt from "bcryptjs"
 
-require('../models/UserSchema');
+import "../models/UserSchema.js"
 const User = mongoose.model('users');
 
-function ensureAuthenticated(req, res, next) {
+export function ensureAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
         return next();
     }
@@ -13,7 +13,7 @@ function ensureAuthenticated(req, res, next) {
     res.redirect('/user/signin');
 }
 
-function ensureRole(allowedRoles) {
+export function ensureRole(allowedRoles) {
     return (req, res, next) => {
         if (!req.isAuthenticated()) {
             req.flash('errorMsg', 'Você precisa estar logado para acessar esta página.');
@@ -31,7 +31,7 @@ function ensureRole(allowedRoles) {
     };
 }
 
-module.exports = function (passport) {
+export default function (passport) {
     passport.use(new localStrategy({
         usernameField: 'signUserEmail',
         passwordField: 'signUserPassword'
@@ -58,7 +58,4 @@ module.exports = function (passport) {
     passport.deserializeUser((id, done) => {
         User.findById(id).then(user => done(null, user)).catch(err => done(err));
     });
-};
-
-module.exports.ensureAuthenticated = ensureAuthenticated;
-module.exports.ensureRole = ensureRole;
+}

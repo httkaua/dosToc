@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose"
 
 const recordSchema = new mongoose.Schema({
     recordID: {type: Number, required: true, unique: true, immutable: true},
@@ -23,4 +23,4 @@ const recordSchema = new mongoose.Schema({
     hidden: {type: Boolean, default: false}
 });
 
-module.exports = mongoose.model('records', recordSchema);
+export default mongoose.model('records', recordSchema);

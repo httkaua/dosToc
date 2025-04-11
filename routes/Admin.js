@@ -1,20 +1,25 @@
-const express = require('express');
+import express from "express"
 const router = express.Router();
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt')
-const passport = require('passport');
+import mongoose from "mongoose"
+import bcrypt from "bcrypt"
+import passport from "passport"
 
-const { ensureAuthenticated, ensureRole } = require('../helpers/Auth');
-const positionsI = require('../helpers/positionsI');
-const { createRecord } = require('../helpers/newRecord');
-const { create: uploadMedia } = require('../helpers/uploadMedia');
-const upload = require("../helpers/Multer");
+/* separated in 2 lines because in es6 are sending
+error with both in the same line */
+import { ensureAuthenticated } from "../helpers/Auth.js"
+import { ensureRole } from "../helpers/Auth.js"
+import positionsI from "../helpers/positionsI.js"
+import createRecord from "../helpers/newRecord.js"
+// changed: { create: uploadMedia } to { uploadMedia }
+import uploadMedia from "../helpers/uploadMedia.js"
+import upload from "../helpers/Multer.js"
 
-require ('../models/CompanySchema');
-require ('../models/UserSchema');
-require ('../models/RecordsSchema');
-require ('../models/RealStateSchema');
-require ('../models/LeadSchema');
+import "../models/CompanySchema.js"
+import "../models/UserSchema.js"
+import "../models/RecordsSchema.js"
+import "../models/RealStateSchema.js"
+import "../models/LeadSchema.js"
+import RealStateSchema from "../models/RealStateSchema.js";
 
 const Companies = mongoose.model('companies');
 const Users = mongoose.model('users');
@@ -25,7 +30,7 @@ const Leads = mongoose.model('leads');
 router.get('/',
     ensureAuthenticated,
     async (req, res, next) => {
-    res.render('admin/home');
+    res.render('admin/home', {user: req.user.toObject()});
 });
 
 
@@ -75,7 +80,7 @@ router.get('/records',
 router.get('/my-account/:userID',
     ensureAuthenticated,
     async (req, res, next) => {
-    res.render('admin/my-account');
+    res.render('admin/my-account', { user: req.user.toObject() });
 });
 
 router.post('/my-account/:userID/update',
@@ -87,8 +92,8 @@ router.post('/my-account/:userID/update',
         const userUp = await Users.findOne({ userID: userID });
   
         if (!userUp) {
-          req.flash('errorMsg', 'Lead não encontrado.');
-          return res.redirect('./');
+          req.flash('errorMsg', 'Conta não encontrada.');
+          return res.redirect('/admin');
         }
   
         const updatedData = req.body;
@@ -149,7 +154,7 @@ router.post('/my-account/:userID/update',
             req.flash('successMsg', 'Nenhum campo foi alterado.')
         }
 
-        res.redirect('./');
+        res.redirect('/admin');
 
     } catch (error) {
         console.error(error);
@@ -169,12 +174,20 @@ router.get('/company',
         const userOwner = req.user.userID;
 
         const userCompany = await Companies.findOne({ owner: userOwner }) || null
-        return userCompany
+        return userCompany.toObject()
     }
 
-    const company = await searchCompanyByUser()
+    let companyPl = null
 
-    res.render('admin/company', { company: company })
+    try {
+        companyPl = await searchCompanyByUser()
+        
+    } catch(err) {
+        req.flash('errorMsg', `There was an error searching company: ${err}`)
+        return res.redirect('./')
+    }
+
+    res.render('admin/company', { company: companyPl })
 });
 
 router.post('/newcompany',
@@ -325,7 +338,7 @@ router.get('/team',
             for (let i = 0; i < teamMembers.length; i++) {
                 const element = teamMembers[i];
                 
-                const pick = await Users.findOne({ userID: element });
+                const pick = await Users.findOne({ userID: element }).lean();
 
                 const member = {
                     id: pick.userID,
@@ -599,15 +612,19 @@ router.get('/leads',
     ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
     async (req, res, next) => {
 
-    async function searchLeads(req) {
+    async function searchLeads() {
         try {
             const userR = req.user.userID;
             
-            const leads = await Leads.find({ responsibleAgent: userR }).exec();
+            const leads = await Leads.find({ responsibleAgent: userR }).lean().exec();
+            if (leads.length < 1) {
+                return null
+            }
 
             const visibleLeads = leads.filter(lead => !lead.hidden);
             
             const formattedLeads = visibleLeads.map(lead => ({
+                ...lead.toObject ? lead.toObject() : lead,
                 id: lead.leadID,
                 name: lead.name,
                 phone: lead.phone,
@@ -616,12 +633,12 @@ router.get('/leads',
             
             return formattedLeads;
         } catch (err) {
-            console.error(`Houve um erro ao buscar os dados: ${err}`);
-            throw err;
+            req.flash('errorMsg', `Houve um erro ao buscar os dados: ${err}`)
+            return res.redirect('/admin')
         }
     }
 
-    const leadsByUser = await searchLeads(req);
+    const leadsByUser = await searchLeads();
 
     res.render('admin/leads', { lead: leadsByUser })
 });
@@ -800,13 +817,14 @@ router.get('/leads/:leadID',
             const leadID = req.params.leadID;
 
             const lead = await Leads.findOne({ leadID: leadID });
-
+            
             if (!lead) {
                 req.flash(`Lead não encontrado em sua base.`);
-                res.redirect('./');
+                return res.redirect('./');
             }
 
-            res.render('admin/leads/leadinfo', { lead });
+            const leadPlained = lead.toObject()
+            res.render('admin/leads/leadinfo', { lead: leadPlained });
 
         } catch (err) {
             req.flash(`Houve um erro interno no servidor ao buscar o lead: ${err}`);
@@ -946,9 +964,7 @@ router.get('/real-states',
 
         try {
             const userCompany = req.user.company;
-            
-            const realStates = await RealStates.find({ company: userCompany }).exec();
-
+            const realStates = await RealStates.find({ company: userCompany }).lean().exec();
             const visibleRealStates = realStates.filter(realstate => !realstate.hidden);
             
             const formattedRealStates = visibleRealStates.map(realstate => ({
@@ -1052,7 +1068,6 @@ router.post('/real-states/new-real-state/create',
         try {
             await uploadMedia(req.file, newRealState);
         } catch (err) {
-            console.error('Erro ao acessar uploadMedia:', err);
             req.flash('errorMsg', `Erro ao salvar imagem: ${err.message}`);
             return res.redirect('./');
         }
@@ -1084,7 +1099,7 @@ router.post('/real-states/new-real-state/create',
             req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`);
         }
 
-        return res.redirect('../');
+        return res.redirect('/admin');
     }
 );
 
@@ -1095,17 +1110,18 @@ router.get('/real-states/:realStateID',
         try {
             const realStateID = req.params.realStateID;
 
-            const realS = await RealStates.findOne({ realStateID: realStateID });
+            const realS = await RealStates.findOne({ realStateID: realStateID }).lean();
+            const realstatePlained = realS.toObject ? realS.toObject() : { ...realS }
 
             if (!realS) {
-                req.flash(`Imóvel não encontrado em sua base.`);
-                res.redirect('./');
+                req.flash('errorMsg', `Imóvel não encontrado em sua base.`);
+                return res.redirect('admin/realStates');
             }
 
-            res.render('admin/realStates/real-state-info', { realS });
+            res.render('admin/realStates/real-state-info', { realS: realstatePlained });
 
         } catch (err) {
-            req.flash(`Houve um erro interno no servidor ao buscar o lead: ${err}`);
+            req.flash('errorMsg', `Houve um erro interno no servidor ao buscar o lead: ${err}`);
             res.redirect('./')
         }
     }
@@ -1180,10 +1196,10 @@ router.post('/real-states/:realStateID/update',
           req.flash('successMsg', 'Nenhum campo foi alterado.');
         }
   
-        res.redirect('./');
+        res.redirect('/admin/real-states');
       } catch (err) {
         req.flash('errorMsg', `Erro no servidor: ${err}`);
-        res.redirect('./');
+        res.redirect('/admin/real-states');
       }
     }
 );
@@ -1233,4 +1249,4 @@ router.get('/real-states/:realStateID/hidden',
     }
 );
 
-module.exports = router;
+export default router
