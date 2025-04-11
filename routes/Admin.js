@@ -19,6 +19,7 @@ import "../models/UserSchema.js"
 import "../models/RecordsSchema.js"
 import "../models/RealStateSchema.js"
 import "../models/LeadSchema.js"
+import RealStateSchema from "../models/RealStateSchema.js";
 
 const Companies = mongoose.model('companies');
 const Users = mongoose.model('users');
@@ -91,8 +92,8 @@ router.post('/my-account/:userID/update',
         const userUp = await Users.findOne({ userID: userID });
   
         if (!userUp) {
-          req.flash('errorMsg', 'Lead não encontrado.');
-          return res.redirect('./');
+          req.flash('errorMsg', 'Conta não encontrada.');
+          return res.redirect('/admin');
         }
   
         const updatedData = req.body;
@@ -153,7 +154,7 @@ router.post('/my-account/:userID/update',
             req.flash('successMsg', 'Nenhum campo foi alterado.')
         }
 
-        res.redirect('./');
+        res.redirect('/admin');
 
     } catch (error) {
         console.error(error);
@@ -337,7 +338,7 @@ router.get('/team',
             for (let i = 0; i < teamMembers.length; i++) {
                 const element = teamMembers[i];
                 
-                const pick = await Users.findOne({ userID: element });
+                const pick = await Users.findOne({ userID: element }).lean();
 
                 const member = {
                     id: pick.userID,
@@ -345,7 +346,7 @@ router.get('/team',
                     position: pick.position
                 };
 
-                members.push(member.toObject());
+                members.push(member);
             }
 
             res.render('admin/team', { members });
@@ -963,12 +964,7 @@ router.get('/real-states',
 
         try {
             const userCompany = req.user.company;
-            
             const realStates = await RealStates.find({ company: userCompany }).lean().exec();
-            if (realStates.length > 1) {
-                return null
-            }
-
             const visibleRealStates = realStates.filter(realstate => !realstate.hidden);
             
             const formattedRealStates = visibleRealStates.map(realstate => ({
@@ -1103,7 +1099,7 @@ router.post('/real-states/new-real-state/create',
             req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`);
         }
 
-        return res.redirect('../');
+        return res.redirect('/admin');
     }
 );
 
@@ -1114,17 +1110,18 @@ router.get('/real-states/:realStateID',
         try {
             const realStateID = req.params.realStateID;
 
-            const realS = await RealStates.findOne({ realStateID: realStateID });
+            const realS = await RealStates.findOne({ realStateID: realStateID }).lean();
+            const realstatePlained = realS.toObject ? realS.toObject() : { ...realS }
 
             if (!realS) {
-                req.flash(`Imóvel não encontrado em sua base.`);
-                res.redirect('./');
+                req.flash('errorMsg', `Imóvel não encontrado em sua base.`);
+                return res.redirect('admin/realStates');
             }
 
-            res.render('admin/realStates/real-state-info', { realS });
+            res.render('admin/realStates/real-state-info', { realS: realstatePlained });
 
         } catch (err) {
-            req.flash(`Houve um erro interno no servidor ao buscar o lead: ${err}`);
+            req.flash('errorMsg', `Houve um erro interno no servidor ao buscar o lead: ${err}`);
             res.redirect('./')
         }
     }
@@ -1199,10 +1196,10 @@ router.post('/real-states/:realStateID/update',
           req.flash('successMsg', 'Nenhum campo foi alterado.');
         }
   
-        res.redirect('./');
+        res.redirect('/admin/real-states');
       } catch (err) {
         req.flash('errorMsg', `Erro no servidor: ${err}`);
-        res.redirect('./');
+        res.redirect('/admin/real-states');
       }
     }
 );
