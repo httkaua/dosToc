@@ -10,7 +10,6 @@ import { ensureAuthenticated } from "../helpers/Auth.js"
 import { ensureRole } from "../helpers/Auth.js"
 import positionsI from "../helpers/positionsI.js"
 import createRecord from "../helpers/newRecord.js"
-// changed: { create: uploadMedia } to { uploadMedia }
 import uploadMedia from "../helpers/uploadMedia.js"
 import upload from "../helpers/Multer.js"
 
@@ -544,11 +543,11 @@ router.post('/team/new-member/create',
                                     req.flash('errorMsg', `Erro ao criar registro em histórico: ${err}`)
                                 }
 
-                            return res.redirect('../');
+                            return res.redirect('/admin/team');
                         })
                         .catch((err) => {
                             req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
-                            return res.redirect('./');
+                            return res.redirect('/admin/team');
                         });
                     });
                 });
@@ -556,7 +555,7 @@ router.post('/team/new-member/create',
         };
 });
 
-router.get('/team/:userID/hidden',
+router.get('/team/:teamuserID/hidden',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
     async (req, res, user) => {
@@ -564,25 +563,28 @@ router.get('/team/:userID/hidden',
         try {
 
             // Manager user
-            const dataToHidden = await Users.findOne({ userID: req.user.userID });
+            const managedUserID = Number(req.params.teamuserID)
+            const userManagerID = req.user.userID
+            const userManager = await Users.findOne({ userID: userManagerID });
+            const managedUser = await Users.findOne({ userID: managedUserID.toString() });
 
-            const userToPop = req.params.userID
-
-            const underManagement = dataToHidden.underManagement
-
-            underManagement.pop(userToPop)
-
-            if (!dataToHidden) {
-                req.flash('errorMsg', `Lead ${leadID} não encontrado.`);
+            if (!userManager || !managedUser) {
+                return req.flash('errorMsg', `Usuário ${managedUserID} ou ${req.user.userID} não encontrado.`);
             }
 
-            await dataToHidden.save()
+            const newUnderManArray = userManager.underManagement.filter(item => item !== managedUserID)
+            const newManagersArray = managedUser.managers.filter(item => item !== userManagerID)
+
+            userManager.underManagement = newUnderManArray
+            managedUser.managers = newManagersArray
+
+            await managedUser.save()
             .then(async () => {
 
                 const recordInfo = {
-                    userWhoChanged: req.user.userID,
+                    userWhoChanged: userManagerID,
                     affectedType: 'usuário',
-                    affectedData: userToPop,
+                    affectedData: managedUserID,
                     action: 'retirou',
                     category: 'Equipes',
                     company: req.user.company
@@ -590,18 +592,24 @@ router.get('/team/:userID/hidden',
 
                 await createRecord(recordInfo);
 
+                await userManager.save()
+                .then()
+                .catch((err) => {
+                    req.flash('errorMsg', `Não foi possível registrar a exclusão do membro: ${err}`)
+                })
+
                 req.flash('successMsg', `membro da equipe excluído com sucesso.`)
 
             })
             .catch((err) => {
-                req.flash('errorMsg', `Não foi possível excluir o membro: ${err}`)
+                req.flash('errorMsg', `Não foi possível registrar a exclusão do gestor: ${err}`)
             })
         }
         catch (err) {
             req.flash('errorMsg', `Erro interno: ${err}`)
         }
 
-        res.redirect('../')
+        res.redirect('/admin/team')
     }
 );
 
