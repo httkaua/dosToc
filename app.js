@@ -60,7 +60,6 @@ import dotenv from "dotenv/config"
         }));
         app.set('view engine', 'handlebars');
         app.set('views', './views');
-        
 
         // Body-parser
         app.use(express.json());
@@ -72,8 +71,14 @@ app.get('/', async (req, res) => {
     res.render('user/home')
 })
 
+// Router groups
 app.use('/user', User);
 app.use('/admin', Admin);
+
+// Non-existent routes
+app.use((req, res) => {
+    res.status(404).render('error404')
+})
 
 // Listen in a PORT of computer
 app.listen(8088, 'localhost', () => {

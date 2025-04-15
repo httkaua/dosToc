@@ -2,13 +2,7 @@
 {{#if user}}
     <div class="card mt-4" style="width: 18rem;">
         <div class="card-body">
-            <h5 class="card-title">{{user.firstName}} {{user.lastName}}</h5>
-            <h6 class="card-subtitle mb-2 text-muted">Agente de vendas na {{user.company}}</h6>
-            <small>ID de usuário: {{user.userID}}<br></small>
             <a href="/admin" class="card-link">Acessar home</a>
-            <a href="#" class="card-link">Acessar clientes</a>
-            <a href="/admin/my-account/:{{user.userID}} class="card-link"">Minha conta</a>
-            <a href="/admin/company" class="card-link">Minha empresa</a>
         </div>
     </div>
 
