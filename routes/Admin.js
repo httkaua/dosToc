@@ -562,7 +562,6 @@ router.get('/team/:teamuserID/hidden',
 
         try {
 
-            // Manager user
             const managedUserID = Number(req.params.teamuserID)
             const userManagerID = req.user.userID
             const userManager = await Users.findOne({ userID: userManagerID });
@@ -578,7 +577,7 @@ router.get('/team/:teamuserID/hidden',
             userManager.underManagement = newUnderManArray
             managedUser.managers = newManagersArray
 
-            await managedUser.save()
+            await userManager.save()
             .then(async () => {
 
                 const recordInfo = {
@@ -592,17 +591,17 @@ router.get('/team/:teamuserID/hidden',
 
                 await createRecord(recordInfo);
 
-                await userManager.save()
+                await managedUser.save()
                 .then()
                 .catch((err) => {
-                    req.flash('errorMsg', `Não foi possível registrar a exclusão do membro: ${err}`)
+                    req.flash('errorMsg', `Não foi possível registrar a exclusão do gestor: ${err}`)
                 })
 
                 req.flash('successMsg', `membro da equipe excluído com sucesso.`)
 
             })
             .catch((err) => {
-                req.flash('errorMsg', `Não foi possível registrar a exclusão do gestor: ${err}`)
+                req.flash('errorMsg', `Não foi possível registrar a exclusão do membro: ${err}`)
             })
         }
         catch (err) {
