@@ -41,6 +41,7 @@ const RealStateSchema = new mongoose.Schema({
         enum: ['Ativo', 'Inativo', 'Vendido', 'Suspenso', 'Alugado', 'Permutado']
     },
     description: {type: String},
+    bedrooms: {type: Number},
     rooms: {type: Number},
     bathrooms: {type: Number},
     parkingSpaces: {type: Number},

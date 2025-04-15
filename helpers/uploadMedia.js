@@ -4,7 +4,7 @@ export default async (file, objWithMedia) => {
             throw new Error("Nenhum arquivo enviado ou caminho inválido.");
         }
 
-        console.log(`Arquivo recebido: ${file.filename}`);
+        //console.log(`Arquivo recebido: ${file.filename}`);
 
         const imagePath = file.path.replace(/\\/g, "/");
 
@@ -14,7 +14,7 @@ export default async (file, objWithMedia) => {
 
         objWithMedia.src.push(imagePath);
 
-        console.log(`Objeto após inserção da imagem:`, objWithMedia);
+        //console.log(`Objeto após inserção da imagem:`, objWithMedia);
 
         return { ...objWithMedia };
 

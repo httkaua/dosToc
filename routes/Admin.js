@@ -978,7 +978,7 @@ router.get('/real-states',
                 src: realstate.src[0],
                 id: realstate.realStateID,
                 type: realstate.type,
-                rooms: realstate.rooms,
+                bedrooms: realstate.bedrooms,
                 neighborhood: realstate.neighborhood,
                 city: realstate.city,
                 saleValue: realstate.saleValue
@@ -1106,7 +1106,7 @@ router.post('/real-states/new-real-state/create',
             req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`);
         }
 
-        return res.redirect('/admin');
+        return res.redirect('/admin/real-states');
     }
 );
 
@@ -1252,7 +1252,7 @@ router.get('/real-states/:realStateID/hidden',
             req.flash('errorMsg', `Erro interno: ${err}`)
         }
 
-        res.redirect('../')
+        res.redirect('/admin/real-states')
     }
 );
 
