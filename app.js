@@ -86,9 +86,12 @@ app.get('/', async (req, res) => {
 app.use('/user', User);
 app.use('/admin', Admin);
 
-// Non-existent routes
-app.use((req, res) => {
-    res.status(404).render('error404')
+// Error treatment
+app.use((err, req, res, next) => {
+
+    const errStatus = err.status || null
+    
+    res.status(400).render('errorHTTP', { error: errStatus})
 })
 
 // Listen in a PORT of computer

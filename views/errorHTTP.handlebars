@@ -1,0 +1,36 @@
+<div class="text-center">
+    {{#if (is400 error)}}
+        <h1 class="display-1 fw-bold text-danger">400</h1>
+        <h2 class="mb-3">Bad request (requisição ruim)</h2>
+        <p class="mb-4 text-secondary">Sugerimos que reinicie a página pressionando F5.</p>
+    {{else}}
+    {{#if (is401 error)}}
+        <h1 class="display-1 fw-bold text-danger">401</h1>
+        <h2 class="mb-3">Não autenticado</h2>
+        <p class="mb-4 text-secondary">Volte para a tela inicial e realize seu login.</p>
+    {{else}}
+    {{#if (is403 error)}}
+        <h1 class="display-1 fw-bold text-danger">403</h1>
+        <h2 class="mb-3">Sem autorização</h2>
+        <p class="mb-4 text-secondary">Você não possui acesso para acessar essa página</p>
+    {{else}}
+    {{#if (is404 error)}}
+        <h1 class="display-1 fw-bold text-danger">404</h1>
+        <h2 class="mb-3">Página não encontrada</h2>
+        <p class="mb-4 text-secondary">Não sabemos como você veio parar aqui. Você é algum explorador?</p>
+    {{else}}
+    {{#if (is500 error)}}
+        <h1 class="display-1 fw-bold text-danger">500</h1>
+        <h2 class="mb-3">Erro interno no servidor</h2>
+        <p class="mb-4 text-secondary">Sugerimos que tire print da tela e envie ao nosso time de suporte.</p>
+    {{else}}
+    {{#if (is503 error)}}
+        <h1 class="display-1 fw-bold text-danger">503</h1>
+        <h2 class="mb-3">Serviço indisponível</h2>
+        <p class="mb-4 text-secondary">Estamos temporariamente indisponíveis. Tente novamente em alguns minutos.</p>
+    {{else}}
+
+    {{/if}}
+
+    <a href="/admin" class="btn btn-danger">Voltar para a home</a>
+</div>
