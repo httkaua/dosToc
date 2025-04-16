@@ -13,7 +13,10 @@ const Records = mongoose.model('records');
 
 
 router.get('/', async (req, res, next) => {
-    res.send("I don't know how you got here.");
+    /*
+    Unused route, then redirect to admin to authentication verify
+    */
+    res.redirect('/admin')
 });
 
 router.get('/signin', async (req, res, next) => {
@@ -21,30 +24,36 @@ router.get('/signin', async (req, res, next) => {
 });
 
 router.post('/signin/authentication', async (req, res, next) => {
-    passport.authenticate('local', (err, user, info) => {
-        if (err) {
-            req.flash('errorMsg', 'Erro 3006 - Houve um erro durante a autenticação.');
-            return res.redirect('./');
-        }
-        if (!user) {
-            req.flash('errorMsg', info.message || '1010 - Credenciais inválidas.');
-            return res.redirect('./');
-        }
-        req.logIn(user, (err) => {
+
+    try {
+        passport.authenticate('local', (err, user, info) => {
             if (err) {
-                req.flash('errorMsg', '3007 - Ocorreu um erro durante o LogIn.');
+                req.flash('errorMsg', 'Erro 3006 - Houve um erro durante a autenticação.');
                 return res.redirect('./');
             }
-            req.flash('successMsg', 'Seja bem-vindo!');
-            return res.redirect('/admin');
-        });
-    })(req, res, next);
+            if (!user) {
+                req.flash('errorMsg', info.message || '1010 - Credenciais inválidas.');
+                return res.redirect('./');
+            }
+            req.logIn(user, (err) => {
+                if (err) {
+                    req.flash('errorMsg', '3007 - Ocorreu um erro durante o LogIn.');
+                    return res.redirect('./');
+                }
+                req.flash('successMsg', 'Seja bem-vindo!');
+                return res.redirect('/admin');
+            });
+        })(req, res, next);
+    } catch (err) {
+        req.flash('errorMsg', `Ocorreu um erro interno: ${err}`)
+    }
 });
 
 router.get('/register', async (req, res, next) => {
     res.render('user/register');
 });
 
+// Optimize this code
 router.post('/newaccount', async (req, res, next) => {
 
     const newAccErrors = [];

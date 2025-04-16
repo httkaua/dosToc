@@ -68,7 +68,18 @@ import dotenv from "dotenv/config"
 
 
 app.get('/', async (req, res) => {
-    res.render('user/home')
+
+    try {
+        const Users = mongoose.model('users');
+        const userPlained = await Users.findOne({ userID: req.user.userID }).lean()
+        const userObj = userPlained.toObject ? userPlained.toObject() : userPlained
+
+        res.render('user/home', { user: userObj })
+
+    } catch (error) {
+        res.render('user/home', { user: null })
+    }
+    
 })
 
 // Router groups

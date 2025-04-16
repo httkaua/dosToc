@@ -18,7 +18,6 @@ import "../models/UserSchema.js"
 import "../models/RecordsSchema.js"
 import "../models/RealStateSchema.js"
 import "../models/LeadSchema.js"
-import RealStateSchema from "../models/RealStateSchema.js";
 
 const Companies = mongoose.model('companies');
 const Users = mongoose.model('users');
@@ -29,7 +28,9 @@ const Leads = mongoose.model('leads');
 router.get('/',
     ensureAuthenticated,
     async (req, res, next) => {
-    res.render('admin/home', {user: req.user.toObject()});
+    const userObj = req.user.toObject ? req.user.toObject() : null
+
+    res.render('admin/home', {user: userObj});
 });
 
 
@@ -79,7 +80,18 @@ router.get('/records',
 router.get('/my-account/:userID',
     ensureAuthenticated,
     async (req, res, next) => {
-    res.render('admin/my-account', { user: req.user.toObject() });
+
+    const paramsID = String(req.params.userID)
+    const sessionID = String(req.user.userID)
+    
+    if (paramsID !== sessionID) {
+        req.flash('errorMsg', `Usuário não confere com a solicitação.`)
+        return res.redirect('/admin')
+    }
+
+    const userObj = req.user.toObject ? req.user.toObject() : null
+
+    res.render('admin/my-account', { user: userObj });
 });
 
 router.post('/my-account/:userID/update',

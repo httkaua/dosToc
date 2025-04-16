@@ -2,12 +2,14 @@
 {{#if user}}
     <div class="card mt-4" style="width: 18rem;">
         <div class="card-body">
+            <h5 class="card-title">{{user.firstName}} {{user.lastName}}</h5>
+            <small>ID de usuário: {{user.userID}}<br></small>
             <a href="/admin" class="card-link">Acessar home</a>
         </div>
     </div>
 
 {{else}}
-
+    <!-- FR, this else can't be reached -->
     <div class="card mt-4" style="width: 18rem;">
         <div class="card-body">
             <h5 class="card-title">Fazer login</h5>
