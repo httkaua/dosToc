@@ -515,7 +515,7 @@ router.post('/team/new-member/create',
                 bcrypt.genSalt(10, (err, salt) => {
                     if (err) {
                         req.flash('errorMsg', `Erro 3004 - Houve um erro ao gerar SALT: ${err}`)
-                        res.redirect('./');
+                        return res.redirect('./');
                     }
 
                     bcrypt.hash(fields.password, salt, (err, hash) => {

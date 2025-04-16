@@ -196,7 +196,7 @@ router.post('/newaccount', async (req, res, next) => {
                 bcrypt.genSalt(10, (err, salt) => {
                     if (err) {
                         req.flash('errorMsg', `Erro 3004 - Houve um erro ao gerar SALT: ${err}`)
-                        res.redirect('register')
+                        return res.redirect('register')
                     }
 
                     bcrypt.hash(claimantPassw, salt, (err, hash) => {
