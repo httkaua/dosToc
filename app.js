@@ -33,7 +33,14 @@ authHelper(passport);
         app.use(flash());
 
         // Helmet
-        app.use(helmet());
+        app.use(helmet({
+            contentSecurityPolicy: {
+              directives: {
+                defaultSrc: ["'self'"],
+                scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+              },
+            },
+        }));
 
         // Globals
         app.use((req, res, next) => {
