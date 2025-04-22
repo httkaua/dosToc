@@ -139,8 +139,11 @@
                         <input type="text" class="form-control"
                         id="locationCode" name="locationCode"
                         placeholder="83.000-000"
-                        maxlength="9" onblur="searchCEP(this.value)"
-                        onkeypress="formatCEP(event)">
+                        maxlength="9">
+                        <div id="cep-loading" class="text-primary mt-2" style="display: none;">
+                            <small><span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Buscando informações do CEP...</small>
+                        </div>
+
                     </div>
                     <div class="form-group">
                         <label for="address">Rua</label>
@@ -266,5 +269,5 @@
     </div>
 </div>
 
-<script defer src="https://cdn.jsdelivr.net/npm/axios@1.8.4/dist/axios.min.js"></script>
-<script defer src="/js/_searchcep.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios@1.8.4/dist/axios.min.js"></script>
+<script src="/js/_searchcep.js"></script>

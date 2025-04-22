@@ -33,14 +33,15 @@ authHelper(passport);
         app.use(flash());
 
         // Helmet
-        app.use(helmet({
-            contentSecurityPolicy: {
+        app.use(
+            helmet.contentSecurityPolicy({
               directives: {
                 defaultSrc: ["'self'"],
-                scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
-              },
-            },
-        }));
+                /* AXIOS */ scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+                /* SEARCH CEP */ connectSrc: ["'self'", "https://viacep.com.br"],
+              }
+            })
+          )
 
         // Globals
         app.use((req, res, next) => {

@@ -1,33 +1,45 @@
-function formatCEP(e) {
-    let v = e.target.value.replace(/\D/g, '')
-    v = v.replace(/^(\d{5})(\d)/, '$1-$2')
-    e.target.value = v
-}
-
-async function searchCEP(cep) {
-    cep = cep.replace(/\D/g, '')
-
-    if (cep.length !== 8) {
-        alert('CEP deve conter 8 dígitos')
-        return
-    }
-
-    try {
-        const response = await axios.get(`https://viacep.com.br/ws/${cep}/json`)
-        const data = response.data
-
-        if (!data.erro) {
-            document.getElementById('address').value = data.logradouro || ''
-            document.getElementById('neighborhood').value = data.bairro || ''
-            document.getElementById('city').value = data.localidade || ''
-            document.getElementById('state').value = data.uf || ''
-            document.getElementById('country').value = 'Brasil'
-        } else {
-            alert('CEP não encontrado')
+document.addEventListener('DOMContentLoaded', () => {
+    const cepInput = document.getElementById('locationCode');
+    const loadingIndicator = document.createElement('div');
+  
+    // Loading style
+    loadingIndicator.innerHTML = `
+      <div id="cep-loading" style="
+        display: none;
+        margin-top: 8px;
+        font-size: 0.9rem;
+        color: #007bff;">
+        🔄 Buscando endereço...
+      </div>
+    `;
+    cepInput.parentNode.appendChild(loadingIndicator);
+  
+    cepInput.addEventListener('blur', async () => {
+      const cep = cepInput.value.replace(/\D/g, '');
+  
+      if (cep.length !== 8) return;
+  
+      document.getElementById('cep-loading').style.display = 'block';
+  
+      try {
+        const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
+  
+        if (response.data.erro) {
+          throw new Error('CEP não encontrado');
         }
-
-    } catch (err) {
-        console.error(`Erro ao buscar CEP: ${err}`)
-        alert('Erro ao buscar CEP. Tente novamente em alguns segundos')
-    }
-}
+  
+        const data = response.data;
+  
+        document.getElementById('address').value = data.logradouro || '';
+        document.getElementById('neighborhood').value = data.bairro || '';
+        document.getElementById('city').value = data.localidade || '';
+        document.getElementById('state').value = data.uf || '';
+        document.getElementById('country').value = 'Brasil';
+      } catch (error) {
+        alert('Erro ao buscar o CEP. Verifique se ele está correto.');
+      } finally {
+        document.getElementById('cep-loading').style.display = 'none';
+      }
+    });
+  });
+  
