@@ -3,6 +3,7 @@ const router = express.Router();
 import mongoose from "mongoose"
 import bcrypt from "bcrypt"
 import passport from "passport"
+import ExcelJS from "ExcelJS"
 
 import { ensureAuthenticated } from "../helpers/Auth.js"
 import { ensureRole } from "../helpers/Auth.js"
@@ -695,6 +696,7 @@ router.post('/leads/new-lead/create',
             document: req.body.document,
             phone: req.body.phone,
             email: req.body.email,
+            sourceCode: req.body.sourceCode,
             pTypeInterested: req.body.pTypeInterested,
             currentCity: req.body.currentCity,
             currentState: req.body.currentState,
@@ -763,6 +765,7 @@ router.post('/leads/new-lead/create',
                     phone: fields.phone,
                     document: fields.document,
                     email: fields.email,
+                    sourceCode: fields.sourceCode,
                     currentCity: fields.currentCity,
                     currentState: fields.currentState,
                     currentCountry: fields.currentCountry,
@@ -970,6 +973,32 @@ router.get('/leads/:leadID/hidden',
         res.redirect('/admin/leads')
     }
 );
+
+router.post('/leads/export-all',
+    ensureAuthenticated,
+    async (req, res) => {
+    
+        try {
+            const leads = await Leads.find({ responsibleAgent: userR }).lean().exec();
+            if (leads.length < 1) {
+                req.flash('errorMsg', `Você não possui nenhum lead para exportar.`)
+                return res.redirect('./')
+            }
+
+            // creating a new worksheet
+            const workbook = new ExcelJS.workbook()
+            const worksheet = workbook.worksheet()
+
+            worksheet.columns = [
+                {header: 'Nome', key: 'name'},
+                {header: 'Telefone', key: 'phone'},
+                {header: 'Email', key: 'email'}
+            ]
+
+        } catch (err) {
+            req.flash(`Houve um erro interno: ${err}`)
+        }
+})
 
 
 // ROUTES TYPE: Real States / Properties / Imóveis

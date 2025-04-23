@@ -23,6 +23,7 @@
     "bcryptjs": "^3.0.2",
     "body-parser": "^2.2.0",
     "dotenv": "^16.4.7",
+    "exceljs": "^4.4.0",
     "express": "^5.1.0",
     "express-flash": "^0.0.2",
     "express-handlebars": "^8.0.1",

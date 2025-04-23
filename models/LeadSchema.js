@@ -6,6 +6,7 @@ const leadSchema = new mongoose.Schema({
     phone: {type: String, required: true, unique: true},
     document: {type: String},
     email: {type: String, required: true, unique: true},
+    sourceCode: {type: String},
     currentCity: {type: String},
     currentState: {type: String},
     currentCountry: {type: String},
