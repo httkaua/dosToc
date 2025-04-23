@@ -3,7 +3,7 @@ const router = express.Router();
 import mongoose from "mongoose"
 import bcrypt from "bcrypt"
 import passport from "passport"
-import ExcelJS from "ExcelJS"
+import ExcelJS from "exceljs"
 
 import { ensureAuthenticated } from "../helpers/Auth.js"
 import { ensureRole } from "../helpers/Auth.js"
@@ -979,24 +979,72 @@ router.post('/leads/export-all',
     async (req, res) => {
     
         try {
-            const leads = await Leads.find({ responsibleAgent: userR }).lean().exec();
+            let leads = await Leads.find({ responsibleAgent: req.user.userID })
+            .sort({ createdAt: -1 })
+            .lean()
+            .exec();
+            
             if (leads.length < 1) {
-                req.flash('errorMsg', `Você não possui nenhum lead para exportar.`)
+                req.flash(`errorMsg`, `Você não possui nenhum lead para exportar.`)
                 return res.redirect('./')
             }
 
+            leads = leads.filter(lead => !lead.hidden)
+            leads = leads.map(lead => ({
+                ...lead,
+                createdAt: new Date(lead.createdAt),
+                updatedAt: new Date(lead.updatedAt)
+            }))
+
             // creating a new worksheet
-            const workbook = new ExcelJS.workbook()
-            const worksheet = workbook.worksheet()
+            const workbook = new ExcelJS.Workbook()
+            const worksheet = workbook.addWorksheet()
+
+            worksheet.views = [{ state: 'frozen', ySplit: 1 }];
 
             worksheet.columns = [
                 {header: 'Nome', key: 'name'},
                 {header: 'Telefone', key: 'phone'},
-                {header: 'Email', key: 'email'}
-            ]
+                {header: 'Email', key: 'email'},
+                {header: 'Documento / CPF', key: 'document'},
+                {header: 'Imóvel interessado', key: 'sourceCode'},
+                {header: 'Renda bruta familiar', key: 'familyIncome'},
+                {header: 'Status', key: 'status'},
+                {header: 'Data de cadastro', key: 'createdAt', style: { numFmt: 'dd/mm/yyyy' } },
+                {header: 'Última atualização', key: 'updatedAt', style: { numFmt: 'dd/mm/yyyy' } },
+                {header: 'Observações', key: 'observations'}
+            ]          
+
+            worksheet.addRows(leads);
+
+            // Table header xlsx
+            worksheet.getRow(1).eachCell((cell) => {
+                cell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FF1F4E78' }
+                };
+                cell.font = {
+                    color: { argb: 'FFFFFFFF' },
+                    bold: true
+                };
+            });
+
+            res.setHeader(
+                'Content-Type',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            );
+            res.setHeader(
+                'Content-Disposition',
+                'attachment; filename=Leads_ativos.xlsx'
+            );
+
+            await workbook.xlsx.write(res);
+            res.end();
 
         } catch (err) {
-            req.flash(`Houve um erro interno: ${err}`)
+            req.flash('errorMsg',`Houve um erro interno: ${err}`)
+            return res.redirect('./')
         }
 })
 
