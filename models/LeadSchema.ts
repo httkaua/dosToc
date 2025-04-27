@@ -1,6 +1,39 @@
-import mongoose from "mongoose"
+import mongoose, { Document, Schema } from "mongoose";
 
-const leadSchema = new mongoose.Schema({
+interface ILeads extends Document {
+  leadID: number;
+  name: string;
+  phone: string;
+  document?: string;
+  email?: string;
+  sourceCode?: string;
+  currentCity?: string;
+  currentState?: string;
+  currentCountry?: string;
+  tags?: string[];
+  
+  // p == property
+  pTypeInterested?: 'Casa' | 'Terreno' | 'Apartamento' | 'Sobrado' | 'Sítio' | 'Galpão' | 'Studio/Sala comercial';
+  pCityInterested?: string[];
+  pStateInterested?: string[];
+  pCountryInterested?: string[];
+  condominiumInterested?: string[];
+  familyIncome?: number;
+  inputValue?: number;
+  pMaxValue?: number;
+  pMaxMonthlyPortion?: number;
+  sourceOfIncome?: 'Desconhecido' | 'Emprego em CLT' | 'Autônomo' | 'Funcionário público' | 'Pró-Labore' | 'Previdência/Aposentadoria' | 'Misto' | 'Outros';
+  status?: 'Primeiro contato' | 'Em conversa' | 'Visita marcada' | 'Com restrição' | 'Cliente futuro' | 'Encerrado';
+  sourceOfLead?: 'Facebook' | 'Instagram' | 'Internet' | 'Visita à loja' | 'Indicação' | 'Outros';
+  observations?: string;
+  company?: string;
+  responsibleAgent?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  hidden: boolean;
+}
+
+const leadSchema = new Schema<ILeads>({
     leadID: {type: Number, required: true, immutable: true, unique: true},
     name: {type: String, required: true},
     phone: {type: String, required: true, unique: true},
@@ -10,17 +43,17 @@ const leadSchema = new mongoose.Schema({
     currentCity: {type: String},
     currentState: {type: String},
     currentCountry: {type: String},
-    tags: {type: Array},
+    tags: [String],
 
     // p == property
     pTypeInterested: {
         type: String,
         enum: ['Casa', 'Terreno', 'Apartamento', 'Sobrado', 'Sítio', 'Galpão', 'Studio/Sala comercial']
     },
-    pCityInterested: {type: Array},
-    pStateInterested: {type: Array},
-    pCountryInterested: {type: Array},
-    condominiumInterested: {type: Array},
+    pCityInterested: [String],
+    pStateInterested: [String],
+    pCountryInterested: [String],
+    condominiumInterested: [String],
     familyIncome: {type: Number},
     inputValue: {type: Number},
     pMaxValue: {type: Number},
@@ -45,4 +78,5 @@ const leadSchema = new mongoose.Schema({
     hidden: {type: Boolean, default: false}
 })
 
-export default mongoose.model('leads', leadSchema);
+const Leads = mongoose.model<ILeads>('leads', leadSchema);
+export default Leads

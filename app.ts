@@ -15,6 +15,8 @@ import User from "./routes/User.js";
 import Admin from "./routes/Admin.js";
 import authHelper from "./helpers/Auth.js";
 
+import Users, {IUser} from "./models/UserSchema.js"
+
 const app = express();
 authHelper(passport);
 
@@ -22,7 +24,7 @@ authHelper(passport);
 
         // Session
         app.use(session({
-            secret: process.env.SESSION_SECRET!,
+            secret: process.env.SESSION_SECRET,
             resave: true,
             saveUninitialized: true
         }));
@@ -83,7 +85,7 @@ authHelper(passport);
 
         // Mongoose
         try {
-            await mongoose.connect(process.env.DATABASE_URL || null);
+            await mongoose.connect(process.env.DATABASE_URL);
             console.log('Connected to MongoDB with success');
         } catch (err) {
             console.error(`Error connecting to MongoDB: ${err.message}`);
@@ -132,7 +134,6 @@ authHelper(passport);
 
 app.get('/', async (req: Request, res: Response) => {
     try {
-        const Users = mongoose.model('users');
         const userPlained = await Users.findOne({ userID: req.user?.userID }).lean();
 
         res.render('user/home', { user: userPlained });
