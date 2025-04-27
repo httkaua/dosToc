@@ -1,4 +1,9 @@
-export default async (file, objWithMedia) => {
+interface IObjectWithMedia {
+    src: string[];
+    [key: string]: any;
+  }
+  
+export default async (file: Express.Multer.File, objWithMedia: IObjectWithMedia): Promise<IObjectWithMedia> => {
     try {
         if (!file || !file.path) {
             throw new Error("Nenhum arquivo enviado ou caminho inválido.");

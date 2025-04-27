@@ -1,16 +1,16 @@
-import mongoose from "mongoose"
+import mongoose, { Document, Schema } from "mongoose"
+import { Request } from "express"
 
-import "../models/UserSchema.js"
-import "../models/CompanySchema.js"
-import "../models/LeadSchema.js"
-import "../models/RealStateSchema.js"
-import "../models/RecordsSchema.js"
+import Users from "../models/UserSchema.js"
+import Companies from "../models/CompanySchema.js"
+import Leads from "../models/LeadSchema.js"
+import Realstates from "../models/RealStateSchema.js"
+import Records, { IRecord } from "../models/RecordsSchema.js";
 
-const Users = mongoose.model('users');
-const Companies = mongoose.model('companies');
-const Leads = mongoose.model('leads');
-const RealStates = mongoose.model('realstates');
-const Records = mongoose.model('records');
+interface ILocalRecord extends IRecord {
+    oldData: String,
+    newData: String
+}
 
 // RECORDINFO Model for each record to save. Paste this in all the pages if some data are changed (paste inside the .save().then())
 
@@ -34,9 +34,7 @@ const recordInfo = {
 const generateNewRecordID = async () => {
     try {
         const latestRecord = await Records.findOne().sort({ recordID: -1 }).exec();
-        return latestRecord && latestRecord.recordID
-            ? parseInt(latestRecord.recordID, 10) + 1
-            : 30000;
+        return latestRecord?.recordID ? latestRecord.recordID + 1 : 30000;
     } catch (error) {
         console.error('Erro ao gerar novo recordID:', error);
         throw error;
@@ -44,7 +42,7 @@ const generateNewRecordID = async () => {
 };
 
 // Generate custom message
-const recordMessage = async (recordInfo) => {
+const recordMessage = async (recordInfo: ILocalRecord) => {
 
     const pickCreator = await Users.findOne({ userID: recordInfo.userWhoChanged });
 
@@ -58,7 +56,7 @@ const recordMessage = async (recordInfo) => {
         affectedDataText = pick ? `${pick.firstName} ${pick.lastName} | id: ${pick.userID}` : 'Dados desconhecidos';
 
     } else if (recordInfo.affectedType === "imóvel") {
-        const pick = await RealStates.findOne({ realStateID: recordInfo.affectedData });
+        const pick = await Realstates.findOne({ realStateID: recordInfo.affectedData });
         affectedDataText = pick ? `${pick.realStateID}` : 'Dados desconhecidos';
 
     } else if (recordInfo.affectedType === "empresa") {
@@ -87,7 +85,7 @@ const recordMessage = async (recordInfo) => {
 };
 
 // create and save the record
-export default async (recordInfo) => {
+export default async (recordInfo: ILocalRecord, req: Request) => {
     try {
         recordInfo.recordID = await generateNewRecordID();
         recordInfo.message = await recordMessage(recordInfo);

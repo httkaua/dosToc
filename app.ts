@@ -15,7 +15,7 @@ import User from "./routes/User.js";
 import Admin from "./routes/Admin.js";
 import authHelper from "./helpers/Auth.js";
 
-import Users, {IUser} from "./models/UserSchema.js"
+import Users from "./models/UserSchema.js"
 
 const app = express();
 authHelper(passport);

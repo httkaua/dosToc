@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from "mongoose"
 
 interface IRecord extends Document {
-    recordID: Number,
+    recordID: number,
     userWhoChanged: String,
     affectedType: 'usuário' | 'imóvel' | 'empresa' | 'lead',
     affectedData: String,
@@ -38,4 +38,5 @@ const recordSchema = new Schema({
 });
 
 const Records = mongoose.model<IRecord>('records', recordSchema)
+export { Records, IRecord };
 export default Records
