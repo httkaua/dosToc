@@ -7,10 +7,13 @@ import Leads from "../models/LeadSchema.js"
 import Realstates from "../models/RealStateSchema.js"
 import Records, { IRecord } from "../models/RecordsSchema.js";
 
-interface ILocalRecord extends IRecord {
-    oldData: String,
-    newData: String
+interface ILocalRecord extends ISendedRecord {
+    affectedPropertie?: String,
+    oldData?: String,
+    newData?: String
 }
+
+import { ISendedRecord } from "../routes/User.js"
 
 // RECORDINFO Model for each record to save. Paste this in all the pages if some data are changed (paste inside the .save().then())
 
@@ -87,16 +90,18 @@ const recordMessage = async (recordInfo: ILocalRecord) => {
 // create and save the record
 export default async (recordInfo: ILocalRecord, req: Request) => {
     try {
-        recordInfo.recordID = await generateNewRecordID();
-        recordInfo.message = await recordMessage(recordInfo);
-        recordInfo.createdAt = new Date();
+        const newRecord = {...recordInfo,
+            recordID: await generateNewRecordID(),
+            message: await recordMessage(recordInfo),
+            createdAt: new Date()
+        }
 
-        const record = new Records(recordInfo);
+        const record = new Records(newRecord);
         await record.save();
 
     } catch (err) {
         console.error('Erro ao criar registro:', err);
-        req.flash('errorMsg', `Erro ao criar registro: ${err}`)
+        req.flash('errorMsg', `Erro ao criar registro.`)
         throw err;
     }
 };

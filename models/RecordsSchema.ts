@@ -5,9 +5,11 @@ interface IRecord extends Document {
     userWhoChanged: String,
     affectedType: 'usuário' | 'imóvel' | 'empresa' | 'lead',
     affectedData: String,
-    affectedPropertie: String,
+    affectedPropertie?: String,
     action: 'criou' | 'atualizou' | 'excluiu' | 'excluiu*' | 'retirou',
     category: 'Imóveis' | 'Usuários' | 'Empresas' | 'Leads' | 'Equipes',
+    oldData?: String, /* FIELD NOT SAVED IN DATABASE */
+    newData?: String, /* FIELD NOT SAVED IN DATABASE */
     message: String,
     company: String,
     createdAt: Date,
