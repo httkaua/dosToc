@@ -1,5 +1,5 @@
 import express from "express";
-/* TS */ import { Request, Response, NextFunction } from "express"; 
+import { Request, Response, NextFunction } from "express"; 
 import flash from "express-flash";
 import session from "express-session";
 import Handlebars from "handlebars";
@@ -16,6 +16,8 @@ import Admin from "./routes/Admin.js";
 import authHelper from "./helpers/Auth.js";
 
 import Users from "./models/UserSchema.js"
+
+import { IUser } from "./models/UserSchema.js";
 
 const app = express();
 authHelper(passport);

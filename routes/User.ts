@@ -4,16 +4,10 @@ import bcrypt from "bcrypt"
 import passport, { AuthenticateOptions } from 'passport';
 import mongoose from "mongoose"
 import createRecord from "../helpers/newRecord.js"
-import { IUser } from "../models/UserSchema.js"
 
-
-import "../models/UserSchema.js"
-const Users = mongoose.model('users');
-import { IRecord } from "../models/RecordsSchema.js"
+import Users, { IUser } from "../models/UserSchema.js"
+import Records, { IRecord } from "../models/RecordsSchema.js"
 export type ISendedRecord = Pick<IRecord, 'userWhoChanged' | 'affectedType' | 'affectedData' | 'action' | 'category'>;
-
-import "../models/RecordsSchema.js"
-const Records = mongoose.model('records');
 
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
@@ -94,9 +88,9 @@ router.post('/newaccount', async (req: Request, res: Response, next: NextFunctio
     const generateNewUserID = async () => {
         try {
 
-        const latestUser = await Users.findOne().sort({ userID: -1 }).exec();
+        const latestUser = await Users.findOne().sort({ userID: -1 }).lean().exec();
         const newID = latestUser && latestUser.userID 
-            ? parseInt(latestUser.userID, 10) + 1 
+            ? latestUser.userID + 1 
             : 20000;
         return newID;
 
@@ -217,9 +211,9 @@ router.post('/newaccount', async (req: Request, res: Response, next: NextFunctio
 
                             // Adding to records
                             const recordInfo: ISendedRecord = {
-                                userWhoChanged: newAcc.userID,
+                                userWhoChanged: newAcc.userID.toString(),
                                 affectedType: 'usuário',
-                                affectedData: newAcc.userID,
+                                affectedData: newAcc.userID.toString(),
                                 action: 'criou',
                                 category: 'Usuários'
                             }

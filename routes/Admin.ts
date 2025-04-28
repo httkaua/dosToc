@@ -1,5 +1,5 @@
-import express from "express"
-const router = express.Router();
+import {Router, Request, Response, NextFunction } from "express";
+const router = Router();
 import mongoose from "mongoose"
 import bcrypt from "bcrypt"
 import passport from "passport"
@@ -12,24 +12,16 @@ import createRecord from "../helpers/newRecord.js"
 import uploadMedia from "../helpers/uploadMedia.js"
 import upload from "../helpers/Multer.js"
 
-import "../models/CompanySchema.js"
-import "../models/UserSchema.js"
-import "../models/RecordsSchema.js"
-import "../models/RealStateSchema.js"
-import "../models/LeadSchema.js"
-
-const Companies = mongoose.model('companies');
-const Users = mongoose.model('users');
-const Records = mongoose.model('records');
-const RealStates = mongoose.model('realstates');
-const Leads = mongoose.model('leads');
+import Companies from"../models/CompanySchema.js"
+import Users, { IUser } from "../models/UserSchema.js"
+import Records, { IRecord } from "../models/RecordsSchema.js"
+import Realstates from "../models/RealStateSchema.js"
+import Leads from "../models/LeadSchema.js"
 
 router.get('/',
     ensureAuthenticated,
-    async (req, res, next) => {
-    const userObj = req.user.toObject ? req.user.toObject() : null
-
-    res.render('admin/home', {user: userObj});
+    async (req: Request, res: Response, next: NextFunction) => {
+    res.render('admin/home', {user: req.user});
 });
 
 
@@ -37,7 +29,7 @@ router.get('/',
 router.get('/records',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3].map(i => positionsI[i])),
-    async (req, res, next) => {
+    async (req: Request, res: Response, next: NextFunction) => {
 
     // format date from ISO to DD/MM/YY - HH/MM/SS
     const formatDate = (isoDate) => {
@@ -78,7 +70,7 @@ router.get('/records',
 // ROUTES TYPE: Account / Conta
 router.get('/my-account/:userID',
     ensureAuthenticated,
-    async (req, res, next) => {
+    async (req: Request, res: Response, next: NextFunction) => {
 
     const paramsID = String(req.params.userID)
     const sessionID = String(req.user.userID)
@@ -88,9 +80,7 @@ router.get('/my-account/:userID',
         return res.redirect('/admin')
     }
 
-    const userObj = req.user.toObject ? req.user.toObject() : null
-
-    res.render('admin/my-account', { user: userObj });
+    res.render('admin/my-account', { user: req.user });
 });
 
 router.post('/my-account/:userID/update',
@@ -178,7 +168,7 @@ router.post('/my-account/:userID/update',
 router.get('/company',
     ensureAuthenticated,
     ensureRole([0, 1, 2].map(i => positionsI[i])),
-    async (req, res, next) => {
+    async (req: Request, res: Response, next: NextFunction) => {
 
     try {
         const userOwner = req.user.userID;
@@ -196,7 +186,7 @@ router.get('/company',
 router.post('/newcompany',
     ensureAuthenticated,
     ensureRole([0, 1, 2].map(i => positionsI[i])),
-    async (req, res, next) => {
+    async (req: Request, res: Response, next: NextFunction) => {
 
     // Generating new company ID
     const generateNewCompanyID = async () => {
@@ -333,7 +323,7 @@ router.post('/newcompany',
 router.get('/team',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3].map(i => positionsI[i])),
-    async (req, res, next) => {
+    async (req: Request, res: Response, next: NextFunction) => {
         try {
             const members = [];
             const teamMembers = req.user.underManagement;
@@ -363,7 +353,7 @@ router.get('/team',
 router.get('/team/new-member',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3].map(i => positionsI[i])),
-    async (req, res, next) => {
+    async (req: Request, res: Response, next: NextFunction) => {
 
         async function verifyOptions(req) {
 
@@ -398,7 +388,7 @@ router.get('/team/new-member',
 router.post('/team/new-member/create',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3].map(i => positionsI[i])),
-    async (req, res, next) => {
+    async (req: Request, res: Response, next: NextFunction) => {
 
         const newMemberErr = [];
 
@@ -625,7 +615,7 @@ router.get('/team/:teamuserID/hidden',
 router.get('/leads',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
-    async (req, res, next) => {
+    async (req: Request, res: Response, next: NextFunction) => {
 
     async function searchLeads() {
         try {
@@ -661,7 +651,7 @@ router.get('/leads',
 router.get('/leads/new-lead',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
-    async (req, res, next) => {
+    async (req: Request, res: Response, next: NextFunction) => {
         
     res.render('admin/leads/new-lead')
 });
@@ -669,7 +659,7 @@ router.get('/leads/new-lead',
 router.post('/leads/new-lead/create',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
-    async (req, res, next) => {
+    async (req: Request, res: Response, next: NextFunction) => {
         
     // Generating new company ID
     const generateNewLeadID = async () => {
@@ -831,7 +821,7 @@ router.post('/leads/new-lead/create',
 router.get('/leads/:leadID',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
-    async (req, res, next) => {
+    async (req: Request, res: Response, next: NextFunction) => {
         try {
             const leadID = req.params.leadID;
 
@@ -1053,7 +1043,7 @@ router.post('/leads/export-all',
 router.get('/real-states',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
-    async (req, res, next) => {
+    async (req: Request, res: Response, next: NextFunction) => {
 
         try {
             const userCompany = req.user.company;
@@ -1082,7 +1072,7 @@ router.get('/real-states',
 router.get('/real-states/new-real-state',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
-    async (req, res, next) => {
+    async (req: Request, res: Response, next: NextFunction) => {
         res.render('admin/realStates/new-real-state')
     }
 );
@@ -1091,7 +1081,7 @@ router.post('/real-states/new-real-state/create',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
     upload.single("uploaded_file"),
-    async (req, res, next) => {
+    async (req: Request, res: Response, next: NextFunction) => {
 
         const generateNewRealStateID = async () => {
             try {
@@ -1199,7 +1189,7 @@ router.post('/real-states/new-real-state/create',
 router.get('/real-states/:realStateID',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
-    async (req, res, next) => {
+    async (req: Request, res: Response, next: NextFunction) => {
         try {
             const realStateID = req.params.realStateID;
 

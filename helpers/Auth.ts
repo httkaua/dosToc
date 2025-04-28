@@ -14,7 +14,7 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
   res.redirect('/user/signin');
 }
 
-export function ensureRole(allowedRoles: IUser["position"][]): (req: Request, res: Response, next: NextFunction) => void {
+export function ensureRole(allowedRoles: string[]): (req: Request, res: Response, next: NextFunction) => void {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.isAuthenticated()) {
       req.flash('errorMsg', 'Você precisa estar logado para acessar esta página.');
@@ -23,12 +23,12 @@ export function ensureRole(allowedRoles: IUser["position"][]): (req: Request, re
 
     const userRoles = req.user?.position ? [req.user.position.toString()] : [];
 
-    if (userRoles.some(role => allowedRoles.includes(role as IUser["position"]))) {
+    if (userRoles.some(role => allowedRoles.includes(role))) {
       return next();
     }
 
     req.flash('errorMsg', 'Você não tem permissão para acessar esta página.');
-    res.redirect('/');
+    res.redirect('/admin');
   };
 }
 
