@@ -7,8 +7,8 @@ import createRecord from "../helpers/newRecord.js"
 
 import Users, { IUser } from "../models/UserSchema.js"
 import Records, { IRecord } from "../models/RecordsSchema.js"
-export type ISendedRecord = Pick<IRecord, 'userWhoChanged' | 'affectedType' | 'affectedData' | 'action' | 'category'>;
 
+import { ISendedRecord } from "../models/@types_ISendedRecord.js"
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     /*

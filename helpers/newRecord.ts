@@ -13,7 +13,7 @@ interface ILocalRecord extends ISendedRecord {
     newData?: String
 }
 
-import { ISendedRecord } from "../routes/User.js"
+import { ISendedRecord } from "../models/@types_ISendedRecord.js"
 
 // RECORDINFO Model for each record to save. Paste this in all the pages if some data are changed (paste inside the .save().then())
 

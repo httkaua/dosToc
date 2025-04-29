@@ -11,7 +11,7 @@ interface IRecord extends Document {
     oldData?: String, /* FIELD NOT SAVED IN DATABASE */
     newData?: String, /* FIELD NOT SAVED IN DATABASE */
     message: String,
-    company: String,
+    company?: String,
     createdAt: Date,
     hidden: Boolean
 }

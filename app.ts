@@ -51,21 +51,8 @@ authHelper(passport);
 
         // User module for TS
         declare module 'express' {
-            interface User {
-                userID: String,
-                firstName: String,
-                lastName: String,
-                company: String,
-                email: String,
-                password: String,
-                createdAt: Date,
-                updatedAt: Date,
-                position: String,
-                managers: Array<String>,
-                underManagement: Array<String>,
-                document: String,
-                phone: String,
-                hidden: Boolean
+            interface User extends IUser {
+                
             }
 
             interface Request {
