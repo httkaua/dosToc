@@ -1,29 +1,28 @@
-const express = require('express');
-const flash = require('express-flash');
-const session = require('express-session');
+import express from "express"
+import flash from "express-flash"
+import session from "express-session"
 const app = express();
 
-const Handlebars = require('handlebars');
-const { engine } = require('express-handlebars')
-const { allowInsecurePrototypeAccess } = require('@handlebars/allow-prototype-access');
+import Handlebars from "handlebars"
+import { engine } from "express-handlebars"
 
-const mongoose = require('mongoose');
+import mongoose from "mongoose"
 
-const User = require('./routes/User');
-const Admin = require('./routes/Admin');
+import User from "./routes/User.js"
+import Admin from "./routes/Admin.js"
 
-const passport = require('passport');
-const bodyParser = require('body-parser');
-require('./helpers/Auth')(passport);
+import passport from "passport"
+import authHelper from "./helpers/Auth.js"
+authHelper(passport)
 
-require("dotenv").config()
+import dotenv from "dotenv/config"
 
     // Config
 
         // Session
         app.use(
             session({
-                secret: 'isso ai eu resolv0 em dostoc',
+                secret: process.env.SESSION_SECRET,
                 resave: true,
                 saveUninitialized: true
             })
@@ -57,15 +56,15 @@ require("dotenv").config()
             
         // Handlebars
         app.engine('handlebars', engine({
-            defaultLayout: 'main', // in views/layouts
-            handlebars: allowInsecurePrototypeAccess(Handlebars)
+            defaultLayout: 'main' // in views/layouts
         }));
         app.set('view engine', 'handlebars');
         app.set('views', './views');
+        
 
         // Body-parser
-        app.use(bodyParser.urlencoded({extended: true}));
         app.use(express.json());
+        app.use(express.urlencoded({extended: true}));
 
 
 

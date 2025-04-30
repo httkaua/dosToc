@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose"
 
 const companySchema = new mongoose.Schema({
     companyID: {type: Number, required: true, immutable: true, unique: true},
@@ -26,4 +26,4 @@ const companySchema = new mongoose.Schema({
     hidden: {type: Boolean, default: false}
 });
 
-module.exports = mongoose.model('companies', companySchema)
+export default mongoose.model('companies', companySchema)

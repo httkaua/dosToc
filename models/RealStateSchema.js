@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose"
 
 const ownerSchema = new mongoose.Schema({
     ownerID: {type: String, unique: true, immutable: true, required: true},
@@ -73,4 +73,4 @@ const RealStateSchema = new mongoose.Schema({
     hidden: {type: Boolean, default: false}
 });
 
-module.exports = mongoose.model("realstates", RealStateSchema);
+export default mongoose.model("realstates", RealStateSchema);

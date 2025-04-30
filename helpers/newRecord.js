@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose"
 
-require('../models/UserSchema');
-require('../models/CompanySchema');
-require('../models/LeadSchema');
-require('../models/RealStateSchema');
-require('../models/RecordsSchema');
+import "../models/UserSchema.js"
+import "../models/CompanySchema.js"
+import "../models/LeadSchema.js"
+import "../models/RealStateSchema.js"
+import "../models/RecordsSchema.js"
 
 const Users = mongoose.model('users');
 const Companies = mongoose.model('companies');
@@ -87,7 +87,7 @@ const recordMessage = async (recordInfo) => {
 };
 
 // create and save the record
-const createRecord = async (recordInfo) => {
+export default async (recordInfo) => {
     try {
         recordInfo.recordID = await generateNewRecordID();
         recordInfo.message = await recordMessage(recordInfo);
@@ -102,5 +102,3 @@ const createRecord = async (recordInfo) => {
         throw err;
     }
 };
-
-module.exports = { createRecord };

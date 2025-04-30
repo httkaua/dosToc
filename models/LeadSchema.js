@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose"
 
 const leadSchema = new mongoose.Schema({
     leadID: {type: Number, required: true, immutable: true, unique: true},
@@ -44,4 +44,4 @@ const leadSchema = new mongoose.Schema({
     hidden: {type: Boolean, default: false}
 })
 
-module.exports = mongoose.model('leads', leadSchema);
+export default mongoose.model('leads', leadSchema);
