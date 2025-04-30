@@ -1,13 +1,10 @@
 import {Router, Request, Response, NextFunction } from "express";
 const router = Router();
 import bcrypt from "bcrypt"
-import passport, { AuthenticateOptions } from 'passport';
-import mongoose from "mongoose"
+import passport from 'passport';
+
 import createRecord from "../helpers/newRecord.js"
-
-import Users, { IUser } from "../models/UserSchema.js"
-import Records, { IRecord } from "../models/RecordsSchema.js"
-
+import Users from "../models/UserSchema.js"
 import { ISendedRecord } from "../models/@types_ISendedRecord.js"
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {

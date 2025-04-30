@@ -24,6 +24,10 @@ export default async (file: Express.Multer.File, objWithMedia: any): Promise<IOb
         return { ...objWithMedia };
 
     } catch (err) {
-        throw new Error(`Erro ao salvar imagem: ${err.message}`);
+        const message =
+        err instanceof Error ? err.message : String(err)
+
+        console.error(`Erro ao salvar imagem: ${message}`)
+        throw new Error(`Erro ao salvar imagem: ${message}`)
     }
 };

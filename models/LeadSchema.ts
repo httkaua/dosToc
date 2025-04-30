@@ -3,7 +3,7 @@ import mongoose, { Document, Schema } from "mongoose";
 interface ILeads extends Document {
   leadID: number;
   name: string;
-  phone: string;
+  phone?: string;
   document?: string;
   email?: string;
   sourceCode?: string;
@@ -36,9 +36,9 @@ interface ILeads extends Document {
 const leadSchema = new Schema<ILeads>({
     leadID: {type: Number, required: true, immutable: true, unique: true},
     name: {type: String, required: true},
-    phone: {type: String, required: true, unique: true},
+    phone: {type: String},
     document: {type: String},
-    email: {type: String, unique: true},
+    email: {type: String},
     sourceCode: {type: String},
     currentCity: {type: String},
     currentState: {type: String},
@@ -68,7 +68,7 @@ const leadSchema = new Schema<ILeads>({
     },
     sourceOfLead: {
         type: String,
-        enum: ['Facebook', 'Instagram', 'Internet', 'Visita à loja', 'Indicação', 'Outros']
+        enum: ['Facebook', 'Instagram', 'Chaves na mão', 'Internet', 'Visita à loja', 'Indicação', 'Outros']
     },
     observations: {type: String},
     company: {type: String},

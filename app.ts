@@ -1,10 +1,9 @@
-import express from "express";
-import { Request, Response, NextFunction } from "express"; 
+import express, { Request, Response, NextFunction } from "express";
 import flash from "express-flash";
 import session from "express-session";
-import Handlebars from "handlebars";
+
 import { engine } from "express-handlebars";
-import mongoose from "mongoose";
+import mongoose, { Error } from "mongoose";
 import passport from "passport";
 import dotenv from "dotenv";
 dotenv.config()
@@ -15,14 +14,17 @@ import User from "./routes/User.js";
 import Admin from "./routes/Admin.js";
 import authHelper from "./helpers/Auth.js";
 
-import Users from "./models/UserSchema.js"
-
-import { IUser } from "./models/UserSchema.js";
+import Users, { IUser } from "./models/UserSchema.js"
 
 const app = express();
 authHelper(passport);
 
 // Config
+
+        // Ensure variables
+        if (!process.env.SESSION_SECRET || !process.env.DATABASE_URL) {
+            throw new Error("Missing variable in environment variables");
+        }
 
         // Session
         app.use(session({
@@ -50,18 +52,20 @@ authHelper(passport);
           )
 
         // User module for TS
-        declare module 'express' {
-            interface User extends IUser {
+        declare global {
+            namespace Express {
+                interface User extends IUser {
                 
-            }
+                }
 
-            interface Request {
-                user?: User;
-              }
+                interface Request {
+                    user?: User;
+                  }
+            }
         }
 
         // Globals
-        app.use((req: Request, res: Response, next: NextFunction) => {
+        app.use((req, res, next) => {
             res.locals.successMsg = req.flash('successMsg');
             res.locals.errorMsg = req.flash('errorMsg');
             res.locals.user = req.user || null;
@@ -77,7 +81,10 @@ authHelper(passport);
             await mongoose.connect(process.env.DATABASE_URL);
             console.log('Connected to MongoDB with success');
         } catch (err) {
-            console.error(`Error connecting to MongoDB: ${err.message}`);
+            err instanceof Error ? 
+            console.error(`Error connecting to MongoDB: ${err.message}`) : 
+            console.error(`Unknown error connecting to MongoDB: ${err}`)
+
             process.exit(1);
         }
 
@@ -121,7 +128,7 @@ authHelper(passport);
 
 
 
-app.get('/', async (req: Request, res: Response) => {
+app.get('/', async (req, res) => {
     try {
         const userPlained = await Users.findOne({ userID: req.user?.userID }).lean();
 
@@ -135,7 +142,7 @@ app.use('/user', User);
 app.use('/admin', Admin);
 
 // Catch-all for HTTP errors
-app.use((req: Request, res: Response, next: NextFunction) => {
+app.use((req, res, next) => {
     res.status(404).render('errorHTTP', { error: 404 });
 });
 
@@ -150,5 +157,5 @@ try {
         console.log(`Running on PORT 8088`);
     });
 } catch (err) {
-    console.error('Erro ao iniciar servidor:', err.message);
+    err instanceof Error ? console.error('Erro ao iniciar servidor:', err.message) : console.error('Erro ao iniciar servidor:', err)
 }

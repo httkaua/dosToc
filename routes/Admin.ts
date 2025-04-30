@@ -1,8 +1,6 @@
 import {Router, Request, Response, NextFunction } from "express";
 const router = Router();
-import mongoose from "mongoose"
 import bcrypt from "bcrypt"
-import passport from "passport"
 import ExcelJS from "exceljs"
 
 import { ensureAuthenticated } from "../helpers/Auth.js"
@@ -13,8 +11,8 @@ import uploadMedia from "../helpers/uploadMedia.js"
 import upload from "../helpers/Multer.js"
 
 import Companies from"../models/CompanySchema.js"
-import Users, { IUser } from "../models/UserSchema.js"
-import Records, { IRecord } from "../models/RecordsSchema.js"
+import Users from "../models/UserSchema.js"
+import Records from "../models/RecordsSchema.js"
 import Realstates from "../models/RealStateSchema.js"
 import Leads from "../models/LeadSchema.js"
 import { ISendedRecord } from "../models/@types_ISendedRecord.js"
@@ -22,7 +20,7 @@ import { ISendedRecord } from "../models/@types_ISendedRecord.js"
 router.get('/',
     ensureAuthenticated,
     async (req: Request, res: Response, next: NextFunction) => {
-    res.render('admin/home', {user: req.user.toObject()});
+    res.render('admin/home', {user: req.user?.toObject()});
 });
 
 
@@ -74,14 +72,14 @@ router.get('/my-account/:userID',
     async (req: Request, res: Response, next: NextFunction) => {
 
     const paramsID = String(req.params.userID)
-    const sessionID = String(req.user.userID)
+    const sessionID = String(req.user?.userID)
     
     if (paramsID !== sessionID) {
         req.flash('errorMsg', `Usuário não confere com a solicitação.`)
         return res.redirect('/admin')
     }
 
-    res.render('admin/my-account', { user: req.user.toObject() });
+    res.render('admin/my-account', { user: req.user?.toObject() });
 });
 
 router.post('/my-account/:userID/update',
@@ -90,15 +88,13 @@ router.post('/my-account/:userID/update',
     
     const userID = parseInt(req.params.userID, 10);
     try {
-        const userUp = await Users.findOne({ userID: userID });
-  
-        if (!userUp) {
+        const originalData = await Users.findOne({ userID: userID });
+        if (!originalData) {
           req.flash('errorMsg', 'Conta não encontrada.');
           return res.redirect('/admin');
         }
   
         const updatedData = req.body;
-        const originalData = userUp.toObject();
   
         const { updatedAt, ...originalDataWithoutUpdatedAt } = originalData;
   
@@ -108,38 +104,39 @@ router.post('/my-account/:userID/update',
           return value.toString();
         };
   
-        const changedFields = {};
-        const oldFields = {};
+        const changedFields: Record<string, any> = {};
+        const oldFields: Record<string, any> = {};
+        
   
         Object.keys(updatedData).forEach((key) => {
-          const updatedValue = normalizeToString(updatedData[key]);
-          const originalValue = normalizeToString(originalDataWithoutUpdatedAt[key]);
+          const updatedValue = updatedData[key];
+          const originalValue = originalDataWithoutUpdatedAt[key as keyof typeof originalDataWithoutUpdatedAt];
   
           if (updatedValue !== originalValue) {
             changedFields[key] = updatedData[key];
-            oldFields[key] = originalDataWithoutUpdatedAt[key];
+            oldFields[key] = originalDataWithoutUpdatedAt[key as keyof typeof originalDataWithoutUpdatedAt];
           }
         });
 
         // If fields are changed (need save)
         if (Object.keys(changedFields).length > 0) {
-            Object.assign(userUp, changedFields);
-            userUp.updatedAt = new Date();
+            Object.assign(originalData, changedFields);
+            originalData.updatedAt = new Date();
             
-            await userUp.save()
+            await originalData.save()
             .then(async() => {
                 for (const key of Object.keys(changedFields)) {
                     
                     const recordInfo: ISendedRecord = {
-                        userWhoChanged: String(req.user.userID),
+                        userWhoChanged: String(req.user?.userID),
                         affectedType: 'usuário',
-                        affectedData: String(req.user.userID),
+                        affectedData: String(req.user?.userID),
                         affectedPropertie: key,
                         oldData: oldFields[key] !== undefined ? `"${oldFields[key]}"` : "",
                         newData: changedFields[key] !== undefined ? `"${changedFields[key]}"` : "",
                         action: 'atualizou',
                         category: 'Usuários',
-                        company: req.user.company
+                        company: req.user?.company
                     }
 
                     await createRecord(recordInfo, req)
@@ -172,11 +169,11 @@ router.get('/company',
     async (req: Request, res: Response, next: NextFunction) => {
 
     try {
-        const userOwner = req.user.userID;
+        const userOwner = req.user?.userID;
 
-        const userCompany = await Companies.findOne({ owner: userOwner }).lean() || null
+        const userCompany = await Companies.findOne({ owner: userOwner }).lean()
         
-        res.render('admin/company', { company: { userCompany } })
+        res.render('admin/company', { company: userCompany })
     } catch(err) {
         req.flash('errorMsg', `There was an error searching company: ${err}`)
         return res.redirect('./')
@@ -269,7 +266,7 @@ router.post('/newcompany',
                 document: fields.cpDocument,
                 phone: fields.phone,
                 email: fields.email,
-                owner: req.user.userID,
+                owner: req.user?.userID,
                 supervisors: [],
                 agents: [],
                 Realstates: [],
@@ -326,12 +323,16 @@ router.get('/team',
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const members = [];
-            const teamMembers = req.user.underManagement;
+            const teamMembers = req.user?.underManagement ? req.user?.underManagement : [];
 
             for (let i = 0; i < teamMembers.length; i++) {
                 const element = teamMembers[i];
                 
                 const pick = await Users.findOne({ userID: element }).lean();
+                if (!pick) {
+                    req.flash('errorMsg', 'Erro 4400 - vazio inesperado')
+                    return res.redirect('./')
+                }
 
                 const member = {
                     id: pick.userID,
@@ -357,7 +358,7 @@ router.get('/team/new-member',
 
         async function verifyOptions() {
 
-            const userPosition = String(req.user.position);
+            const userPosition = String(req.user?.position);
 
             if (['Criador do sistema',
                 'Administrador do sistema',
@@ -401,12 +402,14 @@ router.post('/team/new-member/create',
             password: req.body.password
         };
 
-        async function findEmail(email) {
+        async function findEmail(email: string) {
             try {
                 const boolUser = await Users.findOne({email: email})
                 return !!boolUser
             } catch (err) {
-                throw new Error(`There was an error parsing email: ${err.message}`);
+                err instanceof Error ?
+                console.error(`There was an error parsing email: ${err.message}`)
+                : console.error(`There was an error parsing email: ${err}`)
             }
         }
 
@@ -427,13 +430,17 @@ router.post('/team/new-member/create',
         };
 
         // Update the current user team
-        async function updateTeam(recordInfo) {
+        async function updateTeam(recordInfo: ISendedRecord) {
 
             try {
                 let currentUser = await Users.findOne({ userID: recordInfo.userWhoChanged });
+                if (!currentUser) {
+                    req.flash('errorMsg', 'Erro 4400 - vazio inesperado')
+                    return res.redirect('./')
+                }
 
                 const i = currentUser.underManagement.length
-                const newTeamMember = recordInfo.affectedData;
+                const newTeamMember = String(recordInfo.affectedData);
     
                 currentUser.underManagement[i] = newTeamMember
                 currentUser.updatedAt = new Date;
@@ -494,10 +501,10 @@ router.post('/team/new-member/create',
                     firstName: fields.firstName,
                     lastName: fields.lastName,
                     phone: fields.phone,
-                    company: req.user.company,
+                    company: req.user?.company,
                     email: fields.email,
                     position: fields.position,
-                    managers: req.user.userID,
+                    managers: req.user?.userID,
                     createdAt: new Date,
                     updatedAt: new Date
                 });
@@ -561,12 +568,12 @@ router.get('/team/:teamuserID/hidden',
         try {
 
             const managedUserID = String(req.params.teamuserID)
-            const userManagerID = String(req.user.userID)
+            const userManagerID = String(req.user?.userID)
             const userManager = await Users.findOne({ userID: userManagerID });
             const managedUser = await Users.findOne({ userID: managedUserID });
 
             if (!userManager || !managedUser) {
-                return req.flash('errorMsg', `Usuário ${managedUserID} ou ${req.user.userID} não encontrado.`);
+                return req.flash('errorMsg', `Usuário ${managedUserID} ou ${req.user?.userID} não encontrado.`);
             }
 
             const newUnderManArray = userManager.underManagement.filter(item => item !== managedUserID)
@@ -584,7 +591,7 @@ router.get('/team/:teamuserID/hidden',
                     affectedData: String(managedUserID),
                     action: 'retirou',
                     category: 'Equipes',
-                    company: req.user.company
+                    company: req.user?.company
                 }
 
                 await createRecord(recordInfo, req);
@@ -619,7 +626,7 @@ router.get('/leads',
 
     async function searchLeads() {
         try {
-            const userR = req.user.userID;
+            const userR = req.user?.userID;
             
             const leads = await Leads.find({ responsibleAgent: userR }).lean().exec();
             if (leads.length < 1) {
@@ -707,8 +714,7 @@ router.post('/leads/new-lead/create',
         
         const errors = {
             undefined: Object.entries(fields).some(([key, value]) => value == undefined),
-            null: Object.entries(fields).some(([key, value]) => value == null),
-            empty: Object.entries(fields).some(([key, value]) => value == '')
+            null: Object.entries(fields).some(([key, value]) => value == null)
         };
         
         if (errors.undefined) {
@@ -718,11 +724,6 @@ router.post('/leads/new-lead/create',
         if (errors.null) {
             newLeadErrors.push({ text: 'Erro 1005 - Campos nulos. Preencha todos os campos corretamente.' });
         }
-        
-        if (errors.empty) {
-            newLeadErrors.push({ text: 'Erro 1006 - Campos vazios. Preencha todos os campos corretamente.' });
-        }
-        
     
         // If it got some error
         if (newLeadErrors.length > 0) {
@@ -774,8 +775,8 @@ router.post('/leads/new-lead/create',
                     status: fields.status,
                     sourceOfLead: fields.sourceOfLead,
                     observations: fields.observations,
-                    company: req.user.company,
-                    responsibleAgent: req.user.userID,
+                    company: req.user?.company,
+                    responsibleAgent: req.user?.userID,
                     createdAt: new Date,
                     updatedAt: new Date
                 });
@@ -788,7 +789,7 @@ router.post('/leads/new-lead/create',
                     try {
     
                         const recordInfo: ISendedRecord = {
-                            userWhoChanged: newLead.responsibleAgent,
+                            userWhoChanged: String(newLead.responsibleAgent),
                             affectedType: "lead",
                             affectedData: String(newLead.leadID),
                             action: "criou",
@@ -868,16 +869,16 @@ router.post('/leads/:leadID/update',
           return value.toString();
         };
   
-        const changedFields = {};
-        const oldFields = {};
+        const changedFields: Record<string, any> = {};
+        const oldFields: Record<string, any> = {};
   
         Object.keys(updatedData).forEach((key) => {
           const updatedValue = normalizeToString(updatedData[key]);
-          const originalValue = normalizeToString(originalDataWithoutUpdatedAt[key]);
+          const originalValue = normalizeToString(originalDataWithoutUpdatedAt[key as keyof typeof originalDataWithoutUpdatedAt]);
   
           if (updatedValue !== originalValue) {
             changedFields[key] = updatedData[key];
-            oldFields[key] = originalDataWithoutUpdatedAt[key];
+            oldFields[key] = originalDataWithoutUpdatedAt[key as keyof typeof originalDataWithoutUpdatedAt];
           }
         });
   
@@ -893,7 +894,7 @@ router.post('/leads/:leadID/update',
             const newLeadData = changedFields[key];
         
             const recordInfo: ISendedRecord = {
-                userWhoChanged: String(req.user.userID),
+                userWhoChanged: String(req.user?.userID),
                 affectedType: "lead",
                 affectedData: String(leadID),
                 action: "atualizou",
@@ -901,7 +902,7 @@ router.post('/leads/:leadID/update',
                 oldData: oldLeadData !== undefined ? `"${oldLeadData}"` : "",
                 newData: newLeadData !== undefined ? `"${newLeadData}"` : "",
                 category: "Leads",
-                company: req.user.company
+                company: req.user?.company
             };
         
             await createRecord(recordInfo, req);
@@ -929,6 +930,10 @@ router.get('/leads/:leadID/hidden',
 
         try {
             const dataToHidden = await Leads.findOne({ leadID: leadID });
+            if (!dataToHidden) {
+                req.flash('errorMsg', 'Erro 4400 - vazio inesperado')
+                return res.redirect('./')
+            }
 
             dataToHidden.hidden = true;
 
@@ -940,12 +945,12 @@ router.get('/leads/:leadID/hidden',
             .then(async () => {
 
                 const recordInfo: ISendedRecord = {
-                    userWhoChanged: String(req.user.userID),
+                    userWhoChanged: String(req.user?.userID),
                     affectedType: 'lead',
                     affectedData: String(leadID),
                     action: 'excluiu*',
                     category: 'Leads',
-                    company: req.user.company
+                    company: req.user?.company
                 }
 
                 await createRecord(recordInfo, req);
@@ -970,7 +975,7 @@ router.post('/leads/export-all',
     async (req: Request, res: Response) => {
     
         try {
-            let leads = await Leads.find({ responsibleAgent: req.user.userID })
+            let leads = await Leads.find({ responsibleAgent: req.user?.userID })
             .sort({ createdAt: -1 })
             .lean()
             .exec();
@@ -1047,12 +1052,12 @@ router.get('/real-states',
     async (req: Request, res: Response, next: NextFunction) => {
 
         try {
-            const userCompany = req.user.company;
+            const userCompany = req.user?.company;
             const realStates = await Realstates.find({ company: userCompany }).lean().exec();
             const visibleRealStates = realStates.filter(realstate => !realstate.hidden);
             
             const formattedRealStates = visibleRealStates.map(realstate => ({
-                src: realstate.src[0],
+                src: realstate.src?.[0],
                 id: realstate.realStateID,
                 type: realstate.type,
                 bedrooms: realstate.bedrooms,
@@ -1103,7 +1108,12 @@ router.post('/real-states/new-real-state/create',
             try {
     
             const latestOwner = await Realstates.findOne().lean().sort({ "owner.ownerID": -1 }).exec();
-            const newID = latestOwner && latestOwner.owner.ownerID 
+            if (!latestOwner) {
+                req.flash('errorMsg', 'Erro 4400 - vazio inesperado')
+                return res.redirect('./')
+            }
+
+            const newID = latestOwner && latestOwner.owner?.ownerID 
                 ? parseInt(latestOwner.owner.ownerID, 10) + 1 
                 : 70000;
             return newID;
@@ -1150,17 +1160,25 @@ router.post('/real-states/new-real-state/create',
         newRealState.src = [];
 
         try {
+            if (!req.file) {
+                req.flash('errorMsg', 'Erro 4400 - vazio inesperado.')
+                return res.redirect('./')
+            }
+
             await uploadMedia(req.file, newRealState);
         } catch (err) {
-            req.flash('errorMsg', `Erro ao salvar imagem: ${err.message}`);
+            err instanceof Error ?
+            req.flash('errorMsg', `Erro ao salvar imagem: ${err.message}`)
+            : req.flash('errorMsg', `Erro ao salvar imagem: ${err}`)
+
             return res.redirect('./');
         }
 
         newRealState.owner = propertyOwner;
         newRealState.realStateID = await generateNewRealStateID();
         newRealState.tags = [];
-        newRealState.company = req.user.company;
-        newRealState.responsibleAgent = req.user.userID;
+        newRealState.company = req.user?.company;
+        newRealState.responsibleAgent = req.user?.userID;
         newRealState.createdAt = new Date();
         newRealState.updatedAt = new Date();
 
@@ -1169,12 +1187,12 @@ router.post('/real-states/new-real-state/create',
             req.flash('successMsg', 'Imóvel cadastrado com sucesso!');
     
             const recordInfo: ISendedRecord = {
-                userWhoChanged: String(req.user.userID),
+                userWhoChanged: String(req.user?.userID),
                 affectedType: 'imóvel',
                 affectedData: String(newRealState.realStateID),
                 action: 'criou',
                 category: 'Imóveis',
-                company: req.user.company
+                company: req.user?.company
             }
 
             createRecord(recordInfo, req)
@@ -1236,16 +1254,17 @@ router.post('/real-states/:realStateID/update',
           return value.toString();
         };
   
-        const changedFields = {};
-        const oldFields = {};
+        const changedFields: Record<string, any> = {};
+        const oldFields: Record<string, any> = {};
+        
   
         Object.keys(updatedData).forEach((key) => {
           const updatedValue = normalizeToString(updatedData[key]);
-          const originalValue = normalizeToString(originalDataWithoutUpdatedAt[key]);
+          const originalValue = normalizeToString(originalDataWithoutUpdatedAt[key as keyof typeof originalDataWithoutUpdatedAt]);
   
           if (updatedValue !== originalValue) {
             changedFields[key] = updatedData[key];
-            oldFields[key] = originalDataWithoutUpdatedAt[key];
+            oldFields[key] = originalDataWithoutUpdatedAt[key as keyof typeof originalDataWithoutUpdatedAt];
           }
         });
   
@@ -1260,7 +1279,7 @@ router.post('/real-states/:realStateID/update',
             const newData = changedFields[key];
         
             const recordInfo: ISendedRecord = {
-                userWhoChanged: String(req.user.userID),
+                userWhoChanged: String(req.user?.userID),
                 affectedType: "imóvel",
                 affectedData: String(realS.realStateID),
                 action: "atualizou",
@@ -1268,7 +1287,7 @@ router.post('/real-states/:realStateID/update',
                 oldData: oldData !== undefined ? `"${oldData}"` : "",
                 newData: newData !== undefined ? `"${newData}"` : "",
                 category: "Imóveis",
-                company: String(req.user.company)
+                company: String(req.user?.company)
             };
         
             await createRecord(recordInfo, req);
@@ -1296,6 +1315,10 @@ router.get('/real-states/:realStateID/hidden',
 
         try {
             const dataToHidden = await Realstates.findOne({ realStateID: realStateID });
+            if (!dataToHidden) {
+                req.flash('errorMsg', 'Erro 4400 - vazio inesperado')
+                return res.redirect('./')
+            }
 
             dataToHidden.hidden = true;
 
@@ -1307,12 +1330,12 @@ router.get('/real-states/:realStateID/hidden',
             .then(async () => {
 
                 const recordInfo: ISendedRecord = {
-                    userWhoChanged: String(req.user.userID),
+                    userWhoChanged: String(req.user?.userID),
                     affectedType: 'imóvel',
                     affectedData: realStateID,
                     action: 'excluiu*',
                     category: 'Imóveis',
-                    company: req.user.company
+                    company: req.user?.company
                 }
 
                 await createRecord(recordInfo, req);

@@ -3,10 +3,12 @@ import mongoose, { Document, Schema } from "mongoose"
 import bcrypt from "bcryptjs";
 import { Request, Response, NextFunction } from "express";
 import passport from "passport";
+import Users, { IUser } from "../models/UserSchema.js"
 
-import Users, { IUser } from "../models/UserSchema.js";
-
-export function ensureAuthenticated(req: Request, res: Response, next: NextFunction): void {
+export function ensureAuthenticated(
+  req: Request,
+  res: Response,
+  next: NextFunction): asserts req is Request & { user: IUser } {
   if (req.isAuthenticated()) {
     return next();
   }
