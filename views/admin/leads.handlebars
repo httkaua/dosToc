@@ -14,7 +14,11 @@
       {{#each lead}}
       <tr>
           <td>{{this.name}}</td>
-          <td>{{this.phone}}</td>
+          <td>
+            <a class="link-secondary" href="https://wa.me/55{{this.phone}}" target="_blank" rel="noopener noreferrer">
+              {{formatPhone this.phone}}
+            </a>
+          </td>
           <td>{{this.status}}</td>
           <td>
             <div class="d-grid gap-2 d-md-block">

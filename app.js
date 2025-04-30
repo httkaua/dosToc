@@ -74,10 +74,21 @@ authHelper(passport);
                 is404: (err) => err == 404,
                 is500: (err) => err == 500,
                 is503: (err) => err == 503,
+                formatPhone: (phone) => {
+                    phone = phone.replace(/\D/g, '');
+                    if (phone.length === 11) {
+                        const ddd = phone.slice(0, 2);
+                        const parte1 = phone.slice(2, 7);
+                        const parte2 = phone.slice(7);
+                        return `(${ddd}) ${parte1}-${parte2}`;
+                    }
+                    return phone;
+                }
             }
         }));
         app.set('view engine', 'handlebars');
         app.set('views', './views');
+
 
         // Body parser
         app.use(express.json());
