@@ -14,7 +14,7 @@
                     </div>
                     <div class="form-group mt-4">
                         <label for="phone">Telefone</label>
-                        <input type="tel" class="form-control" id="phone" name="phone" placeholder="+ 55 41 99999-9999" required>
+                        <input type="tel" class="form-control" id="phone" name="phone" placeholder="+ 55 41 99999-9999">
                     </div>
                     <div class="form-group mt-4">
                         <label for="document">CPF</label>
@@ -22,7 +22,11 @@
                     </div>
                     <div class="form-group">
                         <label for="email">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" aria-describedby="emailHelp" placeholder="example@gmail.com" required>
+                        <input type="email" class="form-control" id="email" name="email" aria-describedby="emailHelp" placeholder="example@gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="sourceCode">Código do imóvel interessado</label>
+                        <input type="sourceCode" class="form-control" id="sourceCode" name="sourceCode" placeholder="CA0123">
                     </div>
                     <div class="dropdownMenus col-md-12">
                         <div class='form-field'>
@@ -124,7 +128,8 @@
                             <label for='sourceOfLead'>Origem do lead</label>
                             <select id='sourceOfLead' name="sourceOfLead" class='form-control'>
                             <option value="Facebook">Facebook</option>
-                            <option value="Instagram">Instagram</option>
+                            <option value="Instagram" selected>Instagram</option>
+                            <option value="Chaves na mão">Chaves na mão</option>
                             <option value="Internet">Internet</option>
                             <option value="Visita à loja">Visita à loja</option>
                             <option value="Indicação">Indicação</option>
@@ -143,6 +148,7 @@
                         <input type="text" class="form-control" id="observations" name="observations" placeholder="'Gostaria de condomínio com cancha de futebol para os filhos...'">
                     </div>
                     <button type="submit" class="btn btn-success mt-5">Adicionar lead</button>
+                    <a href="/admin/leads" class="btn btn-secondary mt-5">Voltar</a>
                 </form>
             </div>
         </div>

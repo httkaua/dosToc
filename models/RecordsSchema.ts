@@ -1,6 +1,22 @@
-import mongoose from "mongoose"
+import mongoose, { Document, Schema } from "mongoose"
 
-const recordSchema = new mongoose.Schema({
+interface IRecord extends Document {
+    recordID: number,
+    userWhoChanged: String,
+    affectedType: 'usuário' | 'imóvel' | 'empresa' | 'lead',
+    affectedData: String,
+    affectedPropertie?: String,
+    action: 'criou' | 'atualizou' | 'excluiu' | 'excluiu*' | 'retirou',
+    category: 'Imóveis' | 'Usuários' | 'Empresas' | 'Leads' | 'Equipes',
+    oldData?: String, /* FIELD NOT SAVED IN DATABASE */
+    newData?: String, /* FIELD NOT SAVED IN DATABASE */
+    message: String,
+    company?: String,
+    createdAt: Date,
+    hidden: Boolean
+}
+
+const recordSchema = new Schema({
     recordID: {type: Number, required: true, unique: true, immutable: true},
     userWhoChanged: {type: String, required: true},
     affectedType: {
@@ -23,4 +39,6 @@ const recordSchema = new mongoose.Schema({
     hidden: {type: Boolean, default: false}
 });
 
-export default mongoose.model('records', recordSchema);
+const Records = mongoose.model<IRecord>('records', recordSchema)
+export { Records, IRecord };
+export default Records

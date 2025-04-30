@@ -1,11 +1,12 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import flash from "express-flash";
 import session from "express-session";
-import Handlebars from "handlebars";
+
 import { engine } from "express-handlebars";
-import mongoose from "mongoose";
+import mongoose, { Error } from "mongoose";
 import passport from "passport";
-import dotenv from "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config()
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 
@@ -13,10 +14,17 @@ import User from "./routes/User.js";
 import Admin from "./routes/Admin.js";
 import authHelper from "./helpers/Auth.js";
 
+import Users, { IUser } from "./models/UserSchema.js"
+
 const app = express();
 authHelper(passport);
 
 // Config
+
+        // Ensure variables
+        if (!process.env.SESSION_SECRET || !process.env.DATABASE_URL) {
+            throw new Error("Missing variable in environment variables");
+        }
 
         // Session
         app.use(session({
@@ -43,6 +51,19 @@ authHelper(passport);
             })
           )
 
+        // User module for TS
+        declare global {
+            namespace Express {
+                interface User extends IUser {
+                
+                }
+
+                interface Request {
+                    user?: User;
+                  }
+            }
+        }
+
         // Globals
         app.use((req, res, next) => {
             res.locals.successMsg = req.flash('successMsg');
@@ -60,7 +81,10 @@ authHelper(passport);
             await mongoose.connect(process.env.DATABASE_URL);
             console.log('Connected to MongoDB with success');
         } catch (err) {
-            console.error(`Error connecting to MongoDB: ${err.message}`);
+            err instanceof Error ? 
+            console.error(`Error connecting to MongoDB: ${err.message}`) : 
+            console.error(`Unknown error connecting to MongoDB: ${err}`)
+
             process.exit(1);
         }
 
@@ -76,13 +100,13 @@ authHelper(passport);
         app.engine('handlebars', engine({
             defaultLayout: 'main',
             helpers: {
-                is400: (err) => err == 400,
-                is401: (err) => err == 401,
-                is403: (err) => err == 403,
-                is404: (err) => err == 404,
-                is500: (err) => err == 500,
-                is503: (err) => err == 503,
-                formatPhone: (phone) => {
+                is400: (err: number) => err == 400,
+                is401: (err: number) => err == 401,
+                is403: (err: number) => err == 403,
+                is404: (err: number) => err == 404,
+                is500: (err: number) => err == 500,
+                is503: (err: number) => err == 503,
+                formatPhone: (phone: string) => {
                     phone = phone.replace(/\D/g, '');
                     if (phone.length === 11) {
                         const ddd = phone.slice(0, 2);
@@ -106,11 +130,9 @@ authHelper(passport);
 
 app.get('/', async (req, res) => {
     try {
-        const Users = mongoose.model('users');
         const userPlained = await Users.findOne({ userID: req.user?.userID }).lean();
-        const userObj = userPlained?.toObject ? userPlained.toObject() : userPlained;
 
-        res.render('user/home', { user: userObj });
+        res.render('user/home', { user: userPlained });
     } catch (error) {
         res.render('user/home', { user: null });
     }
@@ -125,7 +147,7 @@ app.use((req, res, next) => {
 });
 
 // HTTP error handling
-app.use((err, req, res, next) => {
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     const errStatus = err.status || 500;
     res.status(errStatus).render('errorHTTP', { error: errStatus });
 });
@@ -135,5 +157,5 @@ try {
         console.log(`Running on PORT 8088`);
     });
 } catch (err) {
-    console.error('Erro ao iniciar servidor:', err.message);
+    err instanceof Error ? console.error('Erro ao iniciar servidor:', err.message) : console.error('Erro ao iniciar servidor:', err)
 }

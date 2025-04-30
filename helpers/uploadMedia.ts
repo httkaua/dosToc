@@ -1,4 +1,9 @@
-export default async (file, objWithMedia) => {
+interface IObjectWithMedia {
+    src: string[];
+    [key: string]: any;
+  }
+  
+export default async (file: Express.Multer.File, objWithMedia: any): Promise<IObjectWithMedia> => {
     try {
         if (!file || !file.path) {
             throw new Error("Nenhum arquivo enviado ou caminho inválido.");
@@ -19,6 +24,10 @@ export default async (file, objWithMedia) => {
         return { ...objWithMedia };
 
     } catch (err) {
-        throw new Error(`Erro ao salvar imagem: ${err.message}`);
+        const message =
+        err instanceof Error ? err.message : String(err)
+
+        console.error(`Erro ao salvar imagem: ${message}`)
+        throw new Error(`Erro ao salvar imagem: ${message}`)
     }
 };

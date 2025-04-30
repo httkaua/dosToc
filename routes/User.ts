@@ -1,32 +1,27 @@
-import express from "express"
-const router = express.Router();
+import {Router, Request, Response, NextFunction } from "express";
+const router = Router();
 import bcrypt from "bcrypt"
-import passport from "passport"
-import mongoose from "mongoose"
+import passport from 'passport';
+
 import createRecord from "../helpers/newRecord.js"
+import Users from "../models/UserSchema.js"
+import { ISendedRecord } from "../models/@types_ISendedRecord.js"
 
-import "../models/UserSchema.js"
-const Users = mongoose.model('users');
-
-import "../models/RecordsSchema.js"
-const Records = mongoose.model('records');
-
-
-router.get('/', async (req, res, next) => {
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     /*
     Unused route, then redirect to admin to authentication verify
     */
     res.redirect('/admin')
 });
 
-router.get('/signin', async (req, res, next) => {
+router.get('/signin', async (req: Request, res: Response, next: NextFunction) => {
     res.render('user/signin');
 });
 
-router.post('/signin/authentication', async (req, res, next) => {
+router.post('/signin/authentication', async (req: Request, res: Response, next: NextFunction) => {
 
     try {
-        passport.authenticate('local', (err, user, info) => {
+        passport.authenticate('local', (err: Error | null, user: Express.User | false, info: { message?: string }) => {
             if (err) {
                 req.flash('errorMsg', 'Erro 3006 - Houve um erro durante a autenticação.');
                 return res.redirect('./');
@@ -49,12 +44,12 @@ router.post('/signin/authentication', async (req, res, next) => {
     }
 });
 
-router.get('/register', async (req, res, next) => {
+router.get('/register', async (req: Request, res: Response, next: NextFunction) => {
     res.render('user/register');
 });
 
 // Optimize this code
-router.post('/newaccount', async (req, res, next) => {
+router.post('/newaccount', async (req: Request, res: Response, next: NextFunction) => {
 
     const newAccErrors = [];
 
@@ -70,7 +65,7 @@ router.post('/newaccount', async (req, res, next) => {
 
     const numbPsw = (claimantPassw.match(/\d/g) || []).length
 
-    async function findEmail(claimantEmail) {
+    async function findEmail(claimantEmail: any) {
         try {
             const user = await Users.findOne({email: claimantEmail})
             return !!user // convert to boolean
@@ -80,7 +75,7 @@ router.post('/newaccount', async (req, res, next) => {
     }
 
     // Special characters count
-    function sCharacters (str) {
+    function sCharacters (str: string) {
         const specialChar = /[^a-zA-Z0-9\s]/g;
         const matches = str.match(specialChar);
         return matches ? matches.length : 0
@@ -90,9 +85,9 @@ router.post('/newaccount', async (req, res, next) => {
     const generateNewUserID = async () => {
         try {
 
-        const latestUser = await Users.findOne().sort({ userID: -1 }).exec();
+        const latestUser = await Users.findOne().sort({ userID: -1 }).lean().exec();
         const newID = latestUser && latestUser.userID 
-            ? parseInt(latestUser.userID, 10) + 1 
+            ? latestUser.userID + 1 
             : 20000;
         return newID;
 
@@ -212,19 +207,19 @@ router.post('/newaccount', async (req, res, next) => {
                             req.flash('successMsg', 'Usuário criado com sucesso!');
 
                             // Adding to records
-                            const recordInfo = {
-                                userWhoChanged: newAcc.userID,
+                            const recordInfo: ISendedRecord = {
+                                userWhoChanged: newAcc.userID.toString(),
                                 affectedType: 'usuário',
-                                affectedData: newAcc.userID,
+                                affectedData: newAcc.userID.toString(),
                                 action: 'criou',
                                 category: 'Usuários'
                             }
 
-                            await createRecord(recordInfo);
+                            await createRecord(recordInfo, req);
 
                             return res.redirect('signin');
                         })
-                        .catch((err) => {
+                        .catch((err: Error) => {
                             req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
                             return res.redirect('register');
                         });
@@ -237,7 +232,7 @@ router.post('/newaccount', async (req, res, next) => {
 
 });
 
-router.get('/forgot-password', async (req, res, next) => {
+router.get('/forgot-password', async (req: Request, res: Response, next: NextFunction) => {
     res.render('admin/forgot-password');
 });
 

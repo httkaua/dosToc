@@ -1,6 +1,64 @@
-import mongoose from "mongoose"
+import mongoose, { Document, Schema } from "mongoose"
 
-const ownerSchema = new mongoose.Schema({
+// TS INTERFACES
+interface IOwner extends Document {
+    ownerID: string;
+    name: string;
+    phoneNumber: number;
+    email?: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }
+  
+interface IRealstate extends Document {
+realStateID: number;
+type?: 'Casa' | 'Terreno' | 'Apartamento' | 'Sobrado' | 'Sítio' | 'Galpão' | 'Studio/Sala comercial';
+floor: number;
+saleValue: number;
+assessedValue: number;
+financingMaxValue: number;
+exchange: boolean;
+rentalOrSale?: 'Venda' | 'Aluguel' | 'Ambos';
+currency: string;
+financeable: boolean;
+tax: boolean;
+taxFrequency?: 'Único' | 'Mensal' | 'Anual';
+taxValue: number;
+propertySituation?: 'Novo' | 'Usado' | 'Em construção' | 'Reformado' | 'Em reforma';
+commercialSituation?: 'Ativo' | 'Inativo' | 'Vendido' | 'Suspenso' | 'Alugado' | 'Permutado';
+description?: string;
+bedrooms?: number;
+rooms?: number;
+bathrooms?: number;
+parkingSpaces?: number;
+locationCode?: string;
+address?: string;
+addressNumber: number;
+complement?: string;
+neighborhood?: string;
+region?: string;
+city?: string;
+state?: string;
+country?: string;
+condominium: boolean;
+condominiumNumber: number;
+landArea: number;
+builtUpArea: number;
+face?: 'Norte' | 'Nordeste' | 'Leste' | 'Sudeste' | 'Sul' | 'Sudoeste' | 'Oeste' | 'Noroeste' | 'Não identificado';
+tags?: string[];
+media?: string[];
+publish: boolean;
+userCreator?: string;
+owner?: IOwner;
+company?: string;
+src?: string[];
+createdAt: Date;
+updatedAt: Date;
+hidden: boolean;
+}
+
+// MONGODB SCHEMAS
+const ownerSchema = new Schema<IOwner>({
     ownerID: {type: String, unique: true, immutable: true, required: true},
     name: {type: String, required: true},
     phoneNumber: {type: Number, required: true},
@@ -9,7 +67,7 @@ const ownerSchema = new mongoose.Schema({
     updatedAt: {type: Date, default: new Date}
 });
 
-const RealStateSchema = new mongoose.Schema({
+const RealStateSchema = new Schema<IRealstate>({
     realStateID: {type: Number, immutable: true, unique: true},
     type: {
         type: String,
@@ -62,16 +120,17 @@ const RealStateSchema = new mongoose.Schema({
         type: String,
         enum: ['Norte', 'Nordeste', 'Leste', 'Sudeste', 'Sul', 'Sudoeste', 'Oeste', 'Noroeste', 'Não identificado']
     },
-    tags: {type: Array},
-    media: {type: Array},
+    tags: [String],
+    media: [String],
     publish: {type: Boolean, default: false},
     userCreator: {type: String},
     owner: {type: ownerSchema},
     company: {type: String},
-    src: {type: Array},
+    src: [String],
     createdAt: {type: Date, default: new Date, immutable: true},
     updatedAt: {type: Date, default: new Date},
     hidden: {type: Boolean, default: false}
 });
 
-export default mongoose.model("realstates", RealStateSchema);
+const Realstates = mongoose.model<IRealstate>("realstates", RealStateSchema);
+export default Realstates
