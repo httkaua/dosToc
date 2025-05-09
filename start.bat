@@ -4,7 +4,7 @@ color 1F
 chcp 65001 >nul
 
 :: INICIAR O SERVIDOR EM SEGUNDO PLANO
-start "" /B cmd /C "nodemon app.js"
+start "" /B cmd /C "tsx watch app.ts"
 
 :: SPLASH SCREEN ANIMADA
 echo.
