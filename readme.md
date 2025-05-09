@@ -1,4 +1,4 @@
-<h1 align="center">Dostoc</h1>
+<h1 align="center">🟥 Dostoc 🟦</h1>
 
 <p align="center">
   <a target="blank"><img src="public\img\dosToc.ico" width="120" alt="Dostoc Logo" /></a>
@@ -10,20 +10,20 @@ A system for real estate companies and agents, built with Typescript, MongoDB an
 
 ---
 
-## Developer
+## 💻 Developer
 Kauã Hamilton
 
 ---
 
-## Version
+## 🆚 Version
 2.1.0
 
-## Sprint and tasks
+## 🚀 Sprint and tasks
 **[Google-Drive](https://docs.google.com/spreadsheets/d/e/2PACX-1vSCBJLHfDWlLt09QOOM9PPShJ7EXXyn2jOGh0UZyLADv7dC9-Xsyj6T6YEeaCRn1bz-cyLhdOU3Ro6h/pubhtml)**
 
 ---
 
-## How to install and use
+## ⚙️ How to install and use
 
 1. On Google Chrome or your preferred browser, search "Node.js", "VSCode" and "MongoDB", then download and install;
 
@@ -44,19 +44,17 @@ DATABASE_URL='mongodb://localhost:27017/dostoclocal'
 
 * Replace the text inside the quotation marks in SESSION_SECRET (enter something long, like a random phrase).
 
-* Do not share .env file with other people never.
+* ⚠️ Do not share .env file with other people never.
 
 6. You can see a 'start.bat' file. This is an easy system starter. Create a shortcut and move to a convenient location on your PC (taskbar, desktop, etc.);
 
-7. Done! Now, you can run Dostoc by opening the 'start.bat'. If after loading your browser don't show the web page, open the browser and search this:
-
-**[localhost](http://localhost:8088/)**
+7. Done! Now, you can run Dostoc by opening the 'start.bat'. If after loading your browser don't show the web page, open the browser and search this: **[localhost](http://localhost:8088/)**
 
 Thanks for choose Dostoc! I hope you have a great experience!
 
 ---
 
-## Technical goal
+## 🎯 Technical goal
 practice all concepts of back-end web programming comprehensively: 
 - Security
 - Performance
@@ -69,7 +67,7 @@ practice all concepts of back-end web programming comprehensively:
 
 ---
 
-## Built with:
+## ⚒️ Built with:
 
 <div style="display: inline_block">
   <img src="https://github.com/tandpfun/skill-icons/blob/main/icons/TypeScript.svg" style="width:40px; height:auto;" alt="Typescript"/>
