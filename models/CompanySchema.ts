@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from "mongoose"
+import mongoose, { Document, Schema, Types } from "mongoose"
 
 interface ICompany extends Document {
     companyID: number;
@@ -7,12 +7,12 @@ interface ICompany extends Document {
     phone: string;
     email: string;
     team: {
-        owner: string;
-        supervisors?: Object;
-        agents?: Object;
-        assistants?: Object;
+        owner: Types.ObjectId;
+        supervisors?: Types.ObjectId[];
+        agents?: Types.ObjectId[];
+        assistants?: Types.ObjectId[];
     };
-    realStates?: string[];
+    realEstates?: Types.ObjectId[];
     address: {
         locationCode?: string;
         street?: string;
@@ -22,7 +22,11 @@ interface ICompany extends Document {
         state?: string;
         country?: string;
     };
-    plan?: 'standard' | 'full' | 'free';
+    plan?:
+    'standard' |
+    'full' |
+    'free';
+    
     settings: {
         TeamPermissions: {
 	        SupervisorPermissions: { //* Position index: 4
@@ -46,6 +50,7 @@ interface ICompany extends Document {
             LeadsCriticalUpdate: Boolean,
             RealEtateValueUpdate: Boolean
         },
+        DeadlineLeadsOption: Boolean,
         DeadlineRespondLeads: Number,
         MaxLeadsPerAgent: Number,
         RealEstateDefaults: {
@@ -53,8 +58,8 @@ interface ICompany extends Document {
             ShowTaxFields: Boolean
         }
     };
-    leadQueue: Object;
-    agentQueue: Object;
+    leadQueue: Types.ObjectId[];
+    agentQueue: Types.ObjectId[];
     createdAt: Date;
     updatedAt: Date;
     enabled: Boolean
@@ -71,16 +76,20 @@ const companySchema = new Schema<ICompany>({
         type: String,
         required: true,
         unique: true,
-        trim: true
+        trim: true,
+        maxlength: 50
     },
     document: {
         type: String,
-        trim: true
+        trim: true,
+        maxlength: 50
     },
     phone: { //* E.164 pattern
         type: String,
         required: true,
         unique: true,
+        minlength: 8,
+        maxlength: 15,
         match: /^\+[0-9]{6,14}$/
     },
     email: {
@@ -88,6 +97,7 @@ const companySchema = new Schema<ICompany>({
         required: true,
         unique: true,
         trim: true,
+        maxlength: 50,
         match: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
     },
     team: {
@@ -109,44 +119,56 @@ const companySchema = new Schema<ICompany>({
         }
     },
 
-    realStates: {
+    realEstates: {
         type: Schema.Types.ObjectId,
         ref: 'users'
     },
     address: {
         locationCode: {
             type: String,
-            trim: true
+            trim: true,
+            maxlength: 20
         },
         street: {
             type: String,
-            trim: true
+            trim: true,
+            maxlength: 50
         },
         streetNumber: {
-            type: String,
-            trim: true
+            type: Number,
+            trim: true,
+            min: 0,
+            max: 99999
         },
         neighborhood: {
             type: String,
-            trim: true
+            trim: true,
+            maxlength: 50
         },
         city: {
             type: String,
-            trim: true
+            trim: true,
+            maxlength: 50
         },
         state: {
             type: String,
-            trim: true
+            trim: true,
+            maxlength: 50
         },
         country: {
             type: String,
-            trim: true
+            trim: true,
+            maxlength: 50
         }
     },
 
     plan: {
         type: String,
-        enum: ['standard', 'full', 'free']
+        enum: [
+            'standard',
+            'full',
+            'free'
+        ]
     },
     settings: {
         TeamPermissions: { 
@@ -207,13 +229,20 @@ const companySchema = new Schema<ICompany>({
                 default: true
             }
         },
+        DeadlineLeadsOption: { //* If true, after deadline, the lead will be enter in the queue
+            type: Boolean,
+            default: true
+        },
         DeadlineRespondLeads: { //* In days
             type: Number,
-            default: 5
+            default: 5,
+            min: 0,
+            max: 30
         },
         MaxLeadsPerAgent: { //* To avoid leads withholding
             type: Number,
             default: 100,
+            min: 0,
             max: 300
         },
         RealEstateDefaults: {
@@ -228,14 +257,14 @@ const companySchema = new Schema<ICompany>({
         }
     },
 
-    leadQueue: { //? Can I create ref without Schema.Types ?
-        type: Array,
+    leadQueue: [{
+        type: Schema.Types.ObjectId,
+        ref: 'leads'
+    }],
+    agentQueue: [{ //* For the leads distribution
+        type: Schema.Types.ObjectId,
         ref: 'users'
-    },
-    agentQueue: { //* For the leads distribution
-        type: Array,
-        ref: 'users'
-    },
+    }],
     createdAt: {
         type: Date,
         default: new Date,

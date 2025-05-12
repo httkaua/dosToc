@@ -1,11 +1,11 @@
-import mongoose, { Document, Mongoose, Schema } from "mongoose"
+import mongoose, { Document, Schema, Types } from "mongoose"
 
 //* TS INTERFACE
 export interface IUser extends Document {
     userID: number;
-    firstName: string;
-    lastName: string;
-    company?: Object;
+    name: string;
+    nameSearch: string;
+    company?: Types.ObjectId[];
     email: string;
     password: string;
     createdAt: Date;
@@ -13,8 +13,8 @@ export interface IUser extends Document {
     position?: '1' | '2' | '3' | '4' | '5' | '6' | '7';
     //* Positions ref: helpers/positionNames
 
-    managers: Object;
-    underManagement: Object;
+    managers: Types.ObjectId[];
+    underManagement: Types.ObjectId[];
     document?: string;
     phone: string;
     enabled: boolean;
@@ -28,47 +28,53 @@ const userSchema = new Schema<IUser>({
         immutable: true,
         unique: true
     },
-    firstName: {
+    name: {
         type: String,
         required: true,
-        trim: true
+        trim: true,
+        maxlength: 20
     },
-    lastName: {
+    nameSearch: { //* Normalized name for queries
         type: String,
         required: true,
-        trim: true
+        trim: true,
+        uppercase: true,
+        maxlength: 50,
+        match: /^[A-Z\s]+$/
     },
-    company: {
+    company: [{ //* An user can belong to (or have) one or more companies
         type: Schema.Types.ObjectId,
         ref: 'companies'
-    },
+    }],
     email: {
         type: String,
         required: true,
         unique: true,
         trim: true,
+        maxlength: 50,
         match: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
     },
     password: {
         type: String,
         required: true,
+        minlength: 8,
+        maxlength: 50,
         select: false
     },
     position: {
         type: String,
-        enum: [1, 2, 3, 4, 5, 6, 7],
+        enum: ['1', '2', '3', '4', '5', '6', '7'],
+        default: 7,
         required: true
     },
-    managers: {
+    managers: [{
         type: Schema.Types.ObjectId,
-        ref: 'users',
-        required: true
-    },
-    underManagement: {
+        ref: 'users'
+    }],
+    underManagement: [{
         type: Schema.Types.ObjectId,
-        ref: 'users',
-        required: true
-    },
+        ref: 'users'
+    }],
     document: {
         type: String,
         maxlength: 20
