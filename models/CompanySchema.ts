@@ -6,47 +6,249 @@ interface ICompany extends Document {
     document: string;
     phone: string;
     email: string;
-    owner: string;
-    supervisors?: string[];
-    agents?: string[];
+    team: {
+        owner: string;
+        supervisors?: Object;
+        agents?: Object;
+        assistants?: Object;
+    };
     realStates?: string[];
-    locationCode?: string;
-    street?: string;
-    streetNumber?: string;
-    neighborhood?: string;
-    city?: string;
-    state?: string;
-    country?: string;
-    plan?: 'standard' | 'full' | null;
+    address: {
+        locationCode?: string;
+        street?: string;
+        streetNumber?: string;
+        neighborhood?: string;
+        city?: string;
+        state?: string;
+        country?: string;
+    };
+    plan?: 'standard' | 'full' | 'free';
+    settings: {
+        TeamPermissions: {
+	        SupervisorPermissions: { //* Position index: 4
+                deleteUser: Boolean,
+                changeQueueOrder: Boolean
+            },
+            AgentPermissions: { //* Position index: 5
+                createRealEstate: Boolean,
+                deleteRealEstate: Boolean
+            },
+            AssistantPermissions: { //* Position index: 6
+                createRealEstate: Boolean,
+                deleteRealEstate: Boolean
+            }
+        },
+        Notify: {
+            UserInactivity5days: Boolean,
+            NoRespondLeads: Boolean,
+            DailySummary: Boolean,
+            UserTasks: Boolean,
+            LeadsCriticalUpdate: Boolean,
+            RealEtateValueUpdate: Boolean
+        },
+        DeadlineRespondLeads: Number,
+        MaxLeadsPerAgent: Number,
+        RealEstateDefaults: {
+            DefaultCurrency: String,
+            ShowTaxFields: Boolean
+        }
+    };
+    leadQueue: Object;
+    agentQueue: Object;
     createdAt: Date;
     updatedAt: Date;
-    hidden: boolean;
+    enabled: Boolean
   }
 
 const companySchema = new Schema<ICompany>({
-    companyID: {type: Number, required: true, immutable: true, unique: true},
-    name: {type: String, required: true, unique: true},
-    document: {type: String, required: true, unique: true},
-    phone: {type: String, required: true, unique: true},
-    email: {type: String, required: true, unique: true},
-    owner: {type: String, required: true},
-    supervisors: [String],
-    agents: [String],
-    realStates: [String],
-    locationCode: {type: String},
-    street: {type: String},
-    streetNumber: {type: String},
-    neighborhood: {type: String},
-    city: {type: String},
-    state: {type: String},
-    country: {type: String},
+    companyID: {
+        type: Number,
+        required: true,
+        immutable: true,
+        unique: true
+    },
+    name: {
+        type: String,
+        required: true,
+        unique: true,
+        trim: true
+    },
+    document: {
+        type: String,
+        trim: true
+    },
+    phone: { //* E.164 pattern
+        type: String,
+        required: true,
+        unique: true,
+        match: /^\+[0-9]{6,14}$/
+    },
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+        trim: true,
+        match: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    },
+    team: {
+        owner: {
+            type: Schema.Types.ObjectId,
+            ref: 'users'
+        },
+        supervisors: {
+            type: Schema.Types.ObjectId,
+            ref: 'users'
+        },
+        agents: {
+            type: Schema.Types.ObjectId,
+            ref: 'users'
+        },
+        assistants: {
+            type: Schema.Types.ObjectId,
+            ref: 'users'
+        }
+    },
+
+    realStates: {
+        type: Schema.Types.ObjectId,
+        ref: 'users'
+    },
+    address: {
+        locationCode: {
+            type: String,
+            trim: true
+        },
+        street: {
+            type: String,
+            trim: true
+        },
+        streetNumber: {
+            type: String,
+            trim: true
+        },
+        neighborhood: {
+            type: String,
+            trim: true
+        },
+        city: {
+            type: String,
+            trim: true
+        },
+        state: {
+            type: String,
+            trim: true
+        },
+        country: {
+            type: String,
+            trim: true
+        }
+    },
+
     plan: {
         type: String,
-        enum: ['standard', 'full', null]
+        enum: ['standard', 'full', 'free']
     },
-    createdAt: {type: Date, default: new Date},
-    updatedAt: {type: Date, default: new Date},
-    hidden: {type: Boolean, default: false}
+    settings: {
+        TeamPermissions: { 
+	        SupervisorPermissions: { //* Position index: 4
+                deleteUser: {
+                    type: Boolean,
+                    default: true
+                },
+                changeQueueOrder: {
+                    type: Boolean,
+                    default: true
+                }
+            },
+            AgentPermissions: { //* Position index: 5
+                createRealEstate: {
+                    type: Boolean,
+                    default: false
+                },
+                deleteRealEstate: {
+                    type: Boolean,
+                    default: false
+                }
+            },
+            AssistantPermissions: { //* Position index: 6
+                createRealEstate: {
+                    type: Boolean,
+                    default: true
+                },
+                deleteRealEstate: {
+                    type: Boolean,
+                    default: false
+                }
+            }
+        },
+        Notify: {
+            UserInactivity5days: { //* Users who didn't do any login in the last 5 days
+                type: Boolean,
+                default: true
+            },
+            NoRespondLeads: { //* Agents who missed the leads by deadline
+                type: Boolean,
+                default: true
+            },
+            DailySummary: { //* Quick report about preview day
+                type: Boolean,
+                default: true
+            },
+            UserTasks: { //* Tasks the users have been created
+                type: Boolean,
+                default: true
+            },
+            LeadsCriticalUpdate: {
+                type: Boolean,
+                default: true
+            },
+            RealEtateValueUpdate: { //* Real Estates that had some value field changed
+                type: Boolean,
+                default: true
+            }
+        },
+        DeadlineRespondLeads: { //* In days
+            type: Number,
+            default: 5
+        },
+        MaxLeadsPerAgent: { //* To avoid leads withholding
+            type: Number,
+            default: 100,
+            max: 300
+        },
+        RealEstateDefaults: {
+            DefaultCurrency: {
+                type: String,
+                default: 'BRL'
+            },
+            ShowTaxFields: { //* In the real estate create and update page
+                type: Boolean,
+                default: true
+            }
+        }
+    },
+
+    leadQueue: { //? Can I create ref without Schema.Types ?
+        type: Array,
+        ref: 'users'
+    },
+    agentQueue: { //* For the leads distribution
+        type: Array,
+        ref: 'users'
+    },
+    createdAt: {
+        type: Date,
+        default: new Date,
+        immutable: true
+    },
+    updatedAt: {
+        type: Date,
+        default: new Date
+    },
+    enabled: {
+        type: Boolean,
+        default: true
+    }
 });
 
 const Companies = mongoose.model<ICompany>('companies', companySchema)
