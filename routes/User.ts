@@ -1,87 +1,149 @@
-import {Router, Request, Response, NextFunction } from "express";
+//* Libraries
+import { Router, Request, Response, NextFunction } from "express";
 const router = Router();
 import bcrypt from "bcrypt"
 import passport from 'passport';
 
+//* References
 import createRecord from "../helpers/newRecord.js"
-import Users from "../models/UserSchema.js"
+import Users, { IUser } from "../models/UserSchema.js"
 import { ISendedRecord } from "../models/@types_ISendedRecord.js"
 
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
-    /*
-    Unused route, then redirect to admin to authentication verify
-    */
+
+
+//TODO: Main style page announcing Dostoc
+router.get('/',
+    async (req: Request, res: Response, next: NextFunction) => {
     res.redirect('/admin')
 });
 
-router.get('/signin', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/signin',
+    async (req: Request, res: Response, next: NextFunction) => {
     res.render('user/signin');
 });
 
-router.post('/signin/authentication', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/signin/authentication',
+    async (req: Request, res: Response, next: NextFunction) => {
 
-    try {
-        passport.authenticate('local', (err: Error | null, user: Express.User | false, info: { message?: string }) => {
-            if (err) {
-                req.flash('errorMsg', 'Erro 3006 - Houve um erro durante a autenticação.');
-                return res.redirect('./');
-            }
-            if (!user) {
-                req.flash('errorMsg', info.message || '1010 - Credenciais inválidas.');
-                return res.redirect('./');
-            }
-            req.logIn(user, (err) => {
-                if (err) {
-                    req.flash('errorMsg', '3007 - Ocorreu um erro durante o LogIn.');
-                    return res.redirect('./');
-                }
-                req.flash('successMsg', 'Seja bem-vindo!');
-                return res.redirect('/admin');
-            });
-        })(req, res, next);
-    } catch (err) {
-        req.flash('errorMsg', `Ocorreu um erro interno: ${err}`)
+    //* Handler errors if authentication failed.
+    async function noAuth(
+        err: Error| null,
+        user?: Express.User) {
+    
+        if (err) {
+            req.flash('errorMsg', 'Erro 3006 - Houve um erro durante a autenticação.');
+            return true
+        }
+        if (!user) {
+            req.flash('errorMsg', '1010 - Credenciais inválidas.');
+            return true
+        }
+
+        return false
     }
+
+        passport.authenticate('local',
+            async (err: Error | null, user: Express.User, info: { message?: string }) => {
+            try {
+                const hasError = await noAuth(err, user)
+                if (hasError) {
+                    console.error(`${info.message}`)
+                    return res.redirect('user/signin')
+                }
+                
+                req.logIn(user,
+                    (errLog) => {
+                    if (errLog) {
+                        req.flash('errorMsg', '3007 - Ocorreu um erro durante o LogIn.')
+                        return res.redirect('user/signin')
+                    }
+
+                    req.flash('successMsg', 'Seja bem-vindo!')
+                    return res.redirect('/admin')
+                })
+
+            } catch (err) {
+                console.error(err)
+                return res.redirect('user/signin')
+            }
+        })
+        (req, res, next);
 });
 
-router.get('/register', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/register',
+    async (req: Request, res: Response, next: NextFunction) => {
     res.render('user/register');
 });
 
-// Optimize this code
-router.post('/newaccount', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/newUserount',
+    async (req: Request, res: Response, next: NextFunction) => {
 
-    const newAccErrors = [];
+    const formErrors: object[] = [];
 
-    // REQs from HTML Form
-    let claimantNewID = null;
-    const claimantFtName = req.body.claimantFirstName;
-    const claimantLtName = req.body.claimantLastName;
-    const claimantPhone = req.body.claimantPhone;
-    const claimantCompany = req.body.claimantCompany;
-    const claimantEmail = req.body.claimantEmail;
-    const claimantPassw = req.body.claimantPassword;
-    const claimantPasswConfirm = req.body.claimantPasswordConfirm;
+    const form: IUser = req.body
 
-    const numbPsw = (claimantPassw.match(/\d/g) || []).length
+    async function verifyFormErrors (form: IUser) {
 
-    async function findEmail(claimantEmail: any) {
-        try {
-            const user = await Users.findOne({email: claimantEmail})
-            return !!user // convert to boolean
-        } catch (err) {
-            throw new Error(`There was an error parsing email: ${err}`);
+        if (form.password !== form.passwordConfirm) {
+            formErrors.push({text: `A senha é diferente da confirmação de senha.`})
         }
+
+        if(Object.entries(form)
+            .some(([key, value]) => value == undefined || null || '')) {
+            formErrors.push({text: 'Erro 1004 - Preencha todos os campos para prosseguir.'});
+        }
+
+        if (form.password.length < 8) {
+            formErrors.push({text: 'Erro 1007 - Senha muito curta. Crie uma senha de ao menos 8 caracteres.'});
+        }
+
+        // Weak passwords
+        if (await strongPassword(form.password) == false) {
+            formErrors.push({text: 'Erro 1008 - Senha muito fraca. É necessário ao menos um número e um caractere especial (exemplos: &, %, $, #, @)'})
+        }
+
+        if (await freeEmail(form.email) == false) {
+            formErrors.push({text: 'Erro 1009 - Este e-mail já está sendo usado.'})
+        }
+
+            // If it got some error
+            if (formErrors.length) {
+                return formErrors[0]
+            }
+            else {
+                return null
+            }
     }
 
-    // Special characters count
-    function sCharacters (str: string) {
+    async function strongPassword(password: string) {
+        const numberCount = (password.match(/\d/g) || []).length
+
+        if (numberCount < 1 || checkSpecialChar(password) < 1) {
+            return false
+        }
+        else {
+            return true
+        }
+
+    }
+
+    function checkSpecialChar (password: string) {
         const specialChar = /[^a-zA-Z0-9\s]/g;
-        const matches = str.match(specialChar);
+        const matches = password.match(specialChar);
         return matches ? matches.length : 0
     }
+
+    async function freeEmail(email: string) {
+        try {
+            const user = await Users.findOne({ email })
+            return !user
+        } catch (err) {
+            console.error(`There was an error parsing email: ${err}`);
+            return false
+        }
+    }
     
-    // Generating new userID for claimant
+    //* To be stored in database
     const generateNewUserID = async () => {
         try {
 
@@ -97,138 +159,63 @@ router.post('/newaccount', async (req: Request, res: Response, next: NextFunctio
         }
     };
 
-    // Validations from Form below
+    const checkForm = verifyFormErrors(form)
 
-    // Password different from confirmation 
-    if (claimantPassw !== claimantPasswConfirm) {
-        newAccErrors.push({text: `A senha é diferente da confirmação de senha.`})
-    }
-    
-    // Undefined inputs
-    if (claimantFtName == undefined ||
-        claimantLtName == undefined ||
-        claimantPhone == undefined ||
-        claimantCompany == undefined ||
-        claimantEmail == undefined ||
-        claimantPassw == undefined ||
-        claimantPasswConfirm == undefined
-    ) {
-        newAccErrors.push({text: 'Erro 1004 - Campos indefinidos. Preencha todos os campos corretamente.'});
+    if (await checkForm !== null) {
+        req.flash('errorMsg', `${checkForm}`)
+        return res.redirect('register')
     }
 
-    // Null inputs
-    if (
-        claimantFtName == null ||
-        claimantLtName == null ||
-        claimantPhone == null ||
-        claimantCompany == null ||
-        claimantEmail == null ||
-        claimantPassw == null ||
-        claimantPasswConfirm == null
-    ) {
-        newAccErrors.push({text: 'Erro 1005 - Campos nulos. Preencha todos os campos corretamente.'})
-    }
+    else {
 
-    // Empty inputs
-    if (
-        !claimantFtName ||
-        !claimantLtName ||
-        !claimantPhone ||
-        !claimantCompany ||
-        !claimantEmail ||
-        !claimantPassw ||
-        !claimantPasswConfirm
-    ) {
-        newAccErrors.push({text: 'Erro 1006 - Campos vazios. Preencha todos os campos corretamente.'})
-    }
-    
-    // Too short passwords
-    if (
-        claimantPassw.length < 8
-    ) {
-        newAccErrors.push({text: 'Erro 1007 - Senha muito curta. Crie uma senha de ao menos 8 caracteres.'});
-    }
-    
-    // Weak passwords
-    if (numbPsw < 1 || sCharacters(claimantPassw) < 1) {
-        newAccErrors.push({text: 'Erro 1008 - Senha muito fraca. É necessário ao menos um número e um caractere especial (exemplos: &, %, $, #, @)'})
-    }
+        const newUser = new Users({
+            ...req.body,
+            userID: await generateNewUserID(),
+            position: 'Diretor de imobiliária',
+            createdAt: new Date(),
+            updatedAt: new Date()
+        });
 
-        // If it got some error
-        if (newAccErrors.length > 0) {
-            const errorMessages = newAccErrors.map(error => error.text);
-            req.flash('errorMsg', errorMessages[0]); // passar um erro por vez
-            res.redirect('register');
-            return;
-        }
-
-        // Any error in the HTML Form
-        else {
-
-            // Email already used.
-            if (await findEmail(claimantEmail) == true) {
-
-                req.flash('errorMsg', 'Erro 1009 - Este e-mail já está sendo usado.')
-                return res.redirect('register')
+        // generating hash
+        bcrypt.genSalt(10, (err, salt) => {
+            if (err) {
+                req.flash('errorMsg', `Erro 3004 - Houve um erro ao gerar SALT: ${err}`)
+                return res.redirect('user/register')
             }
 
-            // Allright, creating account in the database
+            bcrypt.hash(newUser.password, salt, (err, hash) => {
+                if (err) {
+                    req.flash(`errorMsg', 'Erro 3005 - Houve um erro ao gerar HASH: ${err}`)
+                    return res.redirect('user/register');
+                };
 
-            else {
+                newUser.password = hash;
 
-                const newAcc = new Users({
-                    userID: await generateNewUserID(),
-                    firstName: claimantFtName,
-                    lastName: claimantLtName,
-                    phone: claimantPhone,
-                    email: claimantEmail,
-                    position: 'Diretor de imobiliária',
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                });
+                newUser.save()
+                .then(async () => {
+                    req.flash('successMsg', 'Usuário criado com sucesso!');
 
-                // generating hash
-                bcrypt.genSalt(10, (err, salt) => {
-                    if (err) {
-                        req.flash('errorMsg', `Erro 3004 - Houve um erro ao gerar SALT: ${err}`)
-                        return res.redirect('register')
+                    // Adding to records
+                    const recordInfo: ISendedRecord = {
+                        userWhoChanged: newUser.userID.toString(),
+                        affectedType: 'usuário',
+                        affectedData: newUser.userID.toString(),
+                        action: 'criou',
+                        category: 'Usuários'
                     }
 
-                    bcrypt.hash(claimantPassw, salt, (err, hash) => {
-                        if (err) {
-                            req.flash(`errorMsg', 'Erro 3005 - Houve um erro ao gerar HASH: ${err}`)
-                            return res.redirect('register');
-                        };
+                    await createRecord(recordInfo, req);
 
-                        newAcc.password = hash;
-
-                        newAcc.save()
-                        .then(async () => {
-                            req.flash('successMsg', 'Usuário criado com sucesso!');
-
-                            // Adding to records
-                            const recordInfo: ISendedRecord = {
-                                userWhoChanged: newAcc.userID.toString(),
-                                affectedType: 'usuário',
-                                affectedData: newAcc.userID.toString(),
-                                action: 'criou',
-                                category: 'Usuários'
-                            }
-
-                            await createRecord(recordInfo, req);
-
-                            return res.redirect('signin');
-                        })
-                        .catch((err: Error) => {
-                            req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
-                            return res.redirect('register');
-                        });
-                    });
+                    return res.redirect('signin');
+                })
+                .catch((err: Error) => {
+                    req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
+                    return res.redirect('register');
                 });
-
-            }
-            
-        }
+            });
+        });
+        
+    }
 
 });
 

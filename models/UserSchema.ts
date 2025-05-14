@@ -2,14 +2,15 @@ import mongoose, { Document, Schema, Types } from "mongoose"
 
 //* TS INTERFACE
 export interface IUser extends Document {
-    userID: number;
-    name: string;
-    nameSearch: string;
-    company?: Types.ObjectId[];
-    email: string;
-    password: string;
-    createdAt: Date;
-    updatedAt: Date;
+    userID: number
+    name: string
+    nameSearch: string
+    company?: Types.ObjectId[]
+    email: string
+    password: string
+    passwordConfirm?: string //* Used in form validation
+    createdAt: Date
+    updatedAt: Date
     position?: '1' | '2' | '3' | '4' | '5' | '6' | '7';
     //* Positions ref: helpers/positionNames
 
