@@ -11,7 +11,7 @@ export interface IUser extends Document {
     passwordConfirm?: string //* Used in form validation
     createdAt: Date
     updatedAt: Date
-    position?: '1' | '2' | '3' | '4' | '5' | '6' | '7';
+    position?: 1 | 2 | 3 | 4 | 5 | 6 | 7;
     //* Positions ref: helpers/positionNames
 
     managers: Types.ObjectId[];
@@ -33,7 +33,7 @@ const userSchema = new Schema<IUser>({
         type: String,
         required: true,
         trim: true,
-        maxlength: 20
+        maxlength: 50
     },
     nameSearch: { //* Normalized name for queries
         type: String,
@@ -59,12 +59,12 @@ const userSchema = new Schema<IUser>({
         type: String,
         required: true,
         minlength: 8,
-        maxlength: 50,
+        maxlength: 1000,
         select: false
     },
     position: {
-        type: String,
-        enum: ['1', '2', '3', '4', '5', '6', '7'],
+        type: Number,
+        enum: [1, 2, 3, 4, 5, 6, 7],
         default: 7,
         required: true
     },

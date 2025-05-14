@@ -152,10 +152,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 //* HTTP error handling
+/*
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     const errStatus = err.status || 500;
     res.status(errStatus).render('errorHTTP', { error: errStatus });
 });
+*/
 
 //* Listen
 try {

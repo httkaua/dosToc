@@ -1,34 +1,37 @@
-<form method="POST" action="/user/newaccount">
-    <h4>Vamos criar a sua conta?</h4>
-    <div class="form-group">
-        <label for="firstName">Nome</label>
-        <input type="text" class="form-control" id="firstName" name="firstName" placeholder="Sophia">
+<form method="POST" action="/user/newaccount" id="registerForm" novalidate>
+    <h4 class="mb-4">Vamos criar a sua conta?</h4>
+
+    <div class="form-group mb-3">
+        <label for="name">Nome</label>
+        <input type="text" class="form-control" id="name" name="name" placeholder="Walter White" maxlength="50" required>
+        <span class="invalid-feedback" id="nameError"></span>
     </div>
-    <div class="form-group">
-        <label for="lastName">Sobrenome</label>
-        <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Jones">
-    </div>
-        <div class="form-group">
+
+    <div class="form-group mb-3">
         <label for="phone">Telefone</label>
-        <input type="tel" class="form-control" id="phone" name="phone" placeholder="+ 55 41 99999-9999">
+        <input type="tel" class="form-control" id="phone" name="phone" placeholder="+554172727272" required>
+        <span class="invalid-feedback" id="phoneError"></span>
     </div>
-    <div class="form-group">
-        <label for="company">Empresa</label>
-        <input type="text" class="form-control" id="company" name="company" placeholder="My Company S.A.">
-    </div>
-    <div class="form-group">
+
+    <div class="form-group mb-3">
         <label for="email">Email</label>
-        <input type="email" class="form-control" id="email" name="email" aria-describedby="emailHelp" placeholder="example@gmail.com">
-        <small id="emailHelp" class="form-text text-muted">Nós nunca compartilharemos seu e-mail com outros.</small>
+        <input type="email" class="form-control" id="email" name="email" placeholder="example@gmail.com" maxlength="50" required>
+        <span class="invalid-feedback" id="emailError"></span>
     </div>
-    <div class="form-group">
+
+    <div class="form-group mb-3">
         <label for="password">Senha</label>
-        <input type="password" class="form-control" id="password" name="password" placeholder="Password">
-        <small id="passwordHelp" class="form-text text-muted">Escolha uma senha forte, com pelo menos um número e um caractere especial.</small>
+        <input type="password" class="form-control" id="password" name="password" placeholder="Senha" minlength="8" maxlength="1000" required>
+        <span class="invalid-feedback" id="passwordError"></span>
     </div>
-    <div class="form-group">
+
+    <div class="form-group mb-4">
         <label for="passwordConfirm">Confirmar senha</label>
-        <input type="password" class="form-control" id="passwordConfirm" name="passwordConfirm" placeholder="Password">
+        <input type="password" class="form-control" id="passwordConfirm" name="passwordConfirm" placeholder="Confirme a senha" required>
+        <span class="invalid-feedback" id="passwordConfirmError"></span>
     </div>
-    <button type="submit" class="btn btn-success">Criar</button>
+
+    <button type="submit" class="btn btn-success w-100">Criar</button>
 </form>
+
+<script src="/js/_registerValidation.js"></script>

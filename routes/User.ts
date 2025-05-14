@@ -14,7 +14,7 @@ import { ISendedRecord } from "../models/@types_ISendedRecord.js"
 //TODO: Main style page announcing Dostoc
 router.get('/',
     async (req: Request, res: Response, next: NextFunction) => {
-    res.redirect('/admin')
+    res.render('user/signin');
 });
 
 router.get('/signin',
@@ -48,14 +48,14 @@ router.post('/signin/authentication',
                 const hasError = await noAuth(err, user)
                 if (hasError) {
                     console.error(`${info.message}`)
-                    return res.redirect('user/signin')
+                    return res.redirect('user/signin/')
                 }
                 
                 req.logIn(user,
                     (errLog) => {
                     if (errLog) {
                         req.flash('errorMsg', '3007 - Ocorreu um erro durante o LogIn.')
-                        return res.redirect('user/signin')
+                        return res.redirect('user/signin/')
                     }
 
                     req.flash('successMsg', 'Seja bem-vindo!')
@@ -64,7 +64,7 @@ router.post('/signin/authentication',
 
             } catch (err) {
                 console.error(err)
-                return res.redirect('user/signin')
+                return res.redirect('user/signin/')
             }
         })
         (req, res, next);
@@ -75,7 +75,7 @@ router.get('/register',
     res.render('user/register');
 });
 
-router.post('/newUserount',
+router.post('/newaccount',
     async (req: Request, res: Response, next: NextFunction) => {
 
     const formErrors: object[] = [];
@@ -142,6 +142,14 @@ router.post('/newUserount',
             return false
         }
     }
+
+    function normalizeName(name: string): string {
+    return name
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toUpperCase()
+        .replace(/\s+/g, ' ');
+    }
     
     //* To be stored in database
     const generateNewUserID = async () => {
@@ -159,10 +167,11 @@ router.post('/newUserount',
         }
     };
 
-    const checkForm = verifyFormErrors(form)
+    const checkForm = await verifyFormErrors(form)
 
-    if (await checkForm !== null) {
-        req.flash('errorMsg', `${checkForm}`)
+    if (checkForm !== null) {
+        req.flash('errorMsg', `${checkForm}`) //! [object Object]
+        console.log(checkForm)
         return res.redirect('register')
     }
 
@@ -171,27 +180,30 @@ router.post('/newUserount',
         const newUser = new Users({
             ...req.body,
             userID: await generateNewUserID(),
-            position: 'Diretor de imobiliária',
+            nameSearch: normalizeName(form.name),
+            position: 3,
             createdAt: new Date(),
             updatedAt: new Date()
         });
 
-        // generating hash
+        //* generating hash
         bcrypt.genSalt(10, (err, salt) => {
             if (err) {
                 req.flash('errorMsg', `Erro 3004 - Houve um erro ao gerar SALT: ${err}`)
+                console.log(err)
                 return res.redirect('user/register')
             }
 
-            bcrypt.hash(newUser.password, salt, (err, hash) => {
+            bcrypt.hash(newUser.password, salt, async (err, hash) => {
                 if (err) {
                     req.flash(`errorMsg', 'Erro 3005 - Houve um erro ao gerar HASH: ${err}`)
+                    console.log(err)
                     return res.redirect('user/register');
                 };
 
                 newUser.password = hash;
 
-                newUser.save()
+                await newUser.save()
                 .then(async () => {
                     req.flash('successMsg', 'Usuário criado com sucesso!');
 
@@ -206,11 +218,12 @@ router.post('/newUserount',
 
                     await createRecord(recordInfo, req);
 
-                    return res.redirect('signin');
+                    return res.redirect('/signin');
                 })
                 .catch((err: Error) => {
                     req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
-                    return res.redirect('register');
+                    console.log(err)
+                    return res.redirect('user/register');
                 });
             });
         });

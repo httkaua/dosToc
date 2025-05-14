@@ -8,25 +8,14 @@
         <div class="card-body">
           <form method="POST" action="/admin/my-account/{{user.userID}}/update">
             <div class="mb-3">
-              <label for="firstName" class="form-label">Nome</label>
+              <label for="name" class="form-label">Nome</label>
               <input
                 type="text"
                 class="form-control"
-                id="firstName"
-                name="firstName"
+                id="name"
+                name="name"
                 placeholder="Seu nome"
-                value= "{{user.firstName}}"
-              />
-            </div>
-            <div class="mb-3">
-              <label for="lastName" class="form-label">Sobrenome</label>
-              <input
-                type="text"
-                class="form-control"
-                id="lastName"
-                name="lastName"
-                placeholder="Seu sobrenome"
-                value="{{user.lastName}}"
+                value= "{{user.name}}"
               />
             </div>
             <div class="mb-3">

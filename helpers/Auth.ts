@@ -5,10 +5,12 @@ import { Request, Response, NextFunction } from "express";
 import passport from "passport";
 import Users, { IUser } from "../models/UserSchema.js"
 
+//* Used in each admin route
 export function ensureAuthenticated(
   req: Request,
   res: Response,
-  next: NextFunction): asserts req is Request & { user: IUser } {
+  next: NextFunction
+  ): asserts req is Request & { user: IUser } {
   if (req.isAuthenticated()) {
     return next();
   }
@@ -16,6 +18,7 @@ export function ensureAuthenticated(
   res.redirect('/user/signin');
 }
 
+//* Some routes need a hierarchy enough level to acess
 export function ensureRole(allowedRoles: string[]): (req: Request, res: Response, next: NextFunction) => void {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.isAuthenticated()) {

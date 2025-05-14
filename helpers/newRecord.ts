@@ -4,8 +4,8 @@ import { Request } from "express"
 import Users from "../models/UserSchema.js"
 import Companies from "../models/CompanySchema.js"
 import Leads from "../models/LeadSchema.js"
-import Realstates from "../models/RealStateSchema.js"
-import Records, { IRecord } from "../models/RecordsSchema.js";
+import Realestates from "../models/RealEstateSchema.js"
+import Records, { IRecord } from "../models/RecordSchema.js";
 
 interface ILocalRecord extends ISendedRecord {
     affectedPropertie?: String,
@@ -59,7 +59,7 @@ const recordMessage = async (recordInfo: ILocalRecord) => {
         affectedDataText = pick ? `${pick.firstName} ${pick.lastName} | id: ${pick.userID}` : 'Dados desconhecidos';
 
     } else if (recordInfo.affectedType === "imóvel") {
-        const pick = await Realstates.findOne({ realStateID: recordInfo.affectedData });
+        const pick = await Realestates.findOne({ realStateID: recordInfo.affectedData });
         affectedDataText = pick ? `${pick.realStateID}` : 'Dados desconhecidos';
 
     } else if (recordInfo.affectedType === "empresa") {

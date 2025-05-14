@@ -1,19 +1,20 @@
-import {Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 const router = Router();
 import bcrypt from "bcrypt"
 import ExcelJS from "exceljs"
+import { Types } from "mongoose";
 
 import { ensureAuthenticated } from "../helpers/Auth.js"
 import { ensureRole } from "../helpers/Auth.js"
-import positionsI from "../helpers/positionsI.js"
+import positionNames from "../helpers/positionNames.js"
 import createRecord from "../helpers/newRecord.js"
 import uploadMedia from "../helpers/uploadMedia.js"
 import upload from "../helpers/Multer.js"
 
 import Companies from"../models/CompanySchema.js"
 import Users from "../models/UserSchema.js"
-import Records from "../models/RecordsSchema.js"
-import Realstates from "../models/RealStateSchema.js"
+import Records from "../models/RecordSchema.js"
+import Realstates from "../models/RealEstateSchema.js"
 import Leads from "../models/LeadSchema.js"
 import { ISendedRecord } from "../models/@types_ISendedRecord.js"
 
@@ -24,10 +25,10 @@ router.get('/',
 });
 
 
-// ROUTES TYPE: Records / Histórico
+//* ROUTES TYPE: Record
 router.get('/records',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
     async (req: Request, res: Response, next: NextFunction) => {
 
     // format date from ISO to DD/MM/YY - HH/MM/SS
@@ -43,30 +44,24 @@ router.get('/records',
     };
 
     try {
-
         const allRecords = await Records.find().lean().sort({ createdAt: -1 });
 
-        const formattedRecords = allRecords.map(record => ({
+        const recordsPOJO = allRecords.map(record => ({
             ...record,
-            createdAt: formatDate(record.createdAt),
-            created: record.action === 'criou', //booleans below
-            updated: record.action === 'atualizou',
-            deleted: record.action === 'excluiu',
-            hidded: record.action === 'excluiu*'
+            createdAt: formatDate(record.createdAt)
         }));
 
-        res.render('admin/records', { records: formattedRecords });
+        const recordsJSON = JSON.stringify(recordsPOJO)
+
+        res.render('admin/records', { records: recordsJSON });
 
     } catch (err) {
-
         req.flash('errorMsg', `Houve um erro ao encontrar os dados: ${err}`)
         res.status(500).send('Erro ao buscar os registros');
-
     }
 });
 
-
-// ROUTES TYPE: Account / Conta
+//* ROUTES TYPE: Account
 router.get('/my-account/:userID',
     ensureAuthenticated,
     async (req: Request, res: Response, next: NextFunction) => {
@@ -79,7 +74,9 @@ router.get('/my-account/:userID',
         return res.redirect('/admin')
     }
 
-    res.render('admin/my-account', { user: req.user?.toObject() });
+    const userJSON = JSON.stringify(req.user)
+
+    res.render('admin/my-account', { user: userJSON });
 });
 
 router.post('/my-account/:userID/update',
@@ -90,40 +87,38 @@ router.post('/my-account/:userID/update',
     try {
         const originalData = await Users.findOne({ userID: userID });
         if (!originalData) {
-          req.flash('errorMsg', 'Conta não encontrada.');
-          return res.redirect('/admin');
+          req.flash('errorMsg', 'Conta não encontrada.')
+          return res.redirect('/admin')
         }
-  
-        const updatedData = req.body;
-  
-        const { updatedAt, ...originalDataWithoutUpdatedAt } = originalData;
-  
-        const normalizeToString = (value: string) => {
-          if (value === undefined || value === null || value === '') return '';
-          if (Array.isArray(value)) return value.sort().join(',');
-          return value.toString();
-        };
-  
-        const changedFields: Record<string, any> = {};
-        const oldFields: Record<string, any> = {};
-        
-  
-        Object.keys(updatedData).forEach((key) => {
-          const updatedValue = updatedData[key];
-          const originalValue = originalDataWithoutUpdatedAt[key as keyof typeof originalDataWithoutUpdatedAt];
-  
-          if (updatedValue !== originalValue) {
-            changedFields[key] = updatedData[key];
-            oldFields[key] = originalDataWithoutUpdatedAt[key as keyof typeof originalDataWithoutUpdatedAt];
-          }
-        });
 
-        // If fields are changed (need save)
+        if (userID !== req.user?.userID) {
+          req.flash('errorMsg', 'O usuário não confere com a solicitação.')
+          return res.redirect('/admin')
+        }
+        
+        //* Old (updatedAt discarded for key review)
+        const { updatedAt, ...original } = originalData
+        const oldFields: Record<string, string | number | object> = {}
+
+        //* New
+        const formData = req.body
+        const changedFields: Record<string, string | number | object> = {}
+
+        const changeableFields: string[] = ['name', 'phone', 'email']
+
+        changeableFields.forEach((key) => {
+            if (formData[key] != original[key as keyof typeof original]) {
+
+            changedFields[key] = formData[key]
+            oldFields[key] = original[key as keyof typeof original]
+            }
+        })
+
         if (Object.keys(changedFields).length > 0) {
-            Object.assign(originalData, changedFields);
+            const dataToSave = Object.assign(originalData, changedFields);
             originalData.updatedAt = new Date();
             
-            await originalData.save()
+            await dataToSave.save()
             .then(async() => {
                 for (const key of Object.keys(changedFields)) {
                     
@@ -136,7 +131,7 @@ router.post('/my-account/:userID/update',
                         newData: changedFields[key] !== undefined ? `"${changedFields[key]}"` : "",
                         action: 'atualizou',
                         category: 'Usuários',
-                        company: req.user?.company
+                        company: '' //! CORRECT WITH COMPANY OBJECTID
                     }
 
                     await createRecord(recordInfo, req)
@@ -148,6 +143,7 @@ router.post('/my-account/:userID/update',
                 req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
             })
         }
+        
         else {
             req.flash('successMsg', 'Nenhum campo foi alterado.')
         }
@@ -162,10 +158,10 @@ router.post('/my-account/:userID/update',
 });
 
 
-// ROUTES TYPE: Company / Empresa
+//* ROUTES TYPE: Company
 router.get('/company',
     ensureAuthenticated,
-    ensureRole([0, 1, 2].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3].map(i => positionNames[i])),
     async (req: Request, res: Response, next: NextFunction) => {
 
     try {
@@ -182,10 +178,9 @@ router.get('/company',
 
 router.post('/newcompany',
     ensureAuthenticated,
-    ensureRole([0, 1, 2].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3].map(i => positionNames[i])),
     async (req: Request, res: Response, next: NextFunction) => {
 
-    // Generating new company ID
     const generateNewCompanyID = async () => {
         try {
 
@@ -319,7 +314,7 @@ router.post('/newcompany',
 // ROUTES TYPE: Team / Group / Equipe
 router.get('/team',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3].map(i => positionNames[i])),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const members = [];
@@ -353,7 +348,7 @@ router.get('/team',
 
 router.get('/team/new-member',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3].map(i => positionNames[i])),
     async (req: Request, res: Response, next: NextFunction) => {
 
         async function verifyOptions() {
@@ -388,7 +383,7 @@ router.get('/team/new-member',
 
 router.post('/team/new-member/create',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3].map(i => positionNames[i])),
     async (req: Request, res: Response, next: NextFunction) => {
 
         const newMemberErr = [];
@@ -562,7 +557,7 @@ router.post('/team/new-member/create',
 
 router.get('/team/:teamuserID/hidden',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
     async (req: Request, res: Response) => {
 
         try {
@@ -621,7 +616,7 @@ router.get('/team/:teamuserID/hidden',
 // ROUTES TYPE: Leads / Customers / Clientes
 router.get('/leads',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
     async (req: Request, res: Response, next: NextFunction) => {
 
     async function searchLeads() {
@@ -657,7 +652,7 @@ router.get('/leads',
 
 router.get('/leads/new-lead',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
     async (req: Request, res: Response, next: NextFunction) => {
         
     res.render('admin/leads/new-lead')
@@ -665,7 +660,7 @@ router.get('/leads/new-lead',
 
 router.post('/leads/new-lead/create',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
     async (req: Request, res: Response, next: NextFunction) => {
         
     // Generating new company ID
@@ -822,7 +817,7 @@ router.post('/leads/new-lead/create',
 
 router.get('/leads/:leadID',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const leadID = req.params.leadID;
@@ -846,7 +841,7 @@ router.get('/leads/:leadID',
 
 router.post('/leads/:leadID/update',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
     async (req: Request, res: Response) => {
       const leadID = parseInt(req.params.leadID, 10);
   
@@ -861,7 +856,7 @@ router.post('/leads/:leadID/update',
         const updatedData = req.body;
         const originalData = lead.toObject();
   
-        const { updatedAt, ...originalDataWithoutUpdatedAt } = originalData;
+        const { updatedAt, ...original } = originalData;
   
         const normalizeToString = (value: string | null | undefined) => {
           if (value === undefined || value === null || value === '') return '';
@@ -874,11 +869,11 @@ router.post('/leads/:leadID/update',
   
         Object.keys(updatedData).forEach((key) => {
           const updatedValue = normalizeToString(updatedData[key]);
-          const originalValue = normalizeToString(originalDataWithoutUpdatedAt[key as keyof typeof originalDataWithoutUpdatedAt]);
+          const originalValue = normalizeToString(original[key as keyof typeof original]);
   
           if (updatedValue !== originalValue) {
             changedFields[key] = updatedData[key];
-            oldFields[key] = originalDataWithoutUpdatedAt[key as keyof typeof originalDataWithoutUpdatedAt];
+            oldFields[key] = original[key as keyof typeof original];
           }
         });
   
@@ -923,7 +918,7 @@ router.post('/leads/:leadID/update',
 
 router.get('/leads/:leadID/hidden',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
     async (req: Request, res: Response) => {
 
         const leadID = req.params.leadID;
@@ -1048,7 +1043,7 @@ router.post('/leads/export-all',
 // ROUTES TYPE: Real States / Properties / Imóveis
 router.get('/real-states',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
     async (req: Request, res: Response, next: NextFunction) => {
 
         try {
@@ -1077,7 +1072,7 @@ router.get('/real-states',
 
 router.get('/real-states/new-real-state',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
     async (req: Request, res: Response, next: NextFunction) => {
         res.render('admin/realStates/new-real-state')
     }
@@ -1085,7 +1080,7 @@ router.get('/real-states/new-real-state',
 
 router.post('/real-states/new-real-state/create',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
     upload.single("uploaded_file"),
     async (req: Request, res: Response, next: NextFunction) => {
 
@@ -1207,7 +1202,7 @@ router.post('/real-states/new-real-state/create',
 
 router.get('/real-states/:realStateID',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const realStateID = req.params.realStateID;
@@ -1231,7 +1226,7 @@ router.get('/real-states/:realStateID',
 
 router.post('/real-states/:realStateID/update',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
     async (req: Request, res: Response) => {
       const realStateID = parseInt(req.params.realStateID, 10);
   
@@ -1246,7 +1241,7 @@ router.post('/real-states/:realStateID/update',
         const updatedData = req.body;
         const originalData = realS.toObject();
   
-        const { updatedAt, ...originalDataWithoutUpdatedAt } = originalData;
+        const { updatedAt, ...original } = originalData;
   
         const normalizeToString = (value: string | null | undefined) => {
           if (value === undefined || value === null || value === '') return '';
@@ -1260,11 +1255,11 @@ router.post('/real-states/:realStateID/update',
   
         Object.keys(updatedData).forEach((key) => {
           const updatedValue = normalizeToString(updatedData[key]);
-          const originalValue = normalizeToString(originalDataWithoutUpdatedAt[key as keyof typeof originalDataWithoutUpdatedAt]);
+          const originalValue = normalizeToString(original[key as keyof typeof original]);
   
           if (updatedValue !== originalValue) {
             changedFields[key] = updatedData[key];
-            oldFields[key] = originalDataWithoutUpdatedAt[key as keyof typeof originalDataWithoutUpdatedAt];
+            oldFields[key] = original[key as keyof typeof original];
           }
         });
   
@@ -1308,7 +1303,7 @@ router.post('/real-states/:realStateID/update',
 
 router.get('/real-states/:realStateID/hidden',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionsI[i])),
+    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
     async (req: Request, res: Response) => {
 
         const realStateID = req.params.realStateID;
