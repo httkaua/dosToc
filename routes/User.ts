@@ -41,7 +41,7 @@ router.post('/signin/authentication',
             }
 
             req.flash('successMsg', 'Seja bem-vindo!');
-            return res.redirect('/admin/company');
+            return res.redirect('/admin');
         });
     }
 

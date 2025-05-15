@@ -119,7 +119,8 @@ import Users, { IUser } from "./models/UserSchema.js"
                         return `(${ddd}) ${parte1}-${parte2}`;
                     }
                     return phone;
-                }
+                },
+                eq: (a: any, b: any) => a === b
             }
         }));
         app.set('view engine', 'handlebars');

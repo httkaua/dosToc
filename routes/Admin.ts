@@ -164,11 +164,13 @@ router.get('/company',
     async (req: Request, res: Response, next: NextFunction) => {
 
     try {
-        const userOwner = req.user?.userID;
+        const userOwner = req.user?._id;
 
-        const userCompany = await Companies.findOne({ owner: userOwner }).lean()
+        const userCompanies = await Companies.find({ "team.owner": userOwner }).lean()
+
+        console.log(userCompanies)
         
-        res.render('admin/company/companies', { company: userCompany })
+        res.render('admin/company/companies', { companies: userCompanies })
     } catch(err) {
         req.flash('errorMsg', `There was an error searching company: ${err}`)
         return res.redirect('./')
@@ -241,9 +243,12 @@ router.post('/company/new-company/create',
         return res.redirect('/admin/new-company')
     }
 
-    const newCp = new Companies({
+    const newCp: ICompany = new Companies({
         ...form,
         companyID: await generateNewCompanyID(),
+        team: {
+            owner: req.user?._id
+        },
         createdAt: new Date,
         updatedAt: new Date
     });
@@ -267,12 +272,12 @@ router.post('/company/new-company/create',
         } catch (err) {
             req.flash('errorMsg', `Erro ao criar registro em histórico: ${err}`);
         }
+        res.redirect('/admin/company');
     })
     .catch((err) => {
         req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
+        res.redirect('/admin/company');
     });
-
-    res.redirect('/admin/company');
 });
 
 router.get('/company/change-plan',
@@ -292,7 +297,15 @@ router.get('/company/change-plan',
     }
 });
 
-// ROUTES TYPE: Team / Group / Equipe
+//TODO: --- CONTINUE HERE
+router.get('/company/:companyID',
+    ensureAuthenticated,
+    ensureRole([0, 1, 2, 3]),
+    async (req: Request, res: Response, next: NextFunction) => {
+    
+});
+
+//* ROUTES TYPE: Team
 router.get('/team',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3]),
@@ -594,7 +607,7 @@ router.get('/team/:teamuserID/hidden',
 );
 
 
-// ROUTES TYPE: Leads / Customers / Clientes
+//* ROUTES TYPE: Leads
 router.get('/leads',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4]),
@@ -796,6 +809,80 @@ router.post('/leads/new-lead/create',
     }
 });
 
+router.post('/leads/export-all',
+    ensureAuthenticated,
+    async (req: Request, res: Response) => {
+    
+        try {
+            let leads = await Leads.find({ responsibleAgent: req.user?.userID })
+            .sort({ createdAt: -1 })
+            .lean()
+            .exec();
+            
+            if (leads.length < 1) {
+                req.flash(`errorMsg`, `Você não possui nenhum lead para exportar.`)
+                return res.redirect('./')
+            }
+
+            leads = leads.filter(lead => !lead.hidden)
+            leads = leads.map(lead => ({
+                ...lead,
+                createdAt: new Date(lead.createdAt),
+                updatedAt: new Date(lead.updatedAt)
+            }))
+
+            // creating a new worksheet
+            const workbook = new ExcelJS.Workbook()
+            const worksheet = workbook.addWorksheet()
+
+            worksheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+            worksheet.columns = [
+                {header: 'Nome', key: 'name'},
+                {header: 'Telefone', key: 'phone'},
+                {header: 'Email', key: 'email'},
+                {header: 'Documento / CPF', key: 'document'},
+                {header: 'Imóvel interessado', key: 'sourceCode'},
+                {header: 'Renda bruta familiar', key: 'familyIncome'},
+                {header: 'Status', key: 'status'},
+                {header: 'Data de cadastro', key: 'createdAt', style: { numFmt: 'dd/mm/yyyy' } },
+                {header: 'Última atualização', key: 'updatedAt', style: { numFmt: 'dd/mm/yyyy' } },
+                {header: 'Observações', key: 'observations'}
+            ]          
+
+            worksheet.addRows(leads);
+
+            // Table header xlsx
+            worksheet.getRow(1).eachCell((cell) => {
+                cell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FF1F4E78' }
+                };
+                cell.font = {
+                    color: { argb: 'FFFFFFFF' },
+                    bold: true
+                };
+            });
+
+            res.setHeader(
+                'Content-Type',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            );
+            res.setHeader(
+                'Content-Disposition',
+                'attachment; filename=Leads_ativos.xlsx'
+            );
+
+            await workbook.xlsx.write(res);
+            res.end();
+
+        } catch (err) {
+            req.flash('errorMsg',`Houve um erro interno: ${err}`)
+            return res.redirect('./')
+        }
+})
+
 router.get('/leads/:leadID',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4]),
@@ -946,82 +1033,8 @@ router.get('/leads/:leadID/hidden',
     }
 );
 
-router.post('/leads/export-all',
-    ensureAuthenticated,
-    async (req: Request, res: Response) => {
-    
-        try {
-            let leads = await Leads.find({ responsibleAgent: req.user?.userID })
-            .sort({ createdAt: -1 })
-            .lean()
-            .exec();
-            
-            if (leads.length < 1) {
-                req.flash(`errorMsg`, `Você não possui nenhum lead para exportar.`)
-                return res.redirect('./')
-            }
 
-            leads = leads.filter(lead => !lead.hidden)
-            leads = leads.map(lead => ({
-                ...lead,
-                createdAt: new Date(lead.createdAt),
-                updatedAt: new Date(lead.updatedAt)
-            }))
-
-            // creating a new worksheet
-            const workbook = new ExcelJS.Workbook()
-            const worksheet = workbook.addWorksheet()
-
-            worksheet.views = [{ state: 'frozen', ySplit: 1 }];
-
-            worksheet.columns = [
-                {header: 'Nome', key: 'name'},
-                {header: 'Telefone', key: 'phone'},
-                {header: 'Email', key: 'email'},
-                {header: 'Documento / CPF', key: 'document'},
-                {header: 'Imóvel interessado', key: 'sourceCode'},
-                {header: 'Renda bruta familiar', key: 'familyIncome'},
-                {header: 'Status', key: 'status'},
-                {header: 'Data de cadastro', key: 'createdAt', style: { numFmt: 'dd/mm/yyyy' } },
-                {header: 'Última atualização', key: 'updatedAt', style: { numFmt: 'dd/mm/yyyy' } },
-                {header: 'Observações', key: 'observations'}
-            ]          
-
-            worksheet.addRows(leads);
-
-            // Table header xlsx
-            worksheet.getRow(1).eachCell((cell) => {
-                cell.fill = {
-                    type: 'pattern',
-                    pattern: 'solid',
-                    fgColor: { argb: 'FF1F4E78' }
-                };
-                cell.font = {
-                    color: { argb: 'FFFFFFFF' },
-                    bold: true
-                };
-            });
-
-            res.setHeader(
-                'Content-Type',
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            );
-            res.setHeader(
-                'Content-Disposition',
-                'attachment; filename=Leads_ativos.xlsx'
-            );
-
-            await workbook.xlsx.write(res);
-            res.end();
-
-        } catch (err) {
-            req.flash('errorMsg',`Houve um erro interno: ${err}`)
-            return res.redirect('./')
-        }
-})
-
-
-// ROUTES TYPE: Real States / Properties / Imóveis
+//* ROUTES TYPE: Real Etates
 router.get('/real-states',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4]),

@@ -103,19 +103,25 @@ const companySchema = new Schema<ICompany>({
     team: {
         owner: {
             type: Schema.Types.ObjectId,
-            ref: 'users'
+            ref: 'users',
+            immutable: true,
+            select: false,
+            required: true
         },
         supervisors: {
-            type: Schema.Types.ObjectId,
-            ref: 'users'
+            type: [Schema.Types.ObjectId],
+            ref: 'users',
+            default: []
         },
         agents: {
-            type: Schema.Types.ObjectId,
-            ref: 'users'
+            type: [Schema.Types.ObjectId],
+            ref: 'users',
+            default: []
         },
         assistants: {
-            type: Schema.Types.ObjectId,
-            ref: 'users'
+            type: [Schema.Types.ObjectId],
+            ref: 'users',
+            default: []
         }
     },
 
