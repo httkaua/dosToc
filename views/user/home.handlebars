@@ -1,23 +1,9 @@
-<h4>Sistema para imobiliárias</h4>
-{{#if user}}
-    <div class="card mt-4" style="width: 18rem;">
-        <div class="card-body">
-            <h5 class="card-title">{{user.firstName}} {{user.lastName}}</h5>
-            <small>ID de usuário: {{user.userID}}<br></small>
-            <a href="/admin" class="card-link">Acessar home</a>
-        </div>
+<div class="card mt-4" style="width: 18rem;">
+    <div class="card-body">
+        <h5 class="card-title">Fazer login</h5>
+        <h6 class="card-subtitle mb-2 text-muted">Ou criar uma nova conta</h6>
+        <p class="card-text">Curiosidade: O sistema dosToc é feito usando apenas Javascript como linguagem de programação.</p>
+        <a href="/user/signin" class="card-link">Login</a>
+        <a href="/user/register" class="card-link">Criar conta</a>
     </div>
-
-{{else}}
-    <!-- FR, this else can't be reached -->
-    <div class="card mt-4" style="width: 18rem;">
-        <div class="card-body">
-            <h5 class="card-title">Fazer login</h5>
-            <h6 class="card-subtitle mb-2 text-muted">Ou criar uma nova conta</h6>
-            <p class="card-text">Curiosidade: O sistema dosToc é feito usando apenas Javascript como linguagem de programação.</p>
-            <a href="/user/signin" class="card-link">Login</a>
-            <a href="/user/register" class="card-link">Criar conta</a>
-        </div>
-    </div>
-
-{{/if}}
+</div>

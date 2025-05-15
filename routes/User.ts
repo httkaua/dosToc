@@ -23,52 +23,46 @@ router.get('/signin',
 });
 
 router.post('/signin/authentication',
-    async (req: Request, res: Response, next: NextFunction) => {
+    (req: Request, res: Response, next: NextFunction) => {
 
-    //* Handler errors if authentication failed.
-    async function noAuth(
-        err: Error| null,
-        user?: Express.User) {
-    
-        if (err) {
-            req.flash('errorMsg', 'Erro 3006 - Houve um erro durante a autenticação.');
-            return true
-        }
-        if (!user) {
-            req.flash('errorMsg', '1010 - Credenciais inválidas.');
-            return true
-        }
+    console.log(`${req.body.email} | ${req.body.password}`)
 
-        return false
+    function getAuthErrorMessage(err: Error | null, user?: Express.User): string | null {
+        if (err) return 'Erro 3006 - Houve um erro durante a autenticação.';
+        if (!user) return '1010 - Credenciais inválidas.';
+        return null;
     }
 
-        passport.authenticate('local',
-            async (err: Error | null, user: Express.User, info: { message?: string }) => {
-            try {
-                const hasError = await noAuth(err, user)
-                if (hasError) {
-                    console.error(`${info.message}`)
-                    return res.redirect('user/signin/')
-                }
-                
-                req.logIn(user,
-                    (errLog) => {
-                    if (errLog) {
-                        req.flash('errorMsg', '3007 - Ocorreu um erro durante o LogIn.')
-                        return res.redirect('user/signin/')
-                    }
-
-                    req.flash('successMsg', 'Seja bem-vindo!')
-                    return res.redirect('/admin')
-                })
-
-            } catch (err) {
-                console.error(err)
-                return res.redirect('user/signin/')
+    //* Login process
+    function loginUser(req: Request, res: Response, user: Express.User): void {
+        req.logIn(user, (errLog) => {
+            if (errLog) {
+                console.error('Erro no req.logIn:', errLog);
+                req.flash('errorMsg', '3007 - Ocorreu um erro durante o LogIn.');
+                return res.redirect('/user/signin/');
             }
-        })
-        (req, res, next);
-});
+
+            req.flash('successMsg', 'Seja bem-vindo!');
+            return res.redirect('/admin');
+        });
+    }
+
+        passport.authenticate(
+            'local',
+            (err: Error | null, user: Express.User, info: { message?: string }) => {
+                const errorMsg = getAuthErrorMessage(err, user);
+
+                if (errorMsg) {
+                    console.warn('Falha na autenticação:', info?.message || errorMsg);
+                    req.flash('errorMsg', errorMsg);
+                    return res.redirect('/user/signin/');
+                }
+
+                loginUser(req, res, user);
+            }
+        )(req, res, next);
+    }
+);
 
 router.get('/register',
     async (req: Request, res: Response, next: NextFunction) => {
@@ -78,32 +72,32 @@ router.get('/register',
 router.post('/newaccount',
     async (req: Request, res: Response, next: NextFunction) => {
 
-    const formErrors: object[] = [];
+    const formErrors: string[] = [];
 
     const form: IUser = req.body
 
-    async function verifyFormErrors (form: IUser) {
+    async function verifyFormErrors (form: IUser): Promise<string | null> {
 
         if (form.password !== form.passwordConfirm) {
-            formErrors.push({text: `A senha é diferente da confirmação de senha.`})
+            formErrors.push(`A senha é diferente da confirmação de senha.`)
         }
 
         if(Object.entries(form)
             .some(([key, value]) => value == undefined || null || '')) {
-            formErrors.push({text: 'Erro 1004 - Preencha todos os campos para prosseguir.'});
+            formErrors.push('Erro 1004 - Preencha todos os campos para prosseguir.');
         }
 
         if (form.password.length < 8) {
-            formErrors.push({text: 'Erro 1007 - Senha muito curta. Crie uma senha de ao menos 8 caracteres.'});
+            formErrors.push('Erro 1007 - Senha muito curta. Crie uma senha de ao menos 8 caracteres.');
         }
 
         // Weak passwords
         if (await strongPassword(form.password) == false) {
-            formErrors.push({text: 'Erro 1008 - Senha muito fraca. É necessário ao menos um número e um caractere especial (exemplos: &, %, $, #, @)'})
+            formErrors.push('Erro 1008 - Senha muito fraca. É necessário ao menos um número e um caractere especial (exemplos: &, %, $, #, @)')
         }
 
         if (await freeEmail(form.email) == false) {
-            formErrors.push({text: 'Erro 1009 - Este e-mail já está sendo usado.'})
+            formErrors.push('Erro 1009 - Este e-mail já está sendo usado.')
         }
 
             // If it got some error
@@ -170,7 +164,7 @@ router.post('/newaccount',
     const checkForm = await verifyFormErrors(form)
 
     if (checkForm !== null) {
-        req.flash('errorMsg', `${checkForm}`) //! [object Object]
+        req.flash('errorMsg', `${checkForm}`)
         console.log(checkForm)
         return res.redirect('register')
     }
@@ -191,16 +185,18 @@ router.post('/newaccount',
             if (err) {
                 req.flash('errorMsg', `Erro 3004 - Houve um erro ao gerar SALT: ${err}`)
                 console.log(err)
-                return res.redirect('user/register')
+                return res.redirect('/user/register')
             }
 
             bcrypt.hash(newUser.password, salt, async (err, hash) => {
                 if (err) {
                     req.flash(`errorMsg', 'Erro 3005 - Houve um erro ao gerar HASH: ${err}`)
                     console.log(err)
-                    return res.redirect('user/register');
+                    return res.redirect('/user/register');
                 };
 
+                console.log(newUser.password)
+                console.log(hash)
                 newUser.password = hash;
 
                 await newUser.save()
@@ -218,12 +214,12 @@ router.post('/newaccount',
 
                     await createRecord(recordInfo, req);
 
-                    return res.redirect('/signin');
+                    return res.redirect('/user/signin');
                 })
                 .catch((err: Error) => {
                     req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
                     console.log(err)
-                    return res.redirect('user/register');
+                    return res.redirect('/user/register');
                 });
             });
         });

@@ -1,8 +1,6 @@
 import { Strategy as LocalStrategy } from "passport-local";
-import mongoose, { Document, Schema } from "mongoose"
 import bcrypt from "bcryptjs";
 import { Request, Response, NextFunction } from "express";
-import passport from "passport";
 import Users, { IUser } from "../models/UserSchema.js"
 
 //* Used in each admin route
@@ -39,15 +37,17 @@ export function ensureRole(allowedRoles: string[]): (req: Request, res: Response
 
 export default function (passport: typeof import("passport")): void {
   passport.use(new LocalStrategy({
-    usernameField: 'signUserEmail',
-    passwordField: 'signUserPassword'
+    usernameField: 'email',
+    passwordField: 'password'
   }, (email: string, password: string, done) => {
-    Users.findOne({ email }).then(user => {
+    Users.findOne({ email }).select('+password').then(user => {
+      console.log(user)
       if (!user) {
         return done(null, false, { message: 'Esta conta não existe!' });
       }
 
       bcrypt.compare(password, user.password, (err, ok) => {
+      console.log(`${password} | ${user.password}`)
         if (ok) {
           return done(null, user);
         } else {
