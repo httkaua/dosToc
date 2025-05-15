@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema, Types } from "mongoose"
 
 //* TS INTERFACES
-interface IOwner extends Document {
+export interface IOwner extends Document {
     ownerID: string;
     name: string;
     phoneNumber: string;
@@ -10,7 +10,7 @@ interface IOwner extends Document {
     updatedAt: Date;
   }
   
-interface IRealstate extends Document {
+export interface IRealEstate extends Document {
 realStateID: number;
 classification?:
 'Casa' |
@@ -145,7 +145,7 @@ const ownerSchema = new Schema<IOwner>({
     }
 });
 
-const RealStateSchema = new Schema<IRealstate>({
+const RealStateSchema = new Schema<IRealEstate>({
     realStateID: {
         type: Number,
         immutable: true,
@@ -391,5 +391,5 @@ const RealStateSchema = new Schema<IRealstate>({
     }
 });
 
-const Realstates = mongoose.model<IRealstate>("realestates", RealStateSchema);
-export default Realstates
+const RealEstates = mongoose.model<IRealEstate>("realestates", RealStateSchema);
+export default RealEstates

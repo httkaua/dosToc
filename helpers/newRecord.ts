@@ -1,26 +1,14 @@
-import mongoose, { Document, Schema } from "mongoose"
-import { Request } from "express"
+//* --- R E C O R D   I N F O ---
+//*
+//* Below, copy the object model to use
+//* Paste this in all the pages if some data are changed (paste inside the .save().then())
 
-import Users from "../models/UserSchema.js"
-import Companies from "../models/CompanySchema.js"
-import Leads from "../models/LeadSchema.js"
-import Realestates from "../models/RealEstateSchema.js"
-import Records, { IRecord } from "../models/RecordSchema.js";
+//* THE KEYS: oldData, newData and affectedPropertie are necessary only in updates.
+//* Delete that if the record are not a update.
 
-interface ILocalRecord extends ISendedRecord {
-    affectedPropertie?: String,
-    oldData?: String,
-    newData?: String
-}
-
-import { ISendedRecord } from "../models/@types_ISendedRecord.js"
-
-// RECORDINFO Model for each record to save. Paste this in all the pages if some data are changed (paste inside the .save().then())
-
-// oldData, newData and affectedPropertie keys are necessary only in updates. Delete that if the record are not a update.
-
+//  */ --- C O P Y   B E L O W ---
 /*
-const recordInfo = {
+ const recordInfo: ISendedRecord = {
     userWhoChanged: req.user.userID,
     affectedType: '',
     affectedData: req.user.userID,
@@ -33,7 +21,21 @@ const recordInfo = {
 }
 */
 
-// generate new recordID
+import { Request } from "express"
+
+import Users from "../models/UserSchema.js"
+import Companies from "../models/CompanySchema.js"
+import Leads from "../models/LeadSchema.js"
+import Realestates from "../models/RealEstateSchema.js"
+import Records from "../models/RecordSchema.js";
+import { ISendedRecord } from "../models/@types_ISendedRecord.js"
+
+interface ILocalRecord extends ISendedRecord {
+    affectedPropertie?: String,
+    oldData?: String,
+    newData?: String
+}
+
 const generateNewRecordID = async () => {
     try {
         const latestRecord = await Records.findOne().sort({ recordID: -1 }).exec();
@@ -44,19 +46,40 @@ const generateNewRecordID = async () => {
     }
 };
 
-// Generate custom message
+async function hasSendedErrors (recordInfo: ILocalRecord) {
+    const checkError = Object.entries(recordInfo)
+    .some(value => value == undefined || null)
+
+    //* Log errors
+    checkError == true
+    ? Object.entries(recordInfo)
+    .forEach((value) => {
+        if (value == undefined || null) console.log(value)
+    })
+    : null
+
+    return checkError
+}
+
+//* Generate custom message for better understanding
 const recordMessage = async (recordInfo: ILocalRecord) => {
+
+    const check = await hasSendedErrors(recordInfo)
+    if (check == true) {
+        console.error(`There was an error because user sended errors to record`)
+        return
+    }
 
     const pickCreator = await Users.findOne({ userID: recordInfo.userWhoChanged });
 
-    const creatorName = pickCreator ? `${pickCreator.firstName} ${pickCreator.lastName}` : 'Usuário desconhecido';
+    const creatorName = pickCreator ? `${pickCreator.name}` : 'Usuário desconhecido';
 
     let affectedDataText = '';
 
     // creating customs affectedDataText
     if (recordInfo.affectedType === "usuário") {
         const pick = await Users.findOne({ userID: recordInfo.affectedData });
-        affectedDataText = pick ? `${pick.firstName} ${pick.lastName} | id: ${pick.userID}` : 'Dados desconhecidos';
+        affectedDataText = pick ? `${pick.name} | id: ${pick.userID}` : 'Dados desconhecidos';
 
     } else if (recordInfo.affectedType === "imóvel") {
         const pick = await Realestates.findOne({ realStateID: recordInfo.affectedData });
@@ -87,7 +110,6 @@ const recordMessage = async (recordInfo: ILocalRecord) => {
     }
 };
 
-// create and save the record
 export default async (recordInfo: ILocalRecord, req: Request) => {
     try {
         const newRecord = {...recordInfo,

@@ -25,8 +25,6 @@ router.get('/signin',
 router.post('/signin/authentication',
     (req: Request, res: Response, next: NextFunction) => {
 
-    console.log(`${req.body.email} | ${req.body.password}`)
-
     function getAuthErrorMessage(err: Error | null, user?: Express.User): string | null {
         if (err) return 'Erro 3006 - Houve um erro durante a autenticação.';
         if (!user) return '1010 - Credenciais inválidas.';
@@ -43,7 +41,7 @@ router.post('/signin/authentication',
             }
 
             req.flash('successMsg', 'Seja bem-vindo!');
-            return res.redirect('/admin');
+            return res.redirect('/admin/company');
         });
     }
 
@@ -169,63 +167,58 @@ router.post('/newaccount',
         return res.redirect('register')
     }
 
-    else {
+    const newUser = new Users({
+        ...req.body,
+        userID: await generateNewUserID(),
+        nameSearch: normalizeName(form.name),
+        position: 3,
+        createdAt: new Date(),
+        updatedAt: new Date()
+    });
 
-        const newUser = new Users({
-            ...req.body,
-            userID: await generateNewUserID(),
-            nameSearch: normalizeName(form.name),
-            position: 3,
-            createdAt: new Date(),
-            updatedAt: new Date()
-        });
+    //* generating hash
+    bcrypt.genSalt(10, (err, salt) => {
+        if (err) {
+            req.flash('errorMsg', `Erro 3004 - Houve um erro ao gerar SALT: ${err}`)
+            console.log(err)
+            return res.redirect('/user/register')
+        }
 
-        //* generating hash
-        bcrypt.genSalt(10, (err, salt) => {
+        bcrypt.hash(newUser.password, salt, async (err, hash) => {
             if (err) {
-                req.flash('errorMsg', `Erro 3004 - Houve um erro ao gerar SALT: ${err}`)
+                req.flash(`errorMsg', 'Erro 3005 - Houve um erro ao gerar HASH: ${err}`)
                 console.log(err)
-                return res.redirect('/user/register')
-            }
+                return res.redirect('/user/register');
+            };
 
-            bcrypt.hash(newUser.password, salt, async (err, hash) => {
-                if (err) {
-                    req.flash(`errorMsg', 'Erro 3005 - Houve um erro ao gerar HASH: ${err}`)
-                    console.log(err)
-                    return res.redirect('/user/register');
-                };
+            console.log(newUser.password)
+            console.log(hash)
+            newUser.password = hash;
 
-                console.log(newUser.password)
-                console.log(hash)
-                newUser.password = hash;
+            await newUser.save()
+            .then(async () => {
+                req.flash('successMsg', 'Usuário criado com sucesso!');
 
-                await newUser.save()
-                .then(async () => {
-                    req.flash('successMsg', 'Usuário criado com sucesso!');
+                // Adding to records
+                const recordInfo: ISendedRecord = {
+                    userWhoChanged: newUser.userID.toString(),
+                    affectedType: 'usuário',
+                    affectedData: newUser.userID.toString(),
+                    action: 'criou',
+                    category: 'Usuários'
+                }
 
-                    // Adding to records
-                    const recordInfo: ISendedRecord = {
-                        userWhoChanged: newUser.userID.toString(),
-                        affectedType: 'usuário',
-                        affectedData: newUser.userID.toString(),
-                        action: 'criou',
-                        category: 'Usuários'
-                    }
+                await createRecord(recordInfo, req);
 
-                    await createRecord(recordInfo, req);
-
-                    return res.redirect('/user/signin');
-                })
-                .catch((err: Error) => {
-                    req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
-                    console.log(err)
-                    return res.redirect('/user/register');
-                });
+                return res.redirect('/user/signin');
+            })
+            .catch((err: Error) => {
+                req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
+                console.log(err)
+                return res.redirect('/user/register');
             });
         });
-        
-    }
-
+    });
 });
 
 router.get('/forgot-password', async (req: Request, res: Response, next: NextFunction) => {

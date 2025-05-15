@@ -19,8 +19,10 @@ export interface IUser extends Document {
     document?: string;
     phone: string;
     enabled: boolean;
-  }
-  
+}
+
+
+
 //* MONGOOSE SCHEMA
 const userSchema = new Schema<IUser>({
     userID: {

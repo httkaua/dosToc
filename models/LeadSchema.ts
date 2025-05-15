@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
 
-interface ILeads extends Document {
+export interface ILeads extends Document {
   leadID: number;
   name: string;
   nameSearch: string;

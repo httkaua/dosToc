@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema, Types } from "mongoose"
 
-interface ICompany extends Document {
+export interface ICompany extends Document {
     companyID: number;
     name: string;
     document: string;

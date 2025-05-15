@@ -11,24 +11,28 @@ import createRecord from "../helpers/newRecord.js"
 import uploadMedia from "../helpers/uploadMedia.js"
 import upload from "../helpers/Multer.js"
 
-import Companies from"../models/CompanySchema.js"
-import Users from "../models/UserSchema.js"
-import Records from "../models/RecordSchema.js"
-import Realstates from "../models/RealEstateSchema.js"
+import Companies, { ICompany } from"../models/CompanySchema.js"
+import Users, { IUser } from "../models/UserSchema.js"
+import Records, { IRecord } from "../models/RecordSchema.js"
+import RealEstates, { IRealEstate } from "../models/RealEstateSchema.js"
 import Leads from "../models/LeadSchema.js"
 import { ISendedRecord } from "../models/@types_ISendedRecord.js"
 
 router.get('/',
     ensureAuthenticated,
     async (req: Request, res: Response, next: NextFunction) => {
-    res.render('admin/home', {user: req.user?.toObject()});
-});
 
+        const userWithPosition = {
+            ...req.user?.toObject(),
+            positionName: positionNames[req.user?.position ?? 0]
+        }
+        res.render('admin/home', {user: userWithPosition});
+});
 
 //* ROUTES TYPE: Record
 router.get('/records',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response, next: NextFunction) => {
 
     // format date from ISO to DD/MM/YY - HH/MM/SS
@@ -51,9 +55,7 @@ router.get('/records',
             createdAt: formatDate(record.createdAt)
         }));
 
-        const recordsJSON = JSON.stringify(recordsPOJO)
-
-        res.render('admin/records', { records: recordsJSON });
+        res.render('admin/records', { records: recordsPOJO });
 
     } catch (err) {
         req.flash('errorMsg', `Houve um erro ao encontrar os dados: ${err}`)
@@ -74,9 +76,7 @@ router.get('/my-account/:userID',
         return res.redirect('/admin')
     }
 
-    const userJSON = JSON.stringify(req.user)
-
-    res.render('admin/my-account', { user: userJSON });
+    res.render('admin/my-account', { user: req.user?.toObject() });
 });
 
 router.post('/my-account/:userID/update',
@@ -157,11 +157,10 @@ router.post('/my-account/:userID/update',
 
 });
 
-
 //* ROUTES TYPE: Company
 router.get('/company',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3]),
     async (req: Request, res: Response, next: NextFunction) => {
 
     try {
@@ -169,18 +168,26 @@ router.get('/company',
 
         const userCompany = await Companies.findOne({ owner: userOwner }).lean()
         
-        res.render('admin/company', { company: userCompany })
+        res.render('admin/company/companies', { company: userCompany })
     } catch(err) {
         req.flash('errorMsg', `There was an error searching company: ${err}`)
         return res.redirect('./')
     }
 });
 
-router.post('/newcompany',
+router.get('/company/new-company',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3]),
     async (req: Request, res: Response, next: NextFunction) => {
 
+    res.render('admin/company/new-company')
+});
+
+router.post('/company/new-company/create',
+    ensureAuthenticated,
+    ensureRole([0, 1, 2, 3]),
+    async (req: Request, res: Response, next: NextFunction) => {
+    
     const generateNewCompanyID = async () => {
         try {
 
@@ -196,125 +203,99 @@ router.post('/newcompany',
         }
     };
 
-    // Validations below
+    const form: ICompany = req.body
+    const formErrors: string[] = [];
 
-    const newCpErrors = [];
-
-    const fields = {
-        cpName: req.body.claimantCpName,
-        cpDocument: req.body.claimantCpDocument,
-        phone: req.body.claimantPhone,
-        email: req.body.claimantCpEmail,
-        location: req.body.claimantCpLocation,
-        street: req.body.claimantCpStreet,
-        stNumber: req.body.claimantCpStreetNumber,
-        nhood: req.body.claimantCpNeighborhood,
-        city: req.body.claimantCpCity,
-        state: req.body.claimantCpState,
-        country: req.body.claimantCpCountry,
-    };
-    
-    const errors = {
-        undefined: Object.entries(fields).some(([key, value]) => value == undefined),
-        null: Object.entries(fields).some(([key, value]) => value == null),
-        empty: Object.entries(fields).some(([key, value]) => !value),
-    };
-    
-    if (errors.undefined) {
-        newCpErrors.push({ text: 'Erro 1004 - Campos indefinidos. Preencha todos os campos corretamente.' });
-    }
-    
-    if (errors.null) {
-        newCpErrors.push({ text: 'Erro 1005 - Campos nulos. Preencha todos os campos corretamente.' });
-    }
-    
-    if (errors.empty) {
-        newCpErrors.push({ text: 'Erro 1006 - Campos vazios. Preencha todos os campos corretamente.' });
-    }
-    
-
-    // If it got some error
-    if (newCpErrors.length > 0) {
-        const errorMessages = newCpErrors.map(error => error.text);
-        req.flash('errorMsg', errorMessages[0]); // passar um erro por vez
-        res.redirect('company');
-        return;
-    }
-
-    // Any error in the HTML Form
-    else {
-
-        // Email already used.
-        if (await Companies.findOne({ email: fields.email })) {
-
-            req.flash('errorMsg', 'Erro 1009 - Este e-mail já está sendo usado.')
-            return res.redirect('company')
+    async function verifyFormErrors (form: ICompany) {
+        if(Object.entries(form)
+            .some(([key, value]) => value == undefined || null || '')) {
+            formErrors.push('Erro 1004 - Preencha todos os campos para prosseguir.');
         }
 
-        // Allright, creating account in the database
-
-        else {
-
-            const newCp = new Companies({
-                companyID: await generateNewCompanyID(),
-                name: fields.cpName,
-                document: fields.cpDocument,
-                phone: fields.phone,
-                email: fields.email,
-                owner: req.user?.userID,
-                supervisors: [],
-                agents: [],
-                Realstates: [],
-                locationCode: fields.location,
-                street: fields.street,
-                streetNumber: fields.stNumber,
-                neighborhood: fields.nhood,
-                city: fields.city,
-                state: fields.state,
-                country: fields.country,
-                plan: null,
-                createdAt: new Date,
-                updatedAt: new Date
-            });
-
-            newCp.save()
-            .then(async () => {
-
-                // Adding to records
-                try {
-                    const recordInfo: ISendedRecord = {
-                        userWhoChanged: String(newCp.owner),
-                        affectedType: "empresa",
-                        affectedData: String(newCp.companyID),
-                        action: "criou",
-                        category: "Empresas",
-                        company: String(newCp.companyID)
-                    }
-
-                    await createRecord(recordInfo, req);
-
-                } catch (err) {
-                    req.flash('errorMsg', `Erro ao criar registro em histórico: ${err}`);
-                }
-
-                return res.redirect('company');
-            })
-            .catch((err) => {
-                req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
-                return res.redirect('company');
-            });
-
+        if (await freeCompanyEmail(form.email) == false) {
+            formErrors.push('Erro 1009 - Este e-mail já está sendo usado.')
         }
-        
+
+            // If it got some error
+            if (formErrors.length) {
+                return formErrors[0]
+            }
+            else {
+                return null
+            }
     }
 
+    async function freeCompanyEmail (email: string) {
+        try {
+            const user = await Users.findOne({ email })
+            return !user
+        } catch (err) {
+            console.error(`There was an error parsing email: ${err}`);
+            return false
+        }
+    }
+
+    const checkForm = await verifyFormErrors(form)
+    if (checkForm !== null) {
+        req.flash('errorMsg', `${checkForm}`)
+        return res.redirect('/admin/new-company')
+    }
+
+    const newCp = new Companies({
+        ...form,
+        companyID: await generateNewCompanyID(),
+        createdAt: new Date,
+        updatedAt: new Date
+    });
+
+    newCp.save()
+    .then(async () => {
+
+        // Adding to records
+        try {
+            const recordInfo: ISendedRecord = {
+                userWhoChanged: String(req.user?.userID),
+                affectedType: "empresa",
+                affectedData: String(newCp.companyID),
+                action: "criou",
+                category: "Empresas",
+                company: String(newCp.companyID)
+            }
+
+            await createRecord(recordInfo, req);
+
+        } catch (err) {
+            req.flash('errorMsg', `Erro ao criar registro em histórico: ${err}`);
+        }
+    })
+    .catch((err) => {
+        req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
+    });
+
+    res.redirect('/admin/company');
 });
 
+router.get('/company/change-plan',
+    ensureAuthenticated,
+    ensureRole([0, 1, 2, 3]),
+    async (req: Request, res: Response, next: NextFunction) => {
+
+    try {
+        const userOwner = req.user?.userID;
+
+        const userCompany = await Companies.findOne({ owner: userOwner }).lean()
+        
+        res.render('admin/company/plans', { company: userCompany })
+    } catch(err) {
+        req.flash('errorMsg', `There was an error searching company: ${err}`)
+        return res.redirect('./')
+    }
+});
 
 // ROUTES TYPE: Team / Group / Equipe
 router.get('/team',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3]),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const members = [];
@@ -348,7 +329,7 @@ router.get('/team',
 
 router.get('/team/new-member',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3]),
     async (req: Request, res: Response, next: NextFunction) => {
 
         async function verifyOptions() {
@@ -383,7 +364,7 @@ router.get('/team/new-member',
 
 router.post('/team/new-member/create',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3]),
     async (req: Request, res: Response, next: NextFunction) => {
 
         const newMemberErr = [];
@@ -557,7 +538,7 @@ router.post('/team/new-member/create',
 
 router.get('/team/:teamuserID/hidden',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response) => {
 
         try {
@@ -616,7 +597,7 @@ router.get('/team/:teamuserID/hidden',
 // ROUTES TYPE: Leads / Customers / Clientes
 router.get('/leads',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response, next: NextFunction) => {
 
     async function searchLeads() {
@@ -652,7 +633,7 @@ router.get('/leads',
 
 router.get('/leads/new-lead',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response, next: NextFunction) => {
         
     res.render('admin/leads/new-lead')
@@ -660,7 +641,7 @@ router.get('/leads/new-lead',
 
 router.post('/leads/new-lead/create',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response, next: NextFunction) => {
         
     // Generating new company ID
@@ -817,7 +798,7 @@ router.post('/leads/new-lead/create',
 
 router.get('/leads/:leadID',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const leadID = req.params.leadID;
@@ -841,7 +822,7 @@ router.get('/leads/:leadID',
 
 router.post('/leads/:leadID/update',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response) => {
       const leadID = parseInt(req.params.leadID, 10);
   
@@ -918,7 +899,7 @@ router.post('/leads/:leadID/update',
 
 router.get('/leads/:leadID/hidden',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response) => {
 
         const leadID = req.params.leadID;
@@ -1043,13 +1024,13 @@ router.post('/leads/export-all',
 // ROUTES TYPE: Real States / Properties / Imóveis
 router.get('/real-states',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response, next: NextFunction) => {
 
         try {
             const userCompany = req.user?.company;
-            const realStates = await Realstates.find({ company: userCompany }).lean().exec();
-            const visibleRealStates = realStates.filter(realstate => !realstate.hidden);
+            const RealEstates = await RealEstates.find({ company: userCompany }).lean().exec();
+            const visibleRealStates = RealEstates.filter(realstate => !realstate.hidden);
             
             const formattedRealStates = visibleRealStates.map(realstate => ({
                 src: realstate.src?.[0],
@@ -1061,7 +1042,7 @@ router.get('/real-states',
                 saleValue: realstate.saleValue
             }));
 
-            res.render('admin/realStates/real-states', { property: formattedRealStates });
+            res.render('admin/RealEstates/real-states', { property: formattedRealStates });
 
         } catch (err) {
             console.error(`Houve um erro ao buscar os dados: ${err}`);
@@ -1072,22 +1053,22 @@ router.get('/real-states',
 
 router.get('/real-states/new-real-state',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response, next: NextFunction) => {
-        res.render('admin/realStates/new-real-state')
+        res.render('admin/RealEstates/new-real-state')
     }
 );
 
 router.post('/real-states/new-real-state/create',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3, 4]),
     upload.single("uploaded_file"),
     async (req: Request, res: Response, next: NextFunction) => {
 
         const generateNewRealStateID = async () => {
             try {
     
-            const latestRealState = await Realstates.findOne().sort({ realStateID: -1 }).exec();
+            const latestRealState = await RealEstates.findOne().sort({ realStateID: -1 }).exec();
             const newID = latestRealState && latestRealState.realStateID 
                 ? latestRealState.realStateID + 1 
                 : 60000;
@@ -1102,7 +1083,7 @@ router.post('/real-states/new-real-state/create',
         const generateNewOwnerID = async () => {
             try {
     
-            const latestOwner = await Realstates.findOne().lean().sort({ "owner.ownerID": -1 }).exec();
+            const latestOwner = await RealEstates.findOne().lean().sort({ "owner.ownerID": -1 }).exec();
             if (!latestOwner) {
                 req.flash('errorMsg', 'Erro 4400 - vazio inesperado')
                 return res.redirect('./')
@@ -1151,7 +1132,7 @@ router.post('/real-states/new-real-state/create',
         };
 
         const { name, phoneNumber, email, ...fieldsWithoutOwner } = fields;
-        const newRealState: any = new Realstates(fieldsWithoutOwner);
+        const newRealState: any = new RealEstates(fieldsWithoutOwner);
         newRealState.src = [];
 
         try {
@@ -1202,19 +1183,19 @@ router.post('/real-states/new-real-state/create',
 
 router.get('/real-states/:realStateID',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const realStateID = req.params.realStateID;
 
-            const realS = await Realstates.findOne({ realStateID: realStateID }).lean();
+            const realS = await RealEstates.findOne({ realStateID: realStateID }).lean();
 
             if (!realS) {
                 req.flash('errorMsg', `Imóvel não encontrado em sua base.`);
-                return res.redirect('admin/realStates');
+                return res.redirect('admin/RealEstates');
             }
 
-            res.render('admin/realStates/real-state-info', { realS });
+            res.render('admin/RealEstates/real-state-info', { realS });
 
         } catch (err) {
             req.flash('errorMsg', `Houve um erro interno no servidor ao buscar o lead: ${err}`);
@@ -1226,12 +1207,12 @@ router.get('/real-states/:realStateID',
 
 router.post('/real-states/:realStateID/update',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response) => {
       const realStateID = parseInt(req.params.realStateID, 10);
   
       try {
-        const realS = await Realstates.findOne({ realStateID: realStateID });
+        const realS = await RealEstates.findOne({ realStateID: realStateID });
   
         if (!realS) {
           req.flash('errorMsg', 'Lead não encontrado.');
@@ -1303,13 +1284,13 @@ router.post('/real-states/:realStateID/update',
 
 router.get('/real-states/:realStateID/hidden',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4].map(i => positionNames[i])),
+    ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response) => {
 
         const realStateID = req.params.realStateID;
 
         try {
-            const dataToHidden = await Realstates.findOne({ realStateID: realStateID });
+            const dataToHidden = await RealEstates.findOne({ realStateID: realStateID });
             if (!dataToHidden) {
                 req.flash('errorMsg', 'Erro 4400 - vazio inesperado')
                 return res.redirect('./')

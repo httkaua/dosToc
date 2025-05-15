@@ -5,7 +5,7 @@ TODO: This collection saves the internal ID, not the ObjectID (recommended),
 TODO: then, we can improve that, storing the ObjectID instead or in new fields.
 */
 
-interface IRecord extends Document {
+export interface IRecord extends Document {
     recordID: number,
     userWhoChanged: String,
     affectedType:
@@ -85,5 +85,4 @@ const recordSchema = new Schema({
 });
 
 const Records = mongoose.model<IRecord>('records', recordSchema)
-export { Records, IRecord };
 export default Records

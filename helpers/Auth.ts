@@ -17,14 +17,14 @@ export function ensureAuthenticated(
 }
 
 //* Some routes need a hierarchy enough level to acess
-export function ensureRole(allowedRoles: string[]): (req: Request, res: Response, next: NextFunction) => void {
+export function ensureRole(allowedRoles: number[]): (req: Request, res: Response, next: NextFunction) => void {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.isAuthenticated()) {
       req.flash('errorMsg', 'Você precisa estar logado para acessar esta página.');
       return res.redirect('/user/login');
     }
 
-    const userRoles = req.user?.position ? [req.user.position.toString()] : [];
+    const userRoles = req.user?.position ? [req.user.position] : [];
 
     if (userRoles.some(role => allowedRoles.includes(role))) {
       return next();
@@ -41,13 +41,11 @@ export default function (passport: typeof import("passport")): void {
     passwordField: 'password'
   }, (email: string, password: string, done) => {
     Users.findOne({ email }).select('+password').then(user => {
-      console.log(user)
       if (!user) {
         return done(null, false, { message: 'Esta conta não existe!' });
       }
 
       bcrypt.compare(password, user.password, (err, ok) => {
-      console.log(`${password} | ${user.password}`)
         if (ok) {
           return done(null, user);
         } else {

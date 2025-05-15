@@ -1,0 +1,83 @@
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold">Seu Plano Atual</h1>
+        <p class="lead">
+        Você está atualmente no plano 
+        <span class="badge bg-primary text-uppercase">{{planoAtual}}</span>
+        </p>
+    </div>
+
+    <div class="row g-4">
+        <!-- Free -->
+        <div class="col-md-4">
+        <div class="card h-100 border-secondary">
+            <div class="card-body text-center">
+            <h5 class="card-title text-uppercase fw-bold">Free</h5>
+            <p class="card-text">Ideal para iniciantes. Acesso limitado aos recursos básicos do sistema, com anúncios e suporte via FAQ.</p>
+            <ul class="list-unstyled my-3">
+                <li>✔️ Acesso básico</li>
+                <li>✔️ Suporte FAQ</li>
+                <li>❌ Sem backup automático</li>
+                <li>❌ Sem personalização</li>
+            </ul>
+            {{#ifCond planoAtual '!=' 'free'}}
+                <form action="/trocar-plano" method="POST">
+                <input type="hidden" name="plano" value="free">
+                <button class="btn btn-outline-primary w-100">Mudar para Free</button>
+                </form>
+            {{else}}
+                <span class="badge bg-success">Plano atual</span>
+            {{/ifCond}}
+            </div>
+        </div>
+        </div>
+
+        <!-- Standard -->
+        <div class="col-md-4">
+        <div class="card h-100 border-primary">
+            <div class="card-body text-center">
+            <h5 class="card-title text-uppercase fw-bold">Standard</h5>
+            <p class="card-text">Para usuários que buscam mais recursos e desempenho sem abrir mão da simplicidade.</p>
+            <ul class="list-unstyled my-3">
+                <li>✔️ Acesso completo</li>
+                <li>✔️ Backup automático</li>
+                <li>✔️ Suporte por e-mail</li>
+                <li>❌ Personalização avançada</li>
+            </ul>
+            {{#ifCond planoAtual '!=' 'standard'}}
+                <form action="/trocar-plano" method="POST">
+                <input type="hidden" name="plano" value="standard">
+                <button class="btn btn-outline-primary w-100">Mudar para Standard</button>
+                </form>
+            {{else}}
+                <span class="badge bg-success">Plano atual</span>
+            {{/ifCond}}
+            </div>
+        </div>
+        </div>
+
+        <!-- Full -->
+        <div class="col-md-4">
+        <div class="card h-100 border-warning">
+            <div class="card-body text-center">
+            <h5 class="card-title text-uppercase fw-bold">Full</h5>
+            <p class="card-text">Plano completo para profissionais. Liberdade total para personalizar, com suporte premium.</p>
+            <ul class="list-unstyled my-3">
+                <li>✔️ Todos os recursos</li>
+                <li>✔️ Backup diário</li>
+                <li>✔️ Suporte 24/7</li>
+                <li>✔️ Painel personalizável</li>
+            </ul>
+            {{#ifCond planoAtual '!=' 'full'}}
+                <form action="/trocar-plano" method="POST">
+                <input type="hidden" name="plano" value="full">
+                <button class="btn btn-outline-warning w-100">Mudar para Full</button>
+                </form>
+            {{else}}
+                <span class="badge bg-success">Plano atual</span>
+            {{/ifCond}}
+            </div>
+        </div>
+        </div>
+    </div>
+</div>
