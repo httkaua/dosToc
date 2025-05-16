@@ -128,7 +128,10 @@ import Users, { IUser } from "./models/UserSchema.js"
                         result[args[i]] = args[i + 1];
                     }
                     return result;
-                }
+                },
+                isChecked: (value: any) => {
+                    return value === true || value === 'true' ? 'checked' : '';
+                },
             }
         }));
         app.set('view engine', 'handlebars');

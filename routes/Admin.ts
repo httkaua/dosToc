@@ -308,7 +308,6 @@ router.post('/company/new-company/create',
     });
 });
 
-//TODO: --- IMPLEMENT CEP API HERE ---
 router.get('/company/details/:companyID',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3]),
@@ -352,7 +351,6 @@ router.get('/company/details/:companyID/change-plan',
         }
 
         const currentPlan = company.plan
-        console.log(company)
         
         res.render('admin/company/plans', { 
             currentPlan,
@@ -365,7 +363,88 @@ router.get('/company/details/:companyID/change-plan',
     }
 });
 
+router.post('/company/details/:companyID/update',
+    ensureAuthenticated,
+    ensureRole([0, 1, 2, 3]),
+    async (req: Request, res: Response, next: NextFunction) => {
 
+    const paramID = req.params?.companyID
+    const form = req.body
+    const userClaimant = req.user?._id as unknown as Types.ObjectId
+
+    try {
+        const originalData = await Companies.findOne({ companyID: paramID });
+
+        if (!originalData) {
+        req.flash('errorMsg', 'Empresa não encontrada.')
+        return res.redirect('/admin/company')
+        }
+
+        //TODO --- CONTINUE HERE --- COMPARISION ERROR
+        if (userClaimant !== originalData.team.owner) {
+            req.flash('errorMsg', 'O usuário não confere com a solicitação.')
+            return res.redirect('/admin/company')
+        }
+        
+        //* Old (updatedAt discarded for key review)
+        const { updatedAt, ...original } = originalData
+        const oldFields: Record<string, string | number | object> = {}
+
+        //* New
+        const formData = req.body
+        const changedFields: Record<string, string | number | object> = {}
+
+        Object.keys(formData).forEach((key) => {
+            if (formData[key] != original[key as keyof typeof original]) {
+
+            changedFields[key] = formData[key]
+            oldFields[key] = original[key as keyof typeof original]
+            }
+        })
+
+        if (Object.keys(changedFields).length > 0) {
+            const dataToSave = Object.assign(originalData, changedFields);
+            originalData.updatedAt = new Date();
+            
+            await dataToSave.save()
+            .then(async() => {
+                for (const key of Object.keys(changedFields)) {
+                    
+                    const recordInfo: ISendedRecord = {
+                        userWhoChanged: String(req.user?.userID),
+                        affectedType: 'empresa',
+                        affectedData: String(dataToSave.companyID),
+                        affectedPropertie: key,
+                        oldData: oldFields[key] !== undefined ? `"${oldFields[key]}"` : "",
+                        newData: changedFields[key] !== undefined ? `"${changedFields[key]}"` : "",
+                        action: 'atualizou',
+                        category: 'Empresas',
+                        company: '' //! OBJECTID HERE
+                    }
+
+                    await createRecord(recordInfo, req)
+                }
+
+                req.flash('successMsg', `Dados da conta atualizados com sucesso!`)
+            })
+            .catch((err) => {
+                req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
+            })
+        }
+        
+        else {
+            req.flash('successMsg', 'Nenhum campo foi alterado.')
+        }
+
+        res.redirect('/admin');
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Erro no servidor.');
+    }
+})
+
+//* Specifically in the plans page
 router.post('/company/details/:companyID/change-plan/update',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3]),
