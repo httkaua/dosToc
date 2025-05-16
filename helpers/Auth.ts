@@ -1,14 +1,14 @@
 import { Strategy as LocalStrategy } from "passport-local";
-import mongoose, { Document, Schema } from "mongoose"
 import bcrypt from "bcryptjs";
 import { Request, Response, NextFunction } from "express";
-import passport from "passport";
 import Users, { IUser } from "../models/UserSchema.js"
 
+//* Used in each admin route
 export function ensureAuthenticated(
   req: Request,
   res: Response,
-  next: NextFunction): asserts req is Request & { user: IUser } {
+  next: NextFunction
+  ): asserts req is Request & { user: IUser } {
   if (req.isAuthenticated()) {
     return next();
   }
@@ -16,14 +16,15 @@ export function ensureAuthenticated(
   res.redirect('/user/signin');
 }
 
-export function ensureRole(allowedRoles: string[]): (req: Request, res: Response, next: NextFunction) => void {
+//* Some routes need a hierarchy enough level to acess
+export function ensureRole(allowedRoles: number[]): (req: Request, res: Response, next: NextFunction) => void {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.isAuthenticated()) {
       req.flash('errorMsg', 'Você precisa estar logado para acessar esta página.');
       return res.redirect('/user/login');
     }
 
-    const userRoles = req.user?.position ? [req.user.position.toString()] : [];
+    const userRoles = req.user?.position ? [req.user.position] : [];
 
     if (userRoles.some(role => allowedRoles.includes(role))) {
       return next();
@@ -36,10 +37,10 @@ export function ensureRole(allowedRoles: string[]): (req: Request, res: Response
 
 export default function (passport: typeof import("passport")): void {
   passport.use(new LocalStrategy({
-    usernameField: 'signUserEmail',
-    passwordField: 'signUserPassword'
+    usernameField: 'email',
+    passwordField: 'password'
   }, (email: string, password: string, done) => {
-    Users.findOne({ email }).then(user => {
+    Users.findOne({ email }).select('+password').then(user => {
       if (!user) {
         return done(null, false, { message: 'Esta conta não existe!' });
       }
