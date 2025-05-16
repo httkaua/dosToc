@@ -1,11 +1,12 @@
-import mongoose, { Document, Schema, Types } from "mongoose"
+import mongoose, { Document, ObjectId, Schema, Types } from "mongoose"
 
 //* TS INTERFACE
 export interface IUser extends Document {
+    _id: ObjectId
     userID: number
     name: string
     nameSearch: string
-    company?: Types.ObjectId[]
+    companies?: Types.ObjectId[]
     email: string
     password: string
     passwordConfirm?: string //* Used in form validation
@@ -45,7 +46,7 @@ const userSchema = new Schema<IUser>({
         maxlength: 50,
         match: /^[A-Z\s]+$/
     },
-    company: [{ //* An user can belong to (or have) one or more companies
+    companies: [{ //* An user can belong to (or have) one or more companies
         type: Schema.Types.ObjectId,
         ref: 'companies'
     }],

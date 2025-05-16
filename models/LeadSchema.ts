@@ -1,57 +1,58 @@
-import mongoose, { Document, Schema, Types } from "mongoose";
+import mongoose, { Document, ObjectId, Schema, Types } from "mongoose";
 
 export interface ILeads extends Document {
-  leadID: number;
-  name: string;
-  nameSearch: string;
-  phone?: string;
-  document?: string;
-  email?: string;
-  sourceCode?: string;
-  tags?: string[];
-  interests: {
+    _id: ObjectId
+    leadID: number;
+    name: string;
+    nameSearch: string;
+    phone?: string;
+    document?: string;
+    email?: string;
+    sourceCode?: string;
+    tags?: string[];
+    interests: {
     realEstateIT: Types.ObjectId[],
     typeIT: string[],
     cityIT: string[]
-  };
-  financial: {
-  familyIncome?: number;
-  inputValue?: number;
-  pMaxValue?: number;
-  pMaxMonthlyPortion?: number;
-  sourceOfIncome?:
-  'Desconhecido' |
-  'Emprego em CLT' |
-  'Autônomo' |
-  'Funcionário público' |
-  'Pró-Labore' |
-  'Previdência/Aposentadoria' |
-  'Misto' |
-  'Outros';
-  };
+    };
+    financial: {
+    familyIncome?: number;
+    inputValue?: number;
+    pMaxValue?: number;
+    pMaxMonthlyPortion?: number;
+    sourceOfIncome?:
+    'Desconhecido' |
+    'Emprego em CLT' |
+    'Autônomo' |
+    'Funcionário público' |
+    'Pró-Labore' |
+    'Previdência/Aposentadoria' |
+    'Misto' |
+    'Outros';
+    };
 
-  status?:
-  'Primeiro contato' |
-  'Em conversa' |
-  'Visita marcada' |
-  'Com restrição' |
-  'Cliente futuro' |
-  'Encerrado';
+    status?:
+    'Primeiro contato' |
+    'Em conversa' |
+    'Visita marcada' |
+    'Com restrição' |
+    'Cliente futuro' |
+    'Encerrado';
 
-  sourceOfLead?:
-  'Facebook' |
-  'Instagram' |
-  'Internet' |
-  'Visita à loja' |
-  'Indicação' |
-  'Outros';
+    sourceOfLead?:
+    'Facebook' |
+    'Instagram' |
+    'Internet' |
+    'Visita à loja' |
+    'Indicação' |
+    'Outros';
 
-  observations?: string;
-  company?: Types.ObjectId;
-  responsibleAgent?: Types.ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
-  enabled: boolean;
+    observations?: string;
+    company?: Types.ObjectId;
+    responsibleAgent?: Types.ObjectId;
+    createdAt: Date;
+    updatedAt: Date;
+    enabled: boolean;
 }
 
 const leadSchema = new Schema<ILeads>({

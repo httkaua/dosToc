@@ -2,10 +2,11 @@ import { Router, Request, Response, NextFunction } from "express";
 const router = Router();
 import bcrypt from "bcrypt"
 import ExcelJS from "exceljs"
-import { Types } from "mongoose";
+import { ObjectId, Schema, Types } from "mongoose";
 
 import { ensureAuthenticated } from "../helpers/Auth.js"
 import { ensureRole } from "../helpers/Auth.js"
+import ensureUserAndCompany from "../helpers/ensureUserAndCompany.js" //TODO
 import positionNames from "../helpers/positionNames.js"
 import createRecord from "../helpers/newRecord.js"
 import uploadMedia from "../helpers/uploadMedia.js"
@@ -167,8 +168,6 @@ router.get('/company',
         const userOwner = req.user?._id;
 
         const userCompanies = await Companies.find({ "team.owner": userOwner }).lean()
-
-        console.log(userCompanies)
         
         res.render('admin/company/companies', { companies: userCompanies })
     } catch(err) {
@@ -237,13 +236,35 @@ router.post('/company/new-company/create',
         }
     }
 
+    async function saveUserCompanies (company_id: Types.ObjectId, user_id: Types.ObjectId) {
+
+        const user = await Users.findById(user_id)
+        const company = await Companies.findById(company_id)
+
+        if(!company) {
+            req.flash('errorMsg', 'Não foi possível salvar a empresa')
+            return
+        }
+
+        user?.companies?.push(company._id as unknown as Types.ObjectId)
+
+        user?.save()
+        .then()
+        .catch((err) => {
+            req.flash('errorMsg', `Não foi possível salvar os dados do usuário: ${err}`)
+            return
+        })
+
+    }
+
     const checkForm = await verifyFormErrors(form)
+
     if (checkForm !== null) {
         req.flash('errorMsg', `${checkForm}`)
         return res.redirect('/admin/new-company')
     }
 
-    const newCp: ICompany = new Companies({
+    const newCompany: ICompany = new Companies({
         ...form,
         companyID: await generateNewCompanyID(),
         team: {
@@ -253,25 +274,32 @@ router.post('/company/new-company/create',
         updatedAt: new Date
     });
 
-    newCp.save()
+    newCompany.save()
     .then(async () => {
 
-        // Adding to records
-        try {
-            const recordInfo: ISendedRecord = {
-                userWhoChanged: String(req.user?.userID),
-                affectedType: "empresa",
-                affectedData: String(newCp.companyID),
-                action: "criou",
-                category: "Empresas",
-                company: String(newCp.companyID)
-            }
-
-            await createRecord(recordInfo, req);
-
-        } catch (err) {
-            req.flash('errorMsg', `Erro ao criar registro em histórico: ${err}`);
+        //* Updating user document
+        if (!req.user?._id) {
+            req.flash('errorMsg', `Erro 2005 - Usuário não identificado`)
+            return res.redirect('/admin/company')
         }
+
+        await saveUserCompanies(
+        newCompany?._id as unknown as Types.ObjectId,
+        req.user?._id as unknown as Types.ObjectId)
+
+
+        //* Adding to records
+        const recordInfo: ISendedRecord = {
+            userWhoChanged: String(req.user?.userID),
+            affectedType: "empresa",
+            affectedData: String(newCompany.companyID),
+            action: "criou",
+            category: "Empresas",
+            company: String(newCompany.companyID)
+        }
+
+        await createRecord(recordInfo, req);
+
         res.redirect('/admin/company');
     })
     .catch((err) => {
@@ -280,30 +308,134 @@ router.post('/company/new-company/create',
     });
 });
 
-router.get('/company/change-plan',
+//TODO: --- IMPLEMENT CEP API HERE ---
+router.get('/company/details/:companyID',
+    ensureAuthenticated,
+    ensureRole([0, 1, 2, 3]),
+    async (req: Request, res: Response, next: NextFunction) => {
+        
+        try {
+            const paramID = Number(req.params.companyID)
+            const companiesID = req.user?.companies
+
+            const companiesInfo = await Companies.find({ _id: { $in: companiesID } }).lean()
+
+            const companies = companiesInfo.map((company) => ({
+                ...company
+            }));
+
+            const selectedCompany = companies.find(c => c.companyID === paramID);
+
+            res.render('admin/company/companies', {
+                companies,
+                selectedCompany
+            } )
+        } catch (err) {
+
+            req.flash('errorMsg', `There was an error searching company: ${err}`)
+            return res.redirect('/admin/company')
+        }
+});
+
+router.get('/company/details/:companyID/change-plan',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3]),
     async (req: Request, res: Response, next: NextFunction) => {
 
     try {
-        const userOwner = req.user?.userID;
+        const paramID = Number(req.params.companyID)
 
-        const userCompany = await Companies.findOne({ owner: userOwner }).lean()
+        const company = await Companies.findOne({ companyID: paramID }).lean()
+
+        if (!company) {
+            return req.flash('errorMsg', 'Empresa não encontrada!')
+        }
+
+        const currentPlan = company.plan
+        console.log(company)
         
-        res.render('admin/company/plans', { company: userCompany })
+        res.render('admin/company/plans', { 
+            currentPlan,
+            company
+         })
+
     } catch(err) {
         req.flash('errorMsg', `There was an error searching company: ${err}`)
-        return res.redirect('./')
+        return res.redirect('/admin/company')
     }
 });
 
-//TODO: --- CONTINUE HERE
-router.get('/company/:companyID',
+
+router.post('/company/details/:companyID/change-plan/update',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3]),
     async (req: Request, res: Response, next: NextFunction) => {
-    
-});
+
+        type PlanType = NonNullable<ICompany['plan']>
+
+        const companyID = req.params.companyID
+        const query = req.query?.plan?.toString()
+
+        function isPlanType(value: unknown): value is PlanType {
+            return (
+                value === 'free' ||
+                value === 'single' ||
+                value === 'business'
+            );
+        }
+
+        if (!query || !isPlanType(query)) {
+            req.flash('errorMsg', 'Esse plano não existe!')
+            return res.redirect('/admin/company')
+        }
+
+        try {
+            const company = await Companies.findOne({ companyID: companyID })
+
+            if (!company) {
+                req.flash('errorMsg', 'Empresa não encontrada!')
+                return res.redirect('/admin/company')
+            }
+
+            const oldPlan = company.plan
+
+            company.plan = query
+            company.updatedAt = new Date
+            await company.save()
+            .then(async () => {
+
+                if (!req.user?.userID) {
+                    req.flash('errorMsg', 'Usuário não encontrado!')
+                    return
+                }
+                
+                 const recordInfo: ISendedRecord = {
+                    userWhoChanged: req.user?.userID.toString(),
+                    affectedType: 'empresa',
+                    affectedData: company.companyID.toString(),
+                    affectedPropertie: 'plan',
+                    oldData: oldPlan,
+                    newData: query,
+                    action: 'atualizou',
+                    category: 'Empresas',
+                    company: company.companyID.toString()
+                }
+
+                await createRecord(recordInfo, req);
+
+                return res.redirect(`/admin/company/details/${companyID}`);
+            })
+            .catch((err) => {
+                req.flash('errorMsg', `Erro ao salvar o plano: ${err}`)
+                return res.redirect('/admin/company')
+            })
+
+        } catch (err) {
+            req.flash('errorMsg', `Erro interno: ${err}`)
+            return res.redirect('/admin/company')
+        }
+})
+
 
 //* ROUTES TYPE: Team
 router.get('/team',

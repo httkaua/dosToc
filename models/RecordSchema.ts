@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema, Types } from "mongoose"
+import mongoose, { Document, ObjectId, Schema, Types } from "mongoose"
 
 /*
 TODO: This collection saves the internal ID, not the ObjectID (recommended),
@@ -6,6 +6,7 @@ TODO: then, we can improve that, storing the ObjectID instead or in new fields.
 */
 
 export interface IRecord extends Document {
+    _id: ObjectId
     recordID: number,
     userWhoChanged: String,
     affectedType:

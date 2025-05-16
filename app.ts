@@ -120,7 +120,15 @@ import Users, { IUser } from "./models/UserSchema.js"
                     }
                     return phone;
                 },
-                eq: (a: any, b: any) => a === b
+                eq: (a: any, b: any) => a === b,
+                array: (...args: any[]) => args.slice(0, -1),
+                object: (...args: any[]) => {
+                    const result: Record<string, any> = {};
+                    for (let i = 0; i < args.length - 1; i += 2) {
+                        result[args[i]] = args[i + 1];
+                    }
+                    return result;
+                }
             }
         }));
         app.set('view engine', 'handlebars');
@@ -153,12 +161,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 //* HTTP error handling
-/*
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     const errStatus = err.status || 500;
     res.status(errStatus).render('errorHTTP', { error: errStatus });
+    console.log(err)
 });
-*/
+
 
 //* Listen
 try {

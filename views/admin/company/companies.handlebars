@@ -2,39 +2,211 @@
   <h2 class="text-center mb-4"><i class="bi bi-building"></i> Gerenciar Empresa</h2>
 
   <!-- Company Selection -->
-  <div class="mb-4">
-    <label class="form-label">Selecionar Empresa</label>
-    <div class="d-flex overflow-auto gap-3 pb-2" style="white-space: nowrap;">
-          {{#each companies}}
-          <div class="company-card card shadow-sm border-primary {{#if (eq ../companies.selected this._id)}}border-3 border-success{{/if}} " style="min-width: 220px; cursor: pointer;"
-          data-company-id="{{this.companyID}}"
-          >
-            <div class="card-body text-center">
-              <i class="bi bi-building text-primary" style="font-size: 2rem;"></i>
-              <h5 class="card-title mt-2">{{this.name}}</h5>
-              <p class="card-text small text-muted">{{this.document}}</p>
-            </div>
-          </div>
-          {{/each}}
-
-          <!-- New company -->
-          <div class="new-company-card card shadow-sm border-dashed border-secondary" style="min-width: 220px; cursor: pointer;">
-            <div class="card-body d-flex flex-column justify-content-center align-items-center">
-              <i class="bi bi-plus-circle text-success" style="font-size: 2rem;"></i>
-              <h6 class="mt-2">Criar nova empresa</h6>
-            </div>
-          </div>
+<div class="mb-4">
+  <label class="form-label">Selecionar Empresa</label>
+  <div class="d-flex overflow-auto gap-3 pb-2" style="white-space: nowrap;">
+    {{#each companies}}
+      <div
+        class="company-card card shadow-sm 
+        {{#if (eq ../selectedCompany._id this._id)}}
+          border-danger border-3 selected-card
+        {{else}}
+          border-primary
+        {{/if}}"
+        style="min-width: 220px; cursor: pointer;"
+        data-company-id="{{this.companyID}}">
+        <div class="card-body text-center">
+          <i class="bi bi-building {{#if (eq ../selectedCompany._id this._id)}}text-danger{{else}}text-primary{{/if}}" style="font-size: 2rem;"></i>
+          <h5 class="card-title mt-2">{{this.name}}</h5>
+          <p class="card-text small text-muted">{{this.document}}</p>
         </div>
+      </div>
+    {{/each}}
+
+    <!-- New company card -->
+    <div class="new-company-card card shadow-sm border-dashed border-secondary" style="min-width: 220px; cursor: pointer;">
+      <div class="card-body d-flex flex-column justify-content-center align-items-center">
+        <i class="bi bi-plus-circle text-success" style="font-size: 2rem;"></i>
+        <h6 class="mt-2">Criar nova empresa</h6>
+      </div>
+    </div>
   </div>
+</div>
 
 
 
 
-  <!-- View / edit current company -->
-  <!--
 
-  -->
-  
+
+  <!-- View/edit company details (only if a company is selected) -->
+  {{#if selectedCompany}}
+  <form method="POST" action="/admin/my-company/{{selectedCompany.companyID}}/update">
+
+    <!-- Informações Gerais -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-primary text-white">
+        <i class="bi bi-info-circle"></i> Informações Gerais
+      </div>
+      <div class="card-body row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Nome</label>
+          <input type="text" class="form-control" name="name" value="{{selectedCompany.name}}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">CNPJ</label>
+          <input type="text" class="form-control" name="document" value="{{selectedCompany.document}}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Telefone</label>
+          <input type="tel" class="form-control" name="phone" value="{{selectedCompany.phone}}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" name="email" value="{{selectedCompany.email}}">
+        </div>
+      </div>
+    </div>
+
+    <!-- Endereço -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-secondary text-white">
+        <i class="bi bi-geo-alt-fill"></i> Endereço
+      </div>
+      <div class="card-body row g-3">
+        <div class="col-md-4">
+          <label class="form-label">CEP</label>
+          <input type="text" class="form-control" id="locationCode" name="address.locationCode" value="{{selectedCompany.address.locationCode}}">
+        </div>
+        <div class="col-md-8">
+          <label class="form-label">Rua</label>
+          <input type="text" class="form-control" name="address.street" value="{{selectedCompany.address.street}}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Número</label>
+          <input type="number" class="form-control" name="address.streetNumber" value="{{selectedCompany.address.streetNumber}}">
+        </div>
+        <div class="col-md-5">
+          <label class="form-label">Bairro</label>
+          <input type="text" class="form-control" name="address.neighborhood" value="{{selectedCompany.address.neighborhood}}">
+        </div>
+        <div class="col-md-5">
+          <label class="form-label">Cidade</label>
+          <input type="text" class="form-control" name="address.city" value="{{selectedCompany.address.city}}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Estado</label>
+          <input type="text" class="form-control" name="address.state" value="{{selectedCompany.address.state}}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">País</label>
+          <input type="text" class="form-control" name="address.country" value="{{selectedCompany.address.country}}">
+        </div>
+      </div>
+    </div>
+
+    <!-- Plano e Controle -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-info text-white">
+        <i class="bi bi-star-fill"></i> Plano e Controle
+      </div>
+      <div class="card-body">
+        <p><strong>Plano atual:</strong> {{selectedCompany.plan}}</p>
+        <a href="/admin/company/details/{{selectedCompany.companyID}}/change-plan" class="btn btn-outline-primary"><i class="bi bi-arrow-repeat"></i> Trocar de plano</a>
+        <p class="text-muted mt-2">Cada plano oferece recursos diferentes.</p>
+      </div>
+    </div>
+
+    <!-- Permissões da Equipe -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-warning text-dark">
+        <i class="bi bi-person-gear"></i> Permissões de Equipe
+      </div>
+      <div class="card-body row g-3">
+        <h6>Supervisores</h6>
+        <div class="form-check col-md-6">
+          <input class="form-check-input" type="checkbox" value="true" name="settings.TeamPermissions.SupervisorPermissions.deleteUser" {{#if selectedCompany.settings.TeamPermissions.SupervisorPermissions.deleteUser}}checked{{/if}}>
+          <label class="form-check-label">Pode remover usuários</label>
+        </div>
+        <div class="form-check col-md-6">
+          <input class="form-check-input" type="checkbox" value="true" name="settings.TeamPermissions.SupervisorPermissions.changeQueueOrder" {{#if selectedCompany.settings.TeamPermissions.SupervisorPermissions.changeQueueOrder}}checked{{/if}}>
+          <label class="form-check-label">Pode mudar ordem da fila</label>
+        </div>
+
+        <h6 class="mt-3">Agentes</h6>
+        <div class="form-check col-md-6">
+          <input class="form-check-input" type="checkbox" value="true" name="settings.TeamPermissions.AgentPermissions.createRealEstate" {{#if selectedCompany.settings.TeamPermissions.AgentPermissions.createRealEstate}}checked{{/if}}>
+          <label class="form-check-label">Pode criar imóveis</label>
+        </div>
+        <div class="form-check col-md-6">
+          <input class="form-check-input" type="checkbox" value="true" name="settings.TeamPermissions.AgentPermissions.deleteRealEstate" {{#if selectedCompany.settings.TeamPermissions.AgentPermissions.deleteRealEstate}}checked{{/if}}>
+          <label class="form-check-label">Pode excluir imóveis</label>
+        </div>
+
+        <h6 class="mt-3">Assistentes</h6>
+        <div class="form-check col-md-6">
+          <input class="form-check-input" type="checkbox" value="true" name="settings.TeamPermissions.AssistantPermissions.createRealEstate" {{#if selectedCompany.settings.TeamPermissions.AssistantPermissions.createRealEstate}}checked{{/if}}>
+          <label class="form-check-label">Pode criar imóveis</label>
+        </div>
+        <div class="form-check col-md-6">
+          <input class="form-check-input" type="checkbox" value="true" name="settings.TeamPermissions.AssistantPermissions.deleteRealEstate" {{#if selectedCompany.settings.TeamPermissions.AssistantPermissions.deleteRealEstate}}checked{{/if}}>
+          <label class="form-check-label">Pode excluir imóveis</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Configurações Gerais -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-success text-white">
+        <i class="bi bi-sliders"></i> Configurações Gerais
+      </div>
+      <div class="card-body row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Dias para resposta de leads</label>
+          <input type="number" class="form-control" name="settings.DeadlineRespondLeads" value="{{selectedCompany.settings.DeadlineRespondLeads}}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Leads por agente</label>
+          <input type="number" class="form-control" name="settings.MaxLeadsPerAgent" value="{{selectedCompany.settings.MaxLeadsPerAgent}}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Moeda padrão</label>
+          <select class="form-select" name="settings.RealEstateDefaults.DefaultCurrency">
+            <option value="BRL" {{#if (eq selectedCompany.settings.RealEstateDefaults.DefaultCurrency 'BRL')}}selected{{/if}}>BRL</option>
+            <option value="USD" {{#if (eq selectedCompany.settings.RealEstateDefaults.DefaultCurrency 'USD')}}selected{{/if}}>USD</option>
+            <option value="EUR" {{#if (eq selectedCompany.settings.RealEstateDefaults.DefaultCurrency 'EUR')}}selected{{/if}}>EUR</option>
+          </select>
+        </div>
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" value="true" name="settings.RealEstateDefaults.ShowTaxFields" {{#if selectedCompany.settings.RealEstateDefaults.ShowTaxFields}}checked{{/if}}>
+          <label class="form-check-label">Exibir campos de impostos nos imóveis</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notificações -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-dark text-white">
+        <i class="bi bi-bell-fill"></i> Notificações
+      </div>
+      <div class="card-body row g-3">
+        {{#each selectedCompany.settings.Notify}}
+        <div class="form-check col-md-6">
+          <input class="form-check-input" type="checkbox" value="true" name="settings.Notify.{{@key}}" {{#if this}}checked{{/if}}>
+          <label class="form-check-label">{{@key}}</label>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex justify-content-between">
+      <a href="/admin" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Voltar</a>
+      <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> Salvar Alterações</button>
+    </div>
+  </form>
+  {{/if}}
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/axios@1.8.4/dist/axios.min.js"></script>
 <script src="/js/_searchcep.js"></script>
 <script src="/js/_selectCompany.js"></script>

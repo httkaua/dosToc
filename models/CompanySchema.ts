@@ -1,31 +1,32 @@
-import mongoose, { Document, Schema, Types } from "mongoose"
+import mongoose, { Document, ObjectId, Schema, Types } from "mongoose"
 
 export interface ICompany extends Document {
-    companyID: number;
-    name: string;
-    document: string;
-    phone: string;
-    email: string;
+    _id: ObjectId
+    companyID: number
+    name: string
+    document: string
+    phone: string
+    email: string
     team: {
-        owner: Types.ObjectId;
-        supervisors?: Types.ObjectId[];
-        agents?: Types.ObjectId[];
-        assistants?: Types.ObjectId[];
-    };
-    realEstates?: Types.ObjectId[];
+        owner: Types.ObjectId
+        supervisors?: Types.ObjectId[]
+        agents?: Types.ObjectId[]
+        assistants?: Types.ObjectId[]
+    }
+    realEstates?: Types.ObjectId[]
     address: {
-        locationCode?: string;
-        street?: string;
-        streetNumber?: string;
-        neighborhood?: string;
-        city?: string;
-        state?: string;
-        country?: string;
-    };
+        locationCode?: string
+        street?: string
+        streetNumber?: string
+        neighborhood?: string
+        city?: string
+        state?: string
+        country?: string
+    }
     plan?:
-    'standard' |
-    'full' |
-    'free';
+    'free' |
+    'single' |
+    'business'
     
     settings: {
         TeamPermissions: {
@@ -34,34 +35,34 @@ export interface ICompany extends Document {
                 changeQueueOrder: Boolean
             },
             AgentPermissions: { //* Position index: 5
-                createRealEstate: Boolean,
+                createRealEstate: Boolean
                 deleteRealEstate: Boolean
             },
             AssistantPermissions: { //* Position index: 6
-                createRealEstate: Boolean,
+                createRealEstate: Boolean
                 deleteRealEstate: Boolean
             }
         },
         Notify: {
-            UserInactivity5days: Boolean,
-            NoRespondLeads: Boolean,
-            DailySummary: Boolean,
-            UserTasks: Boolean,
-            LeadsCriticalUpdate: Boolean,
+            UserInactivity5days: Boolean
+            NoRespondLeads: Boolean
+            DailySummary: Boolean
+            UserTasks: Boolean
+            LeadsCriticalUpdate: Boolean
             RealEtateValueUpdate: Boolean
         },
-        DeadlineLeadsOption: Boolean,
-        DeadlineRespondLeads: Number,
-        MaxLeadsPerAgent: Number,
+        DeadlineLeadsOption: Boolean
+        DeadlineRespondLeads: Number
+        MaxLeadsPerAgent: Number
         RealEstateDefaults: {
-            DefaultCurrency: String,
+            DefaultCurrency: String
             ShowTaxFields: Boolean
         }
-    };
-    leadQueue: Types.ObjectId[];
-    agentQueue: Types.ObjectId[];
-    createdAt: Date;
-    updatedAt: Date;
+    }
+    leadQueue: Types.ObjectId[]
+    agentQueue: Types.ObjectId[]
+    createdAt: Date
+    updatedAt: Date
     enabled: Boolean
   }
 
@@ -171,9 +172,9 @@ const companySchema = new Schema<ICompany>({
     plan: {
         type: String,
         enum: [
-            'standard',
-            'full',
-            'free'
+            'free',
+            'single',
+            'business'
         ]
     },
     settings: {

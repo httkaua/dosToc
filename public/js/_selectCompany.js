@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
   companyCards.forEach(card => {
     card.addEventListener("click", () => {
       const companyId = card.dataset.companyId;
-      window.location.href = `/admin/my-company/${companyId}`;
+      window.location.href = `/admin/company/details/${companyId}`;
     });
   });
 

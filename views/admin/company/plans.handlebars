@@ -1,83 +1,111 @@
 <div class="container py-5">
-    <div class="text-center mb-5">
-        <h1 class="fw-bold">Seu Plano Atual</h1>
-        <p class="lead">
-        Você está atualmente no plano 
-        <span class="badge bg-primary text-uppercase">{{planoAtual}}</span>
-        </p>
+  <!-- Cabeçalho -->
+  <div class="text-center mb-5">
+    <h1 class="fw-bold display-5">Escolha o melhor plano para você</h1>
+    <p class="lead">Aproveite os recursos que vão levar sua atuação no mercado imobiliário a outro nível.</p>
+  </div>
+
+  <!-- Plano atual -->
+  <div class="text-center mb-4">
+    <p class="mb-0 fs-5">Seu plano atual:</p>
+    <span class="badge bg-primary text-uppercase fs-6">{{currentPlan}}</span>
+  </div>
+
+  <!-- Cartões dos planos -->
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+
+    <!-- Free -->
+    <div class="col">
+      <div class="card h-100 border-secondary shadow-sm">
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="bi bi-lock fs-1 text-secondary"></i>
+          </div>
+          <h5 class="card-title text-uppercase fw-bold">Free</h5>
+          <p class="card-text">Acesso apenas às informações atuais da conta e empresa. Para aproveitar todos os recursos, faça uma assinatura.</p>
+          <ul class="list-unstyled text-start mt-4 mb-4">
+            <li>✔️ Visualização de conta</li>
+            <li>✔️ Informações básicas da empresa</li>
+            <li>❌ Sem funcionalidades avançadas</li>
+            <li>❌ Sem suporte dedicado</li>
+          </ul>
+          {{#if (eq currentPlan 'free')}}
+            <span class="badge bg-success px-3 py-2">Plano atual</span>
+          {{else}}
+            <form action="/admin/company/details/{{company.companyID}}/change-plan/update/?plan=free" method="POST" class="mt-3">
+              <input type="hidden" name="plano" value="free">
+              <button type="submit" class="btn btn-outline-secondary w-100">Mudar para Free</button>
+            </form>
+          {{/if}}
+        </div>
+      </div>
     </div>
 
-    <div class="row g-4">
-        <!-- Free -->
-        <div class="col-md-4">
-        <div class="card h-100 border-secondary">
-            <div class="card-body text-center">
-            <h5 class="card-title text-uppercase fw-bold">Free</h5>
-            <p class="card-text">Ideal para iniciantes. Acesso limitado aos recursos básicos do sistema, com anúncios e suporte via FAQ.</p>
-            <ul class="list-unstyled my-3">
-                <li>✔️ Acesso básico</li>
-                <li>✔️ Suporte FAQ</li>
-                <li>❌ Sem backup automático</li>
-                <li>❌ Sem personalização</li>
-            </ul>
-            {{#ifCond planoAtual '!=' 'free'}}
-                <form action="/trocar-plano" method="POST">
-                <input type="hidden" name="plano" value="free">
-                <button class="btn btn-outline-primary w-100">Mudar para Free</button>
-                </form>
-            {{else}}
-                <span class="badge bg-success">Plano atual</span>
-            {{/ifCond}}
-            </div>
+    <!-- Single -->
+    <div class="col">
+      <div class="card h-100 border-primary shadow-sm">
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="bi bi-person-badge fs-1 text-primary"></i>
+          </div>
+          <h5 class="card-title text-uppercase fw-bold">Single</h5>
+          <p class="card-text">Ideal para corretores autônomos. Tenha controle dos seus leads, imóveis e uma agenda personalizada com lembretes.</p>
+          <ul class="list-unstyled text-start mt-4 mb-4">
+            <li>✔️ Gerenciamento de leads</li>
+            <li>✔️ Cadastro de imóveis</li>
+            <li>✔️ Agenda com tarefas</li>
+            <li>✔️ Artes para stories automáticas</li>
+            <li>✔️ Suporte 24h</li>
+          </ul>
+          {{#if (eq currentPlan 'single')}}
+            <span class="badge bg-success px-3 py-2">Plano atual</span>
+          {{else}}
+            <form action="/admin/company/details/{{company.companyID}}/change-plan/update/?plan=single" method="POST" class="mt-3">
+              <input type="hidden" name="plano" value="single">
+              <button type="submit" class="btn btn-outline-primary w-100">Assinar Single</button>
+            </form>
+          {{/if}}
         </div>
-        </div>
-
-        <!-- Standard -->
-        <div class="col-md-4">
-        <div class="card h-100 border-primary">
-            <div class="card-body text-center">
-            <h5 class="card-title text-uppercase fw-bold">Standard</h5>
-            <p class="card-text">Para usuários que buscam mais recursos e desempenho sem abrir mão da simplicidade.</p>
-            <ul class="list-unstyled my-3">
-                <li>✔️ Acesso completo</li>
-                <li>✔️ Backup automático</li>
-                <li>✔️ Suporte por e-mail</li>
-                <li>❌ Personalização avançada</li>
-            </ul>
-            {{#ifCond planoAtual '!=' 'standard'}}
-                <form action="/trocar-plano" method="POST">
-                <input type="hidden" name="plano" value="standard">
-                <button class="btn btn-outline-primary w-100">Mudar para Standard</button>
-                </form>
-            {{else}}
-                <span class="badge bg-success">Plano atual</span>
-            {{/ifCond}}
-            </div>
-        </div>
-        </div>
-
-        <!-- Full -->
-        <div class="col-md-4">
-        <div class="card h-100 border-warning">
-            <div class="card-body text-center">
-            <h5 class="card-title text-uppercase fw-bold">Full</h5>
-            <p class="card-text">Plano completo para profissionais. Liberdade total para personalizar, com suporte premium.</p>
-            <ul class="list-unstyled my-3">
-                <li>✔️ Todos os recursos</li>
-                <li>✔️ Backup diário</li>
-                <li>✔️ Suporte 24/7</li>
-                <li>✔️ Painel personalizável</li>
-            </ul>
-            {{#ifCond planoAtual '!=' 'full'}}
-                <form action="/trocar-plano" method="POST">
-                <input type="hidden" name="plano" value="full">
-                <button class="btn btn-outline-warning w-100">Mudar para Full</button>
-                </form>
-            {{else}}
-                <span class="badge bg-success">Plano atual</span>
-            {{/ifCond}}
-            </div>
-        </div>
-        </div>
+      </div>
     </div>
+
+    <!-- Business -->
+    <div class="col">
+      <div class="card h-100 border-warning shadow-sm">
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="bi bi-building fs-1 text-warning"></i>
+          </div>
+          <h5 class="card-title text-uppercase fw-bold">Business</h5>
+          <p class="card-text">Plano completo para imobiliárias. Todos os recursos do plano Single e ferramentas de gestão profissional.</p>
+          <ul class="list-unstyled text-start mt-4 mb-4">
+            <li>✔️ Tudo do plano Single</li>
+            <li>✔️ Dashboards de desempenho</li>
+            <li>✔️ Gerenciamento de equipe</li>
+            <li>✔️ Distribuição de leads</li>
+            <li>✔️ Histórico completo</li>
+            <li>✔️ Simulações de venda/aluguel</li>
+            <li>✔️ E-mails automáticos</li>
+            <li>✔️ Gestão de comissões</li>
+          </ul>
+          {{#if (eq currentPlan 'business')}}
+            <span class="badge bg-success px-3 py-2">Plano atual</span>
+          {{else}}
+            <form action="/admin/company/details/{{company.companyID}}/change-plan/update/?plan=business" method="POST" class="mt-3">
+              <input type="hidden" name="plano" value="business">
+              <button type="submit" class="btn btn-outline-warning w-100">Assinar Business</button>
+            </form>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Call to Action final -->
+  <div class="text-center mt-5">
+    <h2 class="fw-bold">Ainda em dúvida?</h2>
+    <p class="mb-3">Entre em contato com nosso time, responderemos todas as suas perguntas.</p>
+    <a href="https://api.whatsapp.com/send/?phone=5541996448477&text&type=phone_number&app_absent=0"
+    class="btn btn-secondary">Tenho uma dúvida!</a>
+  </div>
 </div>
