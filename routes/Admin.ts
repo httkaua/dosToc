@@ -19,6 +19,7 @@ import Records, { IRecord } from "../models/RecordSchema.js"
 import RealEstates, { IRealEstate } from "../models/RealEstateSchema.js"
 import Leads from "../models/LeadSchema.js"
 import { ISendedRecord } from "../models/@types_ISendedRecord.js"
+import { Console } from "console";
 
 router.get('/',
     ensureAuthenticated,
@@ -364,6 +365,7 @@ router.get('/company/details/:companyID/change-plan',
     }
 });
 
+//TODO: --- Still not working
 router.post('/company/details/:companyID/update',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3]),
@@ -372,8 +374,48 @@ router.post('/company/details/:companyID/update',
     const paramID = Number(req.params?.companyID)
     const userClaimant = req.user?._id
 
+    function normalizeObject(obj: Record<string, any>) {
+        const res: Record<string, any> = {}
+
+        for (const key in obj) {
+            if (obj[key] == 'true') res[key] = true;
+            if (obj[key] == 'false') res[key] = false;
+            if (!isNaN(obj[key]) &&
+            obj[key] != '' &&
+            key != 'phone')
+            res[key] = Number(obj[key])
+
+            else res[key] = obj[key];
+        }
+
+        return res
+    }
+
+    function flatten(obj: object, prefix = ''): Record<string, any> {
+        return Object.entries(obj).reduce((acc, [key, value]) => {
+            const fullKey = prefix ? `${prefix}.${key}` : key;
+            console.log(key)
+            console.log(value)
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            Object.assign(acc, flatten(value, fullKey));
+            } else {
+            acc[fullKey] = value;
+            }
+            return acc;
+        }, {} as Record<string, any>);
+    }
+
+
     try {
         const originalData = await Companies.findOne({ companyID: paramID }).select('+team.owner');
+
+        if (!originalData) {
+            req.flash('errorMsg', 'Dados não encontrados.')
+            return res.redirect('/admin/company')
+        }
+
+        const originalNormalized = flatten(originalData.toObject())
+        console.log(originalNormalized)
 
         if (!originalData?.team.owner) {
         req.flash('errorMsg', 'Empresa não encontrada.')
@@ -386,27 +428,24 @@ router.post('/company/details/:companyID/update',
         }
         
         //* Old (timestamps keys discarded for value review)
-        const { updatedAt, createdAt, ...original } = originalData
         const oldFields: Record<string, string | number | object> = {}
-
-        console.log(originalData)
-        console.log('\n\n')
 
         //* New
         const formData = req.body
+        const formNormalized = normalizeObject(formData)
+        console.log('\n\n')
+        console.log(formNormalized)
+
         const changedFields: Record<string, string | number | object> = {}
 
-        console.log(formData)
-        console.log('\n\n')
+        Object.keys(formNormalized).forEach((key) => {
+            if (formNormalized[key] != originalNormalized[key]) {
 
-        Object.keys(formData).forEach((key) => {
-            if (formData[key] != originalData[key as keyof typeof originalData]) {
+                console.log(originalNormalized[key])
+                console.log(formNormalized[key])
 
-                console.log(originalData[key as keyof typeof originalData])
-                console.log(formData[key])
-
-            changedFields[key] = formData[key]
-            oldFields[key] = originalData[key as keyof typeof originalData]
+            changedFields[key] = formNormalized[key]
+            oldFields[key] = originalNormalized[key]
             }
         })
 
@@ -439,7 +478,7 @@ router.post('/company/details/:companyID/update',
             .catch((err) => {
                 req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
             })
-             */
+            */
 
         }
         
