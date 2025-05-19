@@ -1,8 +1,8 @@
-import mongoose, { Document, ObjectId, Schema, Types } from "mongoose"
+import mongoose, { Document, Schema, Types } from "mongoose"
 
 //* TS INTERFACE
 export interface IUser extends Document {
-    _id: ObjectId
+    _id: Types.ObjectId
     userID: number
     name: string
     nameSearch: string

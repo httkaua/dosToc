@@ -1,4 +1,4 @@
-import mongoose, { Document, ObjectExpressionOperatorReturningArray, ObjectId, Schema, Types } from "mongoose"
+import mongoose, { Document, Schema, Types } from "mongoose"
 
 //* TS INTERFACES
 export interface IOwner extends Document {
@@ -11,7 +11,7 @@ export interface IOwner extends Document {
   }
   
 export interface IRealEstate extends Document {
-_id: ObjectId
+_id: Types.ObjectId
 realStateID: number;
 classification?:
 'Casa' |

@@ -6,7 +6,7 @@ TODO: then, we can improve that, storing the ObjectID instead or in new fields.
 */
 
 export interface IRecord extends Document {
-    _id: ObjectId
+    _id: Types.ObjectId
     recordID: number,
     userWhoChanged: String,
     affectedType:

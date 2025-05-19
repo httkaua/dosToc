@@ -7,6 +7,7 @@ import { ObjectId, Schema, Types } from "mongoose";
 import { ensureAuthenticated } from "../helpers/Auth.js"
 import { ensureRole } from "../helpers/Auth.js"
 import ensureUserAndCompany from "../helpers/ensureUserAndCompany.js" //TODO
+import UpdateComparision from "../helpers/UpdateComparision.js"
 import positionNames from "../helpers/positionNames.js"
 import createRecord from "../helpers/newRecord.js"
 import uploadMedia from "../helpers/uploadMedia.js"
@@ -246,7 +247,7 @@ router.post('/company/new-company/create',
             return
         }
 
-        user?.companies?.push(company._id as unknown as Types.ObjectId)
+        user?.companies?.push(company._id)
 
         user?.save()
         .then()
@@ -284,8 +285,8 @@ router.post('/company/new-company/create',
         }
 
         await saveUserCompanies(
-        newCompany?._id as unknown as Types.ObjectId,
-        req.user?._id as unknown as Types.ObjectId)
+        newCompany?._id,
+        req.user?._id)
 
 
         //* Adding to records
@@ -368,45 +369,53 @@ router.post('/company/details/:companyID/update',
     ensureRole([0, 1, 2, 3]),
     async (req: Request, res: Response, next: NextFunction) => {
 
-    const paramID = req.params?.companyID
-    const form = req.body
-    const userClaimant = req.user?._id as unknown as Types.ObjectId
+    const paramID = Number(req.params?.companyID)
+    const userClaimant = req.user?._id
 
     try {
-        const originalData = await Companies.findOne({ companyID: paramID });
+        const originalData = await Companies.findOne({ companyID: paramID }).select('+team.owner');
 
-        if (!originalData) {
+        if (!originalData?.team.owner) {
         req.flash('errorMsg', 'Empresa não encontrada.')
         return res.redirect('/admin/company')
         }
 
-        //TODO --- CONTINUE HERE --- COMPARISION ERROR
-        if (userClaimant !== originalData.team.owner) {
+        if (!originalData.team.owner.equals(userClaimant)) {
             req.flash('errorMsg', 'O usuário não confere com a solicitação.')
             return res.redirect('/admin/company')
         }
         
-        //* Old (updatedAt discarded for key review)
-        const { updatedAt, ...original } = originalData
+        //* Old (timestamps keys discarded for value review)
+        const { updatedAt, createdAt, ...original } = originalData
         const oldFields: Record<string, string | number | object> = {}
+
+        console.log(originalData)
+        console.log('\n\n')
 
         //* New
         const formData = req.body
         const changedFields: Record<string, string | number | object> = {}
 
+        console.log(formData)
+        console.log('\n\n')
+
         Object.keys(formData).forEach((key) => {
-            if (formData[key] != original[key as keyof typeof original]) {
+            if (formData[key] != originalData[key as keyof typeof originalData]) {
+
+                console.log(originalData[key as keyof typeof originalData])
+                console.log(formData[key])
 
             changedFields[key] = formData[key]
-            oldFields[key] = original[key as keyof typeof original]
+            oldFields[key] = originalData[key as keyof typeof originalData]
             }
         })
 
         if (Object.keys(changedFields).length > 0) {
             const dataToSave = Object.assign(originalData, changedFields);
             originalData.updatedAt = new Date();
-            
-            await dataToSave.save()
+
+            /*
+                        await dataToSave.save()
             .then(async() => {
                 for (const key of Object.keys(changedFields)) {
                     
@@ -419,7 +428,7 @@ router.post('/company/details/:companyID/update',
                         newData: changedFields[key] !== undefined ? `"${changedFields[key]}"` : "",
                         action: 'atualizou',
                         category: 'Empresas',
-                        company: '' //! OBJECTID HERE
+                        company: String(dataToSave.companyID)
                     }
 
                     await createRecord(recordInfo, req)
@@ -430,6 +439,8 @@ router.post('/company/details/:companyID/update',
             .catch((err) => {
                 req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
             })
+             */
+
         }
         
         else {

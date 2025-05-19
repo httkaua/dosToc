@@ -1,7 +1,7 @@
-import mongoose, { Document, ObjectId, Schema, Types } from "mongoose"
+import mongoose, { Document, Schema, Types } from "mongoose"
 
 export interface ICompany extends Document {
-    _id: ObjectId
+    _id: Types.ObjectId
     companyID: number
     name: string
     document: string
