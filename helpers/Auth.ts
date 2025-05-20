@@ -2,6 +2,9 @@ import { Strategy as LocalStrategy } from "passport-local";
 import bcrypt from "bcryptjs";
 import { Request, Response, NextFunction } from "express";
 import Users, { IUser } from "../models/UserSchema.js"
+import Companies, { ICompany } from "../models/CompanySchema.js";
+
+const companyChangeCount = 0
 
 //* Used in each admin route
 export function ensureAuthenticated(
@@ -35,17 +38,47 @@ export function ensureRole(allowedRoles: number[]): (req: Request, res: Response
   };
 }
 
+async function listCompanies(user: IUser) {
+  
+  const userCompanies: (ICompany | null)[] = await Promise.all(
+    user.companies?.map(async (company) => {
+      const companyDoc = await Companies.findById(company)
+      return companyDoc ? companyDoc.toObject() : null
+    }) || []
+  )
+  
+  const enabledCompanies = userCompanies.filter(
+    (company): company is ICompany =>
+    company != null &&
+    company.enabled == true
+  )
+
+  const companiesResponse = enabledCompanies.map(({_id, companyID, name}) => ({
+    _id,
+    companyID,
+    name
+  }))
+
+  return companiesResponse
+}
+
+function changeCompany(companiesListed: Record<string, any>[]) {
+  if (companyChangeCount == 0) {
+    return companiesListed[0]
+  }
+}
+
 export default function (passport: typeof import("passport")): void {
   passport.use(new LocalStrategy({
     usernameField: 'email',
     passwordField: 'password'
   }, (email: string, password: string, done) => {
-    Users.findOne({ email }).select('+password').then(user => {
+    Users.findOne({ email }).select('+password')
+    .then(user => {
       if (!user) {
         return done(null, false, { message: 'Esta conta não existe!' });
       }
-
-      bcrypt.compare(password, user.password, (err, ok) => {
+      bcrypt.compare(password, user.password, async (err, ok) => {
         if (ok) {
           return done(null, user);
         } else {
@@ -60,6 +93,21 @@ export default function (passport: typeof import("passport")): void {
   });
 
   passport.deserializeUser((id: string, done) => {
-    Users.findById(id).then(user => done(null, user)).catch(err => done(err));
+    Users.findById(id)
+    .lean()
+    .then(async user => {
+      if (!user) return done(null, false)
+
+        const companiesListed: Record<string, any>[] = await listCompanies(user)
+
+       const userSession = {
+        ...user,
+        selectedCompany: changeCompany(companiesListed),
+        companyOptions: companiesListed
+       }
+
+      done(null, userSession)
+    })
+    .catch(err => done(err));
   });
 }

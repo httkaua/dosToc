@@ -2,12 +2,11 @@ import { Router, Request, Response, NextFunction } from "express";
 const router = Router();
 import bcrypt from "bcrypt"
 import ExcelJS from "exceljs"
-import { ObjectId, Schema, Types } from "mongoose";
+import { Types } from "mongoose";
 
 import { ensureAuthenticated } from "../helpers/Auth.js"
 import { ensureRole } from "../helpers/Auth.js"
-import ensureUserAndCompany from "../helpers/ensureUserAndCompany.js" //TODO
-import UpdateComparision from "../helpers/UpdateComparision.js"
+import ensureCompanyUserBond from "../helpers/ensureCompanyUserBond.js" //TODO
 import positionNames from "../helpers/positionNames.js"
 import createRecord from "../helpers/newRecord.js"
 import uploadMedia from "../helpers/uploadMedia.js"
@@ -19,14 +18,15 @@ import Records, { IRecord } from "../models/RecordSchema.js"
 import RealEstates, { IRealEstate } from "../models/RealEstateSchema.js"
 import Leads from "../models/LeadSchema.js"
 import { ISendedRecord } from "../models/@types_ISendedRecord.js"
-import { Console } from "console";
 
 router.get('/',
     ensureAuthenticated,
     async (req: Request, res: Response, next: NextFunction) => {
 
+        console.log(req.user)
+
         const userWithPosition = {
-            ...req.user?.toObject(),
+            ...req.user,
             positionName: positionNames[req.user?.position ?? 0]
         }
         res.render('admin/home', {user: userWithPosition});
@@ -79,7 +79,7 @@ router.get('/my-account/:userID',
         return res.redirect('/admin')
     }
 
-    res.render('admin/my-account', { user: req.user?.toObject() });
+    res.render('admin/my-account', { user: req.user });
 });
 
 router.post('/my-account/:userID/update',
