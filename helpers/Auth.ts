@@ -6,12 +6,17 @@ import Companies, { ICompany } from "../models/CompanySchema.js";
 
 const companyChangeCount = 0
 
+export interface IUserSession extends IUser {
+  selectedCompany?: Record<string, any>
+  companyOptions?: Record<string, any>[]
+}
+
 //* Used in each admin route
 export function ensureAuthenticated(
   req: Request,
   res: Response,
   next: NextFunction
-  ): asserts req is Request & { user: IUser } {
+): asserts req is Request & { user: IUserSession } {
   if (req.isAuthenticated()) {
     return next();
   }
@@ -38,22 +43,37 @@ export function ensureRole(allowedRoles: number[]): (req: Request, res: Response
   };
 }
 
-async function listCompanies(user: IUser) {
-  
+//* MAIN AND CALLER
+async function sessionAdder(user: IUserSession, req?: Request) {
+
+  const companiesListed: Record<string, any>[] = await listCompanies(user)
+  const selectedCompany = setCompany(companiesListed, req)
+
+  const userSession = {
+    ...user,
+    selectedCompany: selectedCompany,
+    companyOptions: companiesListed
+  }
+
+  return userSession as IUserSession
+}
+
+export async function listCompanies(user: IUserSession) {
+
   const userCompanies: (ICompany | null)[] = await Promise.all(
     user.companies?.map(async (company) => {
       const companyDoc = await Companies.findById(company)
       return companyDoc ? companyDoc.toObject() : null
     }) || []
   )
-  
+
   const enabledCompanies = userCompanies.filter(
     (company): company is ICompany =>
-    company != null &&
-    company.enabled == true
+      company != null &&
+      company.enabled == true
   )
 
-  const companiesResponse = enabledCompanies.map(({_id, companyID, name}) => ({
+  const companiesResponse = enabledCompanies.map(({ _id, companyID, name }) => ({
     _id,
     companyID,
     name
@@ -62,10 +82,30 @@ async function listCompanies(user: IUser) {
   return companiesResponse
 }
 
-function changeCompany(companiesListed: Record<string, any>[]) {
-  if (companyChangeCount == 0) {
+//* Here I'm creating the function
+//* that user can set the company by yourself
+function setCompany(
+  companiesListed: Record<string, any>[],
+  req?: Request) {
+
+  const paramID = req?.params.companyID
+  console.log(paramID)
+  if (companyChangeCount == 0 || !paramID) {
     return companiesListed[0]
   }
+
+  const selectedCompanyID = Companies
+    .findOne({ companyID: paramID }, '_id')
+    .lean()
+  const isUserPartOfCompany = Users.findById(req.user?._id)
+    .lean()
+  console.log(isUserPartOfCompany)
+  if (!selectedCompanyID) {
+    return companiesListed[0]
+  }
+
+
+
 }
 
 export default function (passport: typeof import("passport")): void {
@@ -74,18 +114,18 @@ export default function (passport: typeof import("passport")): void {
     passwordField: 'password'
   }, (email: string, password: string, done) => {
     Users.findOne({ email }).select('+password')
-    .then(user => {
-      if (!user) {
-        return done(null, false, { message: 'Esta conta não existe!' });
-      }
-      bcrypt.compare(password, user.password, async (err, ok) => {
-        if (ok) {
-          return done(null, user);
-        } else {
-          return done(null, false, { message: 'Senha incorreta!' });
+      .then(user => {
+        if (!user) {
+          return done(null, false, { message: 'Esta conta não existe!' });
         }
-      });
-    }).catch(err => done(err));
+        bcrypt.compare(password, user.password, async (err, ok) => {
+          if (ok) {
+            return done(null, user);
+          } else {
+            return done(null, false, { message: 'Senha incorreta!' });
+          }
+        });
+      }).catch(err => done(err));
   }));
 
   passport.serializeUser((user: IUser, done) => {
@@ -94,20 +134,12 @@ export default function (passport: typeof import("passport")): void {
 
   passport.deserializeUser((id: string, done) => {
     Users.findById(id)
-    .lean()
-    .then(async user => {
-      if (!user) return done(null, false)
-
-        const companiesListed: Record<string, any>[] = await listCompanies(user)
-
-       const userSession = {
-        ...user,
-        selectedCompany: changeCompany(companiesListed),
-        companyOptions: companiesListed
-       }
-
-      done(null, userSession)
-    })
-    .catch(err => done(err));
+      .lean()
+      .then(async user => {
+        if (!user) return done(null, false)
+        const userSession = await sessionAdder(user)
+        done(null, userSession)
+      })
+      .catch(err => done(err));
   });
 }
