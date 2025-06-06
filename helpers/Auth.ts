@@ -43,21 +43,6 @@ export function ensureRole(allowedRoles: number[]): (req: Request, res: Response
   };
 }
 
-//* MAIN AND CALLER
-async function sessionAdder(user: IUserSession, req?: Request) {
-
-  const companiesListed: Record<string, any>[] = await listCompanies(user)
-  const selectedCompany = setCompany(companiesListed, req)
-
-  const userSession = {
-    ...user,
-    selectedCompany: selectedCompany,
-    companyOptions: companiesListed
-  }
-
-  return userSession as IUserSession
-}
-
 export async function listCompanies(user: IUserSession) {
 
   const userCompanies: (ICompany | null)[] = await Promise.all(
@@ -80,32 +65,6 @@ export async function listCompanies(user: IUserSession) {
   }))
 
   return companiesResponse
-}
-
-//* Here I'm creating the function
-//* that user can set the company by yourself
-function setCompany(
-  companiesListed: Record<string, any>[],
-  req?: Request) {
-
-  const paramID = req?.params.companyID
-  console.log(paramID)
-  if (companyChangeCount == 0 || !paramID) {
-    return companiesListed[0]
-  }
-
-  const selectedCompanyID = Companies
-    .findOne({ companyID: paramID }, '_id')
-    .lean()
-  const isUserPartOfCompany = Users.findById(req.user?._id)
-    .lean()
-  console.log(isUserPartOfCompany)
-  if (!selectedCompanyID) {
-    return companiesListed[0]
-  }
-
-
-
 }
 
 export default function (passport: typeof import("passport")): void {
@@ -137,8 +96,13 @@ export default function (passport: typeof import("passport")): void {
       .lean()
       .then(async user => {
         if (!user) return done(null, false)
-        const userSession = await sessionAdder(user)
-        done(null, userSession)
+        const companiesListed = await listCompanies(user);
+        const userSession = {
+          ...user,
+          companyOptions: companiesListed,
+          selectedCompany: companiesListed[0]
+        }
+        done(null, userSession as IUserSession)
       })
       .catch(err => done(err));
   });

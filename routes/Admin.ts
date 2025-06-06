@@ -6,7 +6,7 @@ import { Types } from "mongoose";
 
 import { ensureAuthenticated, IUserSession, listCompanies } from "../helpers/Auth.js"
 import { ensureRole } from "../helpers/Auth.js"
-import ensureCompanyUserBond from "../helpers/ensureCompanyUserBond.js" //TODO
+import ensureSelectedCompany from "../helpers/ensureSelectedCompany.js" //TODO
 import positionNames from "../helpers/positionNames.js"
 import createRecord from "../helpers/newRecord.js"
 import uploadMedia from "../helpers/uploadMedia.js"
@@ -24,12 +24,11 @@ router.get('/',
     ensureAuthenticated,
     async (req: Request, res: Response, next: NextFunction) => {
 
-        console.log(req.user)
-
         const userWithPosition = {
             ...req.user,
             positionName: positionNames[req.user?.position ?? 0]
         }
+
         res.render('admin/home', { user: userWithPosition });
     });
 
@@ -38,6 +37,9 @@ router.get('/records',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response, next: NextFunction) => {
+
+        //test
+        console.log(req.user?.selectedCompany)
 
         // format date from ISO to DD/MM/YY - HH/MM/SS
         const formatDate = (isoDate: Date) => {
@@ -573,37 +575,42 @@ router.get('/company/switch/:companyID',
     async (req: Request, res: Response, next: NextFunction) => {
 
         try {
-            const user = req.user as IUser;
-            const companies = await listCompanies(user)
+            const user = req.user as IUserSession;
+            const companies = await listCompanies(user);
             const selectedCompany = companies.find(
-                c => c.companyID = Number(req.params.companyID)
-            )
+                c => c.companyID === Number(req.params.companyID)
+            );
+
             if (!selectedCompany) {
-                req.flash('errorMsg', 'Dados não encontrados.');
+                req.flash('errorMsg', 'Empresa não encontrada ou acesso não autorizado.');
                 return res.redirect('/admin');
             }
 
-            const updatedUser: IUserSession = {
-                ...user,
-                selectedCompany,
-                companyOptions: companies
-            };
+            // AVOID REQ.LOGIN
+            user.selectedCompany = selectedCompany;
+            user.companyOptions = companies;
 
-            req.logIn(updatedUser, err => {
+            req.session.save(err => {
                 if (err) {
-                    req.flash('errorMsg', 'Erro ao mudar de empresa.');
+                    console.error(err);
+                    req.flash('errorMsg', 'Erro ao salvar sessão ao mudar de empresa.');
                     return res.redirect('/admin');
                 }
 
+                console.log('Sessão atualizada:', req.user?.selectedCompany);
+
                 req.flash('successMsg', `Empresa alterada para ${selectedCompany.name}`);
                 res.redirect('/admin');
-            })
+            });
 
         } catch (err) {
+            console.error(err);
             req.flash('errorMsg', 'Erro inesperado.');
             res.redirect('/admin');
         }
-    })
+    });
+
+
 
 //* ROUTES TYPE: Team
 router.get('/team',

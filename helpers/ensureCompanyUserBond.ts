@@ -1,1 +1,0 @@
-//TODO To be used in routes that manage sensitive data, and needs ensure the user and company are connected with each other
