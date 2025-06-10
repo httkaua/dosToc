@@ -2,11 +2,10 @@ import { Router, Request, Response, NextFunction } from "express";
 const router = Router();
 import bcrypt from "bcrypt"
 import ExcelJS from "exceljs"
-import { Types } from "mongoose";
+import { Query, Types } from "mongoose";
 
-import { ensureAuthenticated, IUserSession, listCompanies } from "../helpers/Auth.js"
+import { ensureAuthenticated, IUserSession } from "../helpers/Auth.js"
 import { ensureRole } from "../helpers/Auth.js"
-import ensureSelectedCompany from "../helpers/ensureSelectedCompany.js" //TODO
 import positionNames from "../helpers/positionNames.js"
 import createRecord from "../helpers/newRecord.js"
 import uploadMedia from "../helpers/uploadMedia.js"
@@ -18,7 +17,49 @@ import Records, { IRecord } from "../models/RecordSchema.js"
 import RealEstates, { IRealEstate } from "../models/RealEstateSchema.js"
 import Leads from "../models/LeadSchema.js"
 import { ISendedRecord } from "../models/@types_ISendedRecord.js"
-import passport from "passport";
+import passport, { use } from "passport";
+import positionsNames from "../helpers/positionNames.js";
+
+router.get('/feed-session',
+    ensureAuthenticated,
+    async (req: Request, res: Response, next: NextFunction) => {
+
+        async function listCompanies(user: IUserSession) {
+            const userCompanies: (ICompany | null)[] = await Promise.all(
+                user.companies?.map(async (company) => {
+                    const companyDoc = await Companies.findById(company)
+                    return companyDoc ? companyDoc.toObject() : null
+                }) || []
+            )
+
+            const enabledCompanies = userCompanies.filter(
+                (company): company is ICompany =>
+                    company != null &&
+                    company.enabled == true
+            )
+
+            const companiesResponse = enabledCompanies.map(({ _id, companyID, name }) => ({
+                _id,
+                companyID,
+                name
+            }))
+
+            return companiesResponse
+        }
+
+        if (!req.user) {
+            return res.redirect('/user/signin')
+        }
+
+        const companyOptions = await listCompanies(req.user)
+
+        req.session.companyOptions = companyOptions
+        req.session.selectedCompany = companyOptions[0]
+
+        req.session.save()
+
+        res.redirect('/admin')
+    })
 
 router.get('/',
     ensureAuthenticated,
@@ -30,7 +71,7 @@ router.get('/',
         }
 
         res.render('admin/home', { user: userWithPosition });
-    });
+    })
 
 //* ROUTES TYPE: Record
 router.get('/records',
@@ -38,14 +79,11 @@ router.get('/records',
     ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response, next: NextFunction) => {
 
-        //test
-        console.log(req.user?.selectedCompany)
-
-        // format date from ISO to DD/MM/YY - HH/MM/SS
+        //* format date from ISO to DD/MM/YY - HH/MM/SS
         const formatDate = (isoDate: Date) => {
             const date = new Date(isoDate);
             const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0'); // Mês começa em 0
+            const month = String(date.getMonth() + 1).padStart(2, '0');
             const year = String(date.getFullYear()).slice(-2);
             const hours = String(date.getHours()).padStart(2, '0');
             const minutes = String(date.getMinutes()).padStart(2, '0');
@@ -67,7 +105,7 @@ router.get('/records',
             req.flash('errorMsg', `Houve um erro ao encontrar os dados: ${err}`)
             res.status(500).send('Erro ao buscar os registros');
         }
-    });
+    })
 
 //* ROUTES TYPE: Account
 router.get('/my-account/:userID',
@@ -83,7 +121,7 @@ router.get('/my-account/:userID',
         }
 
         res.render('admin/my-account', { user: req.user });
-    });
+    })
 
 router.post('/my-account/:userID/update',
     ensureAuthenticated,
@@ -161,7 +199,7 @@ router.post('/my-account/:userID/update',
             res.status(500).send('Erro no servidor.');
         }
 
-    });
+    })
 
 //* ROUTES TYPE: Company
 router.get('/company',
@@ -179,7 +217,7 @@ router.get('/company',
             req.flash('errorMsg', `There was an error searching company: ${err}`)
             return res.redirect('./')
         }
-    });
+    })
 
 router.get('/company/new-company',
     ensureAuthenticated,
@@ -187,7 +225,7 @@ router.get('/company/new-company',
     async (req: Request, res: Response, next: NextFunction) => {
 
         res.render('admin/company/new-company')
-    });
+    })
 
 router.post('/company/new-company/create',
     ensureAuthenticated,
@@ -311,7 +349,7 @@ router.post('/company/new-company/create',
                 req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
                 res.redirect('/admin/company');
             });
-    });
+    })
 
 router.get('/company/details/:companyID',
     ensureAuthenticated,
@@ -339,7 +377,7 @@ router.get('/company/details/:companyID',
             req.flash('errorMsg', `There was an error searching company: ${err}`)
             return res.redirect('/admin/company')
         }
-    });
+    })
 
 router.get('/company/details/:companyID/change-plan',
     ensureAuthenticated,
@@ -366,7 +404,7 @@ router.get('/company/details/:companyID/change-plan',
             req.flash('errorMsg', `There was an error searching company: ${err}`)
             return res.redirect('/admin/company')
         }
-    });
+    })
 
 //TODO: --- Still not working
 router.post('/company/details/:companyID/update',
@@ -397,8 +435,6 @@ router.post('/company/details/:companyID/update',
         function flatten(obj: object, prefix = ''): Record<string, any> {
             return Object.entries(obj).reduce((acc, [key, value]) => {
                 const fullKey = prefix ? `${prefix}.${key}` : key;
-                console.log(key)
-                console.log(value)
                 if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
                     Object.assign(acc, flatten(value, fullKey));
                 } else {
@@ -418,7 +454,6 @@ router.post('/company/details/:companyID/update',
             }
 
             const originalNormalized = flatten(originalData.toObject())
-            console.log(originalNormalized)
 
             if (!originalData?.team.owner) {
                 req.flash('errorMsg', 'Empresa não encontrada.')
@@ -436,16 +471,11 @@ router.post('/company/details/:companyID/update',
             //* New
             const formData = req.body
             const formNormalized = normalizeObject(formData)
-            console.log('\n\n')
-            console.log(formNormalized)
 
             const changedFields: Record<string, string | number | object> = {}
 
             Object.keys(formNormalized).forEach((key) => {
                 if (formNormalized[key] != originalNormalized[key]) {
-
-                    console.log(originalNormalized[key])
-                    console.log(formNormalized[key])
 
                     changedFields[key] = formNormalized[key]
                     oldFields[key] = originalNormalized[key]
@@ -568,47 +598,23 @@ router.post('/company/details/:companyID/change-plan/update',
         }
     })
 
-//TODO: --- Still not working --- WORKING NOW
 router.get('/company/switch/:companyID',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4, 5, 6, 7, 8]),
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response) => {
 
-        try {
-            const user = req.user as IUserSession;
-            const companies = await listCompanies(user);
-            const selectedCompany = companies.find(
-                c => c.companyID === Number(req.params.companyID)
-            );
+        const paramID = Number(req.params.companyID)
 
-            if (!selectedCompany) {
-                req.flash('errorMsg', 'Empresa não encontrada ou acesso não autorizado.');
-                return res.redirect('/admin');
-            }
+        const companyOptions = req.session.companyOptions
 
-            // AVOID REQ.LOGIN
-            user.selectedCompany = selectedCompany;
-            user.companyOptions = companies;
+        const newSelectedCompany = companyOptions?.find(company => company.companyID == paramID)
 
-            req.session.save(err => {
-                if (err) {
-                    console.error(err);
-                    req.flash('errorMsg', 'Erro ao salvar sessão ao mudar de empresa.');
-                    return res.redirect('/admin');
-                }
+        req.session.selectedCompany = newSelectedCompany
 
-                console.log('Sessão atualizada:', req.user?.selectedCompany);
+        req.session.save()
 
-                req.flash('successMsg', `Empresa alterada para ${selectedCompany.name}`);
-                res.redirect('/admin');
-            });
-
-        } catch (err) {
-            console.error(err);
-            req.flash('errorMsg', 'Erro inesperado.');
-            res.redirect('/admin');
-        }
-    });
+        res.redirect('/admin')
+    })
 
 
 
@@ -622,24 +628,24 @@ router.get('/team',
             const teamMembers = req.user?.underManagement ? req.user?.underManagement : [];
 
             for (let i = 0; i < teamMembers.length; i++) {
-                const element = teamMembers[i];
+                const memberID = teamMembers[i];
 
-                const pick = await Users.findOne({ userID: element }).lean();
-                if (!pick) {
+                const pickMember = await Users.findOne({ userID: memberID }).lean();
+                if (!pickMember) {
                     req.flash('errorMsg', 'Erro 4400 - vazio inesperado')
-                    return res.redirect('./')
+                    return res.redirect('/admin')
                 }
 
                 const member = {
-                    id: pick.userID,
-                    name: `${pick.firstName} ${pick.lastName}`,
-                    position: pick.position
+                    id: pickMember.userID,
+                    name: pickMember.name,
+                    position: pickMember.position
                 };
 
                 members.push(member);
             }
 
-            res.render('admin/team', { members });
+            res.render('admin/team/members', { members });
 
         } catch (err) {
             req.flash('errorMsg', `Houve um erro ao buscar os dados: ${err}`);
@@ -652,33 +658,40 @@ router.get('/team/new-member',
     ensureRole([0, 1, 2, 3]),
     async (req: Request, res: Response, next: NextFunction) => {
 
-        async function verifyOptions() {
+        async function verifyCreatingOptions() {
 
-            const userPosition = String(req.user?.position);
+            const userPosition = req.user?.position
 
-            if (['Criador do sistema',
-                'Administrador do sistema',
-                'Diretor de imobiliária']
-                .includes(userPosition)) {
-                return ['Supervisor de vendas', 'Agente de vendas'];
+            if (!userPosition) {
+                return []
             }
 
-            if (userPosition == 'Supervisor de vendas') {
-                return ['Agente de vendas'];
+            switch (userPosition) {
+                case 1:
+                case 2:
+                case 3:
+                    return ['Supervisor de vendas', 'Agente de vendas']
+                case 4:
+                    return ['Agente de vendas']
+                default:
+                    return []
             }
-
-            return [];
         }
 
         try {
-            const positionsO = await verifyOptions();
+            const creatingOptions = await verifyCreatingOptions();
+
+            if (creatingOptions.length < 1) {
+                req.flash('errorMsg', 'Você não possui nível de permissão para criar usuários.')
+                return res.redirect('/admin/team')
+            }
 
             res.render('admin/team/new-member', {
-                positions: positionsO
+                positions: creatingOptions
             });
         } catch (err) {
             req.flash('errorMsg', 'Houve um erro ao verificar as opções')
-            res.redirect('./')
+            res.redirect('/admin/team')
         }
     });
 
@@ -687,29 +700,76 @@ router.post('/team/new-member/create',
     ensureRole([0, 1, 2, 3]),
     async (req: Request, res: Response, next: NextFunction) => {
 
-        const newMemberErr = [];
+        const formErrors: string[] = []
 
-        const fields = {
-            firstName: req.body.firstName,
-            lastName: req.body.lastName,
-            position: req.body.position,
-            phone: req.body.phone,
-            email: req.body.email,
-            password: req.body.password
-        };
+        const formFields = req.body;
 
-        async function findEmail(email: string) {
-            try {
-                const boolUser = await Users.findOne({ email: email })
-                return !!boolUser
-            } catch (err) {
-                err instanceof Error ?
-                    console.error(`There was an error parsing email: ${err.message}`)
-                    : console.error(`There was an error parsing email: ${err}`)
+        async function verifyFormErrors(form: IUser): Promise<string | null> {
+
+            if (Object.entries(form)
+                .some(([key, value]) => value == undefined || null || '')) {
+                formErrors.push('Preencha todos os campos para prosseguir.');
+            }
+
+            if (form.password.length < 8) {
+                formErrors.push('Senha muito curta. Crie uma senha de ao menos 8 caracteres.');
+            }
+
+            if (isValidEmail(form.email) == false) {
+                formErrors.push('Email inválido. Verifique se há @ e o domínio (exemplo: .com). Não deve conter espaços. Verifique se dirigou corretamente')
+            }
+
+            if (await freeEmail(form.email) == false) {
+                formErrors.push('Este e-mail já está sendo usado.')
+            }
+
+            if (await strongPassword(form.password) == false) {
+                formErrors.push('Senha muito fraca. É necessário ao menos um número e um caractere especial (exemplos: &, %, $, #, @)')
+            }
+
+            //* If it got some error
+            if (formErrors.length) {
+                return formErrors[0]
+            }
+            else {
+                return null
             }
         }
 
-        // Generating new userID for claimant
+        async function strongPassword(password: string) {
+            const numberCount = (password.match(/\d/g) || []).length
+
+            if (numberCount < 1 || checkSpecialChar(password) < 1) {
+                return false
+            }
+            else {
+                return true
+            }
+
+        }
+
+        function isValidEmail(email: string): boolean {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        function checkSpecialChar(password: string) {
+            const specialChar = /[^a-zA-Z0-9\s]/g;
+            const matches = password.match(specialChar);
+            return matches ? matches.length : 0
+        }
+
+        async function freeEmail(email: string) {
+            try {
+                const user = await Users.findOne({ email })
+                return !user
+            } catch (err) {
+                console.error(`There was an error parsing email: ${err}`);
+                return false
+            }
+        }
+
+        //* Generating new userID for the claimant
         const generateNewUserID = async () => {
             try {
 
@@ -725,18 +785,24 @@ router.post('/team/new-member/create',
             }
         };
 
-        // Update the current user team
+        //* Update the current user team
         async function updateTeam(recordInfo: ISendedRecord) {
 
             try {
-                let currentUser = await Users.findOne({ userID: recordInfo.userWhoChanged });
+                let currentUser = await Users.findOne({ userID: req.user?.userID });
                 if (!currentUser) {
-                    req.flash('errorMsg', 'Erro 4400 - vazio inesperado')
+                    req.flash('errorMsg', 'Vazio inesperado')
+                    return res.redirect('./')
+                }
+
+                const createdUser = await Users.findOne({ userID: recordInfo.affectedData });
+                if (!createdUser) {
+                    req.flash('errorMsg', 'Vazio inesperado')
                     return res.redirect('./')
                 }
 
                 const i = currentUser.underManagement.length
-                const newTeamMember = String(recordInfo.affectedData);
+                const newTeamMember = createdUser._id
 
                 currentUser.underManagement[i] = newTeamMember
                 currentUser.updatedAt = new Date;
@@ -746,115 +812,89 @@ router.post('/team/new-member/create',
                         req.flash('successMsg', 'Usuário adicionado a equipe com sucesso!')
                     })
                     .catch((err) => {
-                        req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
+                        req.flash('errorMsg', `Houve um erro ao salvar os dados: ${err}`)
                     })
             } catch (error) {
                 throw new Error(`Erro ao atualizar: ${error}`);
             }
         }
 
-        const errors = {
-            undefined: Object.entries(fields).some(([key, value]) => value === undefined),
-            null: Object.entries(fields).some(([key, value]) => value === null),
-            empty: Object.entries(fields).some(([key, value]) => !value),
-        };
-
-        if (errors.undefined) {
-            newMemberErr.push({ text: 'Erro 1004 - Campos indefinidos. Preencha todos os campos corretamente.' });
+        function normalizeName(name: string): string {
+            return name
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .trim()
+                .toUpperCase()
+                .replace(/\s+/g, ' ');
         }
 
-        if (errors.null) {
-            newMemberErr.push({ text: 'Erro 1005 - Campos nulos. Preencha todos os campos corretamente.' });
+        const checkForm = await verifyFormErrors(formFields)
+
+        if (checkForm !== null) {
+            req.flash('errorMsg', `${checkForm}`)
+            console.log(checkForm)
+            return res.redirect('/admin/team')
         }
 
-        if (errors.empty) {
-            newMemberErr.push({ text: 'Erro 1006 - Campos vazios. Preencha todos os campos corretamente.' });
-        }
+        const positionIndex = positionsNames.indexOf(formFields.position) || 6
 
-        // If it got some error
-        if (newMemberErr.length > 0) {
-            const errorMessages = newMemberErr.map(error => error.text);
-            req.flash('errorMsg', errorMessages[0]);
-            res.redirect('./');
-            return;
-        }
+        const newAcc = new Users({
+            userID: await generateNewUserID(),
+            name: formFields.name,
+            nameSearch: normalizeName(formFields.name),
+            phone: formFields.phone,
+            company: req.session?.selectedCompany?._id,
+            email: formFields.email,
+            position: positionIndex,
+            managers: req.user?._id,
+            createdAt: new Date,
+            updatedAt: new Date
+        });
 
-        // Any error in the HTML Form
-        else {
-
-            // Email already used.
-            if (await findEmail(fields.email) == true) {
-
-                req.flash('errorMsg', 'Erro 1009 - Este e-mail já está sendo usado.')
-                return res.redirect('./')
+        //* generating hash
+        bcrypt.genSalt(10, (err, salt) => {
+            if (err) {
+                req.flash('errorMsg', `Houve um erro ao gerar SALT: ${err}`)
+                return res.redirect('./');
             }
 
-            // Allright, creating account in the database
+            bcrypt.hash(formFields.password, salt, (err, hash) => {
+                if (err) {
+                    req.flash(`errorMsg', 'Houve um erro ao gerar HASH: ${err}`)
+                    return res.redirect('./');
+                };
 
-            else {
+                newAcc.password = hash;
 
-                const newAcc = new Users({
-                    userID: await generateNewUserID(),
-                    firstName: fields.firstName,
-                    lastName: fields.lastName,
-                    phone: fields.phone,
-                    company: req.user?.company,
-                    email: fields.email,
-                    position: fields.position,
-                    managers: req.user?.userID,
-                    createdAt: new Date,
-                    updatedAt: new Date
-                });
+                newAcc.save()
+                    .then(async () => {
+                        req.flash('successMsg', 'Usuário criado com sucesso!');
 
-                // generating hash
-                bcrypt.genSalt(10, (err, salt) => {
-                    if (err) {
-                        req.flash('errorMsg', `Erro 3004 - Houve um erro ao gerar SALT: ${err}`)
-                        return res.redirect('./');
-                    }
+                        try {
+                            const recordInfo: ISendedRecord = {
+                                userWhoChanged: String(req.user?.userID),
+                                affectedType: "usuário",
+                                affectedData: String(newAcc.userID),
+                                action: "criou",
+                                category: "Usuários",
+                                company: req.session?.selectedCompany?.companyID
+                            }
 
-                    bcrypt.hash(fields.password, salt, (err, hash) => {
-                        if (err) {
-                            req.flash(`errorMsg', 'Erro 3005 - Houve um erro ao gerar HASH: ${err}`)
-                            return res.redirect('./');
-                        };
+                            await createRecord(recordInfo, req);
 
-                        newAcc.password = hash;
+                            await updateTeam(recordInfo);
 
-                        newAcc.save()
-                            .then(async () => {
-                                req.flash('successMsg', 'Usuário criado com sucesso!');
+                        } catch (err) {
+                            req.flash('errorMsg', `Erro ao criar registro em histórico: ${err}`)
+                        }
 
-                                // Complementary processes
-                                try {
-                                    const recordInfo: ISendedRecord = {
-                                        userWhoChanged: newAcc.managers[0].toString(),
-                                        affectedType: "usuário",
-                                        affectedData: String(newAcc.userID),
-                                        action: "criou",
-                                        category: "Usuários",
-                                        company: newAcc.company
-                                    }
-
-                                    await createRecord(recordInfo, req);
-
-                                    // Updating team
-                                    await updateTeam(recordInfo);
-
-                                } catch (err) {
-                                    req.flash('errorMsg', `Erro ao criar registro em histórico: ${err}`)
-                                }
-
-                                return res.redirect('/admin/team');
-                            })
-                            .catch((err) => {
-                                req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
-                                return res.redirect('/admin/team');
-                            });
+                        return res.redirect('/admin/team');
+                    })
+                    .catch((err) => {
+                        req.flash('errorMsg', `Houve um erro ao salvar os dados: ${err}`)
+                        return res.redirect('/admin/team');
                     });
-                });
-            };
-        };
+            });
+        });
     });
 
 router.get('/team/:teamuserID/hidden',
@@ -1198,8 +1238,6 @@ router.get('/leads/:leadID',
         try {
             const leadID = req.params.leadID;
             const lead = await Leads.findOne({ leadID: leadID }).lean();
-            console.log(leadID)
-            console.log(lead)
 
             if (!lead) {
                 req.flash(`Lead não encontrado em sua base.`);

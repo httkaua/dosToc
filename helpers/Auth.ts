@@ -4,14 +4,11 @@ import { Request, Response, NextFunction } from "express";
 import Users, { IUser } from "../models/UserSchema.js"
 import Companies, { ICompany } from "../models/CompanySchema.js";
 
-const companyChangeCount = 0
-
 export interface IUserSession extends IUser {
   selectedCompany?: Record<string, any>
   companyOptions?: Record<string, any>[]
 }
 
-//* Used in each admin route
 export function ensureAuthenticated(
   req: Request,
   res: Response,
@@ -24,7 +21,6 @@ export function ensureAuthenticated(
   res.redirect('/user/signin');
 }
 
-//* Some routes need a hierarchy enough level to acess
 export function ensureRole(allowedRoles: number[]): (req: Request, res: Response, next: NextFunction) => void {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.isAuthenticated()) {
@@ -41,30 +37,6 @@ export function ensureRole(allowedRoles: number[]): (req: Request, res: Response
     req.flash('errorMsg', 'Você não tem permissão para acessar esta página.');
     res.redirect('/admin');
   };
-}
-
-export async function listCompanies(user: IUserSession) {
-
-  const userCompanies: (ICompany | null)[] = await Promise.all(
-    user.companies?.map(async (company) => {
-      const companyDoc = await Companies.findById(company)
-      return companyDoc ? companyDoc.toObject() : null
-    }) || []
-  )
-
-  const enabledCompanies = userCompanies.filter(
-    (company): company is ICompany =>
-      company != null &&
-      company.enabled == true
-  )
-
-  const companiesResponse = enabledCompanies.map(({ _id, companyID, name }) => ({
-    _id,
-    companyID,
-    name
-  }))
-
-  return companiesResponse
 }
 
 export default function (passport: typeof import("passport")): void {
@@ -96,13 +68,8 @@ export default function (passport: typeof import("passport")): void {
       .lean()
       .then(async user => {
         if (!user) return done(null, false)
-        const companiesListed = await listCompanies(user);
-        const userSession = {
-          ...user,
-          companyOptions: companiesListed,
-          selectedCompany: companiesListed[0]
-        }
-        done(null, userSession as IUserSession)
+
+        done(null, user)
       })
       .catch(err => done(err));
   });

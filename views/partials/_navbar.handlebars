@@ -39,20 +39,20 @@
           <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" id="companyDropdown"
             role="button" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="bi bi-buildings"></i>
-            {{user.selectedCompany.name}}
+            {{#if selectedCompany}}{{selectedCompany.name}}{{else}}Selecionar Empresa{{/if}}
           </a>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="companyDropdown">
             <li class="dropdown-header text-muted px-3">Trocar de empresa</li>
             <li>
               <hr class="dropdown-divider">
             </li>
-            {{#each user.companyOptions}}
+            {{#each companyOptions}}
             <li>
               <a class="dropdown-item d-flex justify-content-between align-items-center 
-                    {{#if (eq this._id ../user.selectedCompany._id)}}active fw-bold{{/if}}"
+                    {{#if (eq this._id ../selectedCompany._id)}}active fw-bold{{/if}}"
                 href="/admin/company/switch/{{this.companyID}}">
                 {{this.name}}
-                {{#if (eq this._id ../user.selectedCompany._id)}}
+                {{#if (eq this._id ../selectedCompany._id)}}
                 <span class="badge bg-success ml-1">Atual</span>
                 {{/if}}
               </a>

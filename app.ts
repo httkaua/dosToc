@@ -19,6 +19,7 @@ import Admin from "./routes/Admin.js";
 import authHelper, { IUserSession } from "./helpers/Auth.js";
 authHelper(passport);
 import Users, { IUser } from "./models/UserSchema.js"
+//import SelectCompany from "./helpers/SelectCompany.js";
 
 //* Config
 
@@ -52,7 +53,7 @@ app.use(
     })
 )
 
-//* User module for TS
+//* Express modules
 declare global {
 
     //* Extending Express.js Types settings
@@ -61,8 +62,15 @@ declare global {
 
         //* Creating req.user (if authenticated)
         interface Request {
-            user?: User;
+            user?: User
         }
+    }
+}
+
+declare module 'express-session' {
+    export interface SessionData {
+        companyOptions?: Record<string, any>[]
+        selectedCompany?: Record<string, any>
     }
 }
 
@@ -71,6 +79,8 @@ app.use((req, res, next) => {
     res.locals.successMsg = req.flash('successMsg');
     res.locals.errorMsg = req.flash('errorMsg');
     res.locals.user = req.user || null;
+    res.locals.companyOptions = req.session.companyOptions || [];
+    res.locals.selectedCompany = req.session.selectedCompany || null;
     next();
 });
 

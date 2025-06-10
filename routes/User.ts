@@ -41,7 +41,7 @@ router.post('/signin/authentication',
                 }
 
                 req.flash('successMsg', 'Seja bem-vindo!');
-                return res.redirect('/admin');
+                return res.redirect('/admin/feed-session');
             });
         }
 
