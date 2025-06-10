@@ -1,4 +1,4 @@
-import Records, { IRecord } from "../models/RecordsSchema.js"
+import Records, { IRecord } from "./RecordSchema.js"
 
 export type ISendedRecord = Pick<IRecord,
 'userWhoChanged' | 'affectedType' | 'affectedPropertie'
