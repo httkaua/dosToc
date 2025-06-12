@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 const router = Router();
 import bcrypt from "bcrypt"
 import ExcelJS from "exceljs"
-import { Query, Types } from "mongoose";
+import { ObjectId, Query, Types } from "mongoose";
 
 import { ensureAuthenticated, IUserSession } from "../helpers/Auth.js"
 import { ensureRole } from "../helpers/Auth.js"
@@ -624,13 +624,12 @@ router.get('/team',
     ensureRole([0, 1, 2, 3]),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const members = [];
+            const members: Record<string, any>[] = [];
             const teamMembers = req.user?.underManagement ? req.user?.underManagement : [];
 
-            for (let i = 0; i < teamMembers.length; i++) {
-                const memberID = teamMembers[i];
+            teamMembers.map(async (id) => {
 
-                const pickMember = await Users.findOne({ userID: memberID }).lean();
+                const pickMember = await Users.findById(id).lean();
                 if (!pickMember) {
                     req.flash('errorMsg', 'Erro 4400 - vazio inesperado')
                     return res.redirect('/admin')
@@ -643,7 +642,7 @@ router.get('/team',
                 };
 
                 members.push(member);
-            }
+            })
 
             res.render('admin/team/members', { members });
 
@@ -670,24 +669,28 @@ router.get('/team/new-member',
                 case 1:
                 case 2:
                 case 3:
-                    return ['Supervisor de vendas', 'Agente de vendas']
+                    return [4, 5, 6]
                 case 4:
-                    return ['Agente de vendas']
+                    return [5, 6]
                 default:
                     return []
             }
         }
 
         try {
-            const creatingOptions = await verifyCreatingOptions();
+            const creatingOptions: number[] = await verifyCreatingOptions();
 
             if (creatingOptions.length < 1) {
                 req.flash('errorMsg', 'Você não possui nível de permissão para criar usuários.')
                 return res.redirect('/admin/team')
             }
 
+            const optionsInText = creatingOptions.map((option) => {
+                return positionsNames[option]
+            })
+
             res.render('admin/team/new-member', {
-                positions: creatingOptions
+                positions: optionsInText
             });
         } catch (err) {
             req.flash('errorMsg', 'Houve um erro ao verificar as opções')
@@ -837,12 +840,16 @@ router.post('/team/new-member/create',
 
         const positionIndex = positionsNames.indexOf(formFields.position) || 6
 
+        const companyOfUser: Types.ObjectId = req.session?.selectedCompany?._id
+
+        console.log(companyOfUser)
+
         const newAcc = new Users({
             userID: await generateNewUserID(),
             name: formFields.name,
             nameSearch: normalizeName(formFields.name),
             phone: formFields.phone,
-            company: req.session?.selectedCompany?._id,
+            company: companyOfUser,
             email: formFields.email,
             position: positionIndex,
             managers: req.user?._id,
