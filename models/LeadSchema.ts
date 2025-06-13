@@ -11,24 +11,24 @@ export interface ILeads extends Document {
     sourceCode?: string;
     tags?: string[];
     interests: {
-    realEstateIT: Types.ObjectId[],
-    typeIT: string[],
-    cityIT: string[]
+        realEstateIT: Types.ObjectId[],
+        typeIT: string[],
+        cityIT: string[]
     };
     financial: {
-    familyIncome?: number;
-    inputValue?: number;
-    pMaxValue?: number;
-    pMaxMonthlyPortion?: number;
-    sourceOfIncome?:
-    'Desconhecido' |
-    'Emprego em CLT' |
-    'Autônomo' |
-    'Funcionário público' |
-    'Pró-Labore' |
-    'Previdência/Aposentadoria' |
-    'Misto' |
-    'Outros';
+        familyIncome?: number;
+        inputValue?: number;
+        pMaxValue?: number;
+        pMaxMonthlyPortion?: number;
+        sourceOfIncome?:
+        'Desconhecido' |
+        'Emprego em CLT' |
+        'Autônomo' |
+        'Funcionário público' |
+        'Pró-Labore' |
+        'Previdência/Aposentadoria' |
+        'Misto' |
+        'Outros';
     };
 
     status?:
@@ -96,7 +96,8 @@ const leadSchema = new Schema<ILeads>({
     },
     sourceCode: {
         type: String,
-        maxlength: 10,
+        trim: true,
+        maxlength: 16,
     },
     tags: {
         type: [String]

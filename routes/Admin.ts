@@ -2,7 +2,8 @@ import { Router, Request, Response, NextFunction } from "express";
 const router = Router();
 import bcrypt from "bcrypt"
 import ExcelJS from "exceljs"
-import { ObjectId, Query, Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
+const { ObjectId } = mongoose.Types
 
 import { ensureAuthenticated, IUserSession } from "../helpers/Auth.js"
 import { ensureRole } from "../helpers/Auth.js"
@@ -629,19 +630,27 @@ router.get('/team',
 
             teamMembers.map(async (id) => {
 
-                const pickMember = await Users.findById(id).lean();
-                if (!pickMember) {
+                const member = await Users.findById(id).lean();
+                if (!member) {
                     req.flash('errorMsg', 'Erro 4400 - vazio inesperado')
                     return res.redirect('/admin')
                 }
 
-                const member = {
-                    id: pickMember.userID,
-                    name: pickMember.name,
-                    position: pickMember.position
-                };
+                const isPartOfCompany = member.companies
+                    ?.map(id => id.toString())
+                    ?.includes(req.session?.selectedCompany?._id)
 
-                members.push(member);
+                const isEnabled = member.enabled
+
+                if (isPartOfCompany && isEnabled) {
+                    const memberToPage = {
+                        id: member.userID,
+                        name: member.name,
+                        position: member.position
+                    };
+
+                    members.push(memberToPage);
+                }
             })
 
             res.render('admin/team/members', { members });
@@ -840,16 +849,12 @@ router.post('/team/new-member/create',
 
         const positionIndex = positionsNames.indexOf(formFields.position) || 6
 
-        const companyOfUser: Types.ObjectId = req.session?.selectedCompany?._id
-
-        console.log(companyOfUser)
-
         const newAcc = new Users({
             userID: await generateNewUserID(),
             name: formFields.name,
             nameSearch: normalizeName(formFields.name),
             phone: formFields.phone,
-            company: companyOfUser,
+            companies: [req.session?.selectedCompany?._id],
             email: formFields.email,
             position: positionIndex,
             managers: req.user?._id,
@@ -909,53 +914,44 @@ router.get('/team/:teamuserID/hidden',
     ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response) => {
 
-        try {
+        const paramID = req.params.teamuserID
 
-            const managedUserID = String(req.params.teamuserID)
-            const userManagerID = String(req.user?.userID)
-            const userManager = await Users.findOne({ userID: userManagerID });
-            const managedUser = await Users.findOne({ userID: managedUserID });
+        const userToBeHidden = await Users.findOne({ userID: paramID })
 
-            if (!userManager || !managedUser) {
-                return req.flash('errorMsg', `Usuário ${managedUserID} ou ${req.user?.userID} não encontrado.`);
-            }
-
-            const newUnderManArray = userManager.underManagement.filter(item => item !== managedUserID)
-            const newManagersArray = managedUser.managers.filter(item => item !== userManagerID)
-
-            userManager.underManagement = newUnderManArray
-            managedUser.managers = newManagersArray
-
-            await userManager.save()
-                .then(async () => {
-
-                    const recordInfo: ISendedRecord = {
-                        userWhoChanged: String(userManagerID),
-                        affectedType: 'usuário',
-                        affectedData: String(managedUserID),
-                        action: 'retirou',
-                        category: 'Equipes',
-                        company: req.user?.company
-                    }
-
-                    await createRecord(recordInfo, req);
-
-                    await managedUser.save()
-                        .then()
-                        .catch((err) => {
-                            req.flash('errorMsg', `Não foi possível registrar a exclusão do gestor: ${err}`)
-                        })
-
-                    req.flash('successMsg', `membro da equipe excluído com sucesso.`)
-
-                })
-                .catch((err) => {
-                    req.flash('errorMsg', `Não foi possível registrar a exclusão do membro: ${err}`)
-                })
+        if (!userToBeHidden) {
+            req.flash('errorMsg', 'Usuário não encontrado')
+            return res.redirect('/admin/team')
         }
-        catch (err) {
-            req.flash('errorMsg', `Erro interno: ${err}`)
+
+        const isUnderThisUser = req.user?.underManagement
+            .map(id => id.toString())
+            .includes(String(userToBeHidden._id))
+
+        if (!isUnderThisUser) {
+            req.flash('errorMsg', 'Você não é gestor do usuário a ser excluído')
+            return res.redirect('/admin/team')
         }
+
+        await Users.findByIdAndUpdate(userToBeHidden._id, { enabled: false })
+            .then(async () => {
+
+                const recordInfo: ISendedRecord = {
+                    userWhoChanged: String(req.user?.userID),
+                    affectedType: 'usuário',
+                    affectedData: String(userToBeHidden.userID),
+                    action: 'retirou',
+                    category: 'Equipes',
+                    company: req.session?.selectedCompany?.companyID
+                }
+
+                await createRecord(recordInfo, req);
+
+                req.flash('successMsg', `membro da equipe excluído com sucesso.`)
+
+            })
+            .catch((err) => {
+                req.flash('errorMsg', `Não foi possível registrar a exclusão do membro: ${err}`)
+            })
 
         res.redirect('/admin/team')
     }
@@ -970,14 +966,17 @@ router.get('/leads',
 
         async function searchLeads() {
             try {
-                const userR = req.user?.userID;
 
-                const leads = await Leads.find({ responsibleAgent: userR }).lean().exec();
+                const leads = await Leads
+                    .find({ responsibleAgent: req.session?.selectedCompany?._id })
+                    .lean()
+                    .exec()
+
                 if (leads.length < 1) {
                     return null
                 }
 
-                const visibleLeads = leads.filter(lead => !lead.hidden);
+                const visibleLeads = leads.filter(lead => !lead.enabled);
 
                 const formattedLeads = visibleLeads.map(lead => ({
                     ...lead.toObject ? lead.toObject() : lead,
@@ -990,13 +989,13 @@ router.get('/leads',
                 return formattedLeads;
             } catch (err) {
                 req.flash('errorMsg', `Houve um erro ao buscar os dados: ${err}`)
-                return res.redirect('/admin')
+                return res.redirect('/admin/leads')
             }
         }
 
         const leadsByUser = await searchLeads();
 
-        res.render('admin/leads', { lead: leadsByUser })
+        res.render('admin/leads/leads', { lead: leadsByUser })
     });
 
 router.get('/leads/new-lead',
@@ -1032,29 +1031,7 @@ router.post('/leads/new-lead/create',
         try {
             const newLeadErrors = [];
 
-            const fields = {
-                name: req.body.name,
-                document: req.body.document,
-                phone: req.body.phone,
-                email: req.body.email,
-                sourceCode: req.body.sourceCode,
-                pTypeInterested: req.body.pTypeInterested,
-                currentCity: req.body.currentCity,
-                currentState: req.body.currentState,
-                currentCountry: req.body.currentCountry,
-                pCityInterested: req.body.pCityInterested,
-                pStateInterested: req.body.pStateInterested,
-                pCountryInterested: req.body.pCountryInterested,
-                condominiumInterested: req.body.condominiumInterested,
-                familyIncome: req.body.familyIncome,
-                inputValue: req.body.inputValue,
-                pMaxValue: req.body.pMaxValue,
-                pMaxMonthlyPortion: req.body.pMaxMonthlyPortion,
-                sourceOfIncome: req.body.sourceOfIncome,
-                status: req.body.status,
-                sourceOfLead: req.body.sourceOfLead,
-                observations: req.body.observations
-            };
+            const fields = req.body;
 
             const errors = {
                 undefined: Object.entries(fields).some(([key, value]) => value == undefined),
@@ -1119,7 +1096,7 @@ router.post('/leads/new-lead/create',
                         status: fields.status,
                         sourceOfLead: fields.sourceOfLead,
                         observations: fields.observations,
-                        company: req.user?.company,
+                        company: req.session?.selectedCompany?.companyID,
                         responsibleAgent: req.user?.userID,
                         createdAt: new Date,
                         updatedAt: new Date
@@ -1138,7 +1115,7 @@ router.post('/leads/new-lead/create',
                                     affectedData: String(newLead.leadID),
                                     action: "criou",
                                     category: "Leads",
-                                    company: newLead.company
+                                    company: String(newLead.company)
                                 }
 
                                 await createRecord(recordInfo, req);
