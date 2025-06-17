@@ -1011,14 +1011,15 @@ router.post('/leads/new-lead/create',
     ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response, next: NextFunction) => {
 
-        // Generating new company ID
+        const formFields = req.body;
+
         const generateNewLeadID = async () => {
             try {
 
                 const latestLead = await Leads.findOne().sort({ leadID: -1 }).exec();
                 const newID = latestLead && latestLead.leadID
                     ? latestLead.leadID + 1
-                    : 50000;
+                    : 1;
                 return newID;
 
             } catch (error) {
@@ -1027,117 +1028,96 @@ router.post('/leads/new-lead/create',
             }
         };
 
-        // Validations below
-        try {
-            const newLeadErrors = [];
+        const userLeads = async function queryUserLeads() {
+            const companyLeads = await Leads
+                .find({ responsibleAgent: req.user?._id })
+                .lean()
+            return companyLeads
+        }()
 
-            const fields = req.body;
-
+        async function verifyUndefinedAndNullFields(formFields: Record<string, any>) {
             const errors = {
-                undefined: Object.entries(fields).some(([key, value]) => value == undefined),
-                null: Object.entries(fields).some(([key, value]) => value == null)
+                undefined: Object.entries(formFields).some(([key, value]) => value == undefined),
+                null: Object.entries(formFields).some(([key, value]) => value == null)
             };
 
-            if (errors.undefined) {
-                newLeadErrors.push({ text: 'Erro 1004 - Campos indefinidos. Preencha todos os campos corretamente.' });
+            if (errors.undefined || errors.null) {
+                return 'Erro de campos. Preencha todos os campos corretamente.'
+            }
+            return null
+        }
+
+        async function verifyPhoneDuplicity(formFields: Record<string, any>) {
+            if ((await userLeads).some(lead => lead.phone == formFields.phone)) {
+                return `Este telefone já está ocupado.`
+            }
+            return null
+        }
+
+        async function verifyEmailDuplicity(formFields: Record<string, any>) {
+            if ((await userLeads).find(lead => lead.email == formFields.email)) {
+                return `Este e-mail já está ocupado.`
+            }
+            return null
+        }
+
+        async function verifyNewLeadProblems(formFields: Record<string, any>) {
+            const newLeadErrors: (string | null)[] = [];
+
+            newLeadErrors.push(await verifyUndefinedAndNullFields(formFields))
+            newLeadErrors.push(await verifyPhoneDuplicity(formFields))
+            newLeadErrors.push(await verifyEmailDuplicity(formFields))
+
+            return newLeadErrors.filter(error => error !== null) as string[]
+        }
+
+        try {
+
+            const leadProblems = await verifyNewLeadProblems(formFields)
+
+            if (leadProblems.length > 0) {
+                req.flash('errorMsg', leadProblems[0] || 'erro interno de validação.')
+                return res.redirect('/admin/leads')
             }
 
-            if (errors.null) {
-                newLeadErrors.push({ text: 'Erro 1005 - Campos nulos. Preencha todos os campos corretamente.' });
-            }
+            const newLead = new Leads({
+                ...formFields,
+                leadID: await generateNewLeadID(),
+                nameSearch: formFields.name.toUpperCase,
+                company: req.session?.selectedCompany?._id,
+                responsibleAgent: req.user?._id
+            });
 
-            // If it got some error
-            if (newLeadErrors.length > 0) {
-                const errorMessages = newLeadErrors.map(error => error.text);
-                req.flash('errorMsg', errorMessages[0]);
-                res.redirect('./');
-                return;
-            }
+            newLead.save()
+                .then(async () => {
+                    req.flash('successMsg', 'Lead criado com sucesso!');
 
-            // Any error in the HTML Form
-            else {
+                    try {
 
-                // Email already used.
-                if (await Leads.findOne({ email: fields.email })) {
-                    req.flash('errorMsg', `Erro 1009 - Este e-mail já está ocupado.`)
-                    return res.redirect('./')
-                }
+                        const recordInfo: ISendedRecord = {
+                            userWhoChanged: String(req.user?.userID),
+                            affectedType: "lead",
+                            affectedData: String(newLead.leadID),
+                            action: "criou",
+                            category: "Leads",
+                            company: req.session?.selectedCompany?.companyID
+                        }
 
-                if (await Leads.findOne({ phone: fields.phone })) {
-                    req.flash('errorMsg', `Erro 1009 - Este telefone já está ocupado.`)
-                    return res.redirect('./')
-                }
+                        await createRecord(recordInfo, req);
 
-                // Allright, creating account in the database
-
-                else {
-
-                    const newLead = new Leads({
-                        leadID: await generateNewLeadID(),
-                        name: fields.name,
-                        phone: fields.phone,
-                        document: fields.document,
-                        email: fields.email,
-                        sourceCode: fields.sourceCode,
-                        currentCity: fields.currentCity,
-                        currentState: fields.currentState,
-                        currentCountry: fields.currentCountry,
-                        tags: [],
-                        pTypeInterested: fields.pTypeInterested,
-                        pCityInterested: fields.pCityInterested,
-                        pStateInterested: fields.pStateInterested,
-                        pCountryInterested: fields.pCountryInterested,
-                        condominiumInterested: fields.condominiumInterested,
-                        familyIncome: fields.familyIncome,
-                        inputValue: fields.inputValue,
-                        pMaxValue: fields.pMaxValue,
-                        pMaxMonthlyPortion: fields.pMaxMonthlyPortion,
-                        sourceOfIncome: fields.sourceOfIncome,
-                        status: fields.status,
-                        sourceOfLead: fields.sourceOfLead,
-                        observations: fields.observations,
-                        company: req.session?.selectedCompany?.companyID,
-                        responsibleAgent: req.user?.userID,
-                        createdAt: new Date,
-                        updatedAt: new Date
-                    });
-
-                    newLead.save()
-                        .then(async () => {
-                            req.flash('successMsg', 'Lead criado com sucesso!');
-
-                            // Adding to records
-                            try {
-
-                                const recordInfo: ISendedRecord = {
-                                    userWhoChanged: String(newLead.responsibleAgent),
-                                    affectedType: "lead",
-                                    affectedData: String(newLead.leadID),
-                                    action: "criou",
-                                    category: "Leads",
-                                    company: String(newLead.company)
-                                }
-
-                                await createRecord(recordInfo, req);
-
-                            }
-                            catch (err) {
-                                req.flash('errorMsg', `Houve um erro ao criar o registro em histórico: ${err}`)
-                            }
-
-                            res.redirect('../');
-
-                        })
-                        .catch((err) => {
-                            req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
-                            res.redirect('../');
-                        });
-
-                }
-
-            }
+                    }
+                    catch (err) {
+                        req.flash('errorMsg', `Houve um erro ao criar o registro em histórico: ${err}`)
+                        return res.redirect('/admin/leads');
+                    }
+                })
+                .catch((err) => {
+                    req.flash('errorMsg', `Houve um erro ao salvar os dados: ${err}`)
+                    return res.redirect('/admin/leads');
+                });
         } catch (error) {
             req.flash('errorMsg', `Erro interno: ${error}`)
+            res.redirect('/admin/leads');
         }
     });
 

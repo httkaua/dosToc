@@ -5,21 +5,21 @@ export interface ILeads extends Document {
     leadID: number;
     name: string;
     nameSearch: string;
-    phone?: string;
+    phone: string;
     document?: string;
     email?: string;
     sourceCode?: string;
     tags?: string[];
     interests: {
-        realEstateIT: Types.ObjectId[],
-        typeIT: string[],
-        cityIT: string[]
+        realEstateIT?: Types.ObjectId[],
+        typeIT?: string[],
+        cityIT?: string[]
     };
     financial: {
         familyIncome?: number;
         inputValue?: number;
-        pMaxValue?: number;
-        pMaxMonthlyPortion?: number;
+        propertyMaxValue?: number;
+        propertyMaxMonthlyPortion?: number;
         sourceOfIncome?:
         'Desconhecido' |
         'Emprego em CLT' |
@@ -79,7 +79,6 @@ const leadSchema = new Schema<ILeads>({
     phone: { //* E.164 pattern
         type: String,
         required: true,
-        unique: true,
         minlength: 8,
         maxlength: 16,
         match: /^\+[0-9]{6,14}$/
@@ -94,7 +93,7 @@ const leadSchema = new Schema<ILeads>({
         maxlength: 50,
         match: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
     },
-    sourceCode: {
+    sourceCode: { //* ID or code of another system
         type: String,
         trim: true,
         maxlength: 16,
@@ -103,12 +102,23 @@ const leadSchema = new Schema<ILeads>({
         type: [String]
     },
     interests: { //* IT = interested
-        realEstateIT: { //* A specific property (input the sourceCode)
+        realEstateIT: {
             type: Schema.Types.ObjectId,
             ref: 'realestates'
         },
         TypeIT: {
-            type: [String]
+            type: [String],
+            enum: [
+                'Indiferente',
+                'Casa',
+                'Sobrado',
+                'Apartamento',
+                'Chácara',
+                'Terreno',
+                'Studio/Sala comercial',
+                'Galpão',
+                'Outros'
+            ]
         },
         cityIT: {
             type: [String]
@@ -118,8 +128,8 @@ const leadSchema = new Schema<ILeads>({
     financial: {
         familyIncome: Number,
         inputValue: Number,
-        pMaxValue: Number,
-        pMaxMonthlyPortion: Number,
+        propertyMaxValue: Number,
+        propertyMaxMonthlyPortion: Number,
         sourceOfIncome: {
             type: String,
             enum: [
