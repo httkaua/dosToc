@@ -16,7 +16,7 @@ import Companies, { ICompany } from "../models/CompanySchema.js"
 import Users, { IUser } from "../models/UserSchema.js"
 import Records, { IRecord } from "../models/RecordSchema.js"
 import RealEstates, { IRealEstate } from "../models/RealEstateSchema.js"
-import Leads from "../models/LeadSchema.js"
+import Leads, { ILeads } from "../models/LeadSchema.js"
 import { ISendedRecord } from "../models/@types_ISendedRecord.js"
 import passport, { use } from "passport";
 import positionsNames from "../helpers/positionNames.js";
@@ -966,36 +966,21 @@ router.get('/leads',
 
         async function searchLeads() {
             try {
-
                 const leads = await Leads
-                    .find({ responsibleAgent: req.session?.selectedCompany?._id })
+                    .find({
+                        company: req.session?.selectedCompany?._id,
+                        responsibleAgent: req.user?._id,
+                        enabled: true
+                    })
                     .lean()
                     .exec()
-
-                if (leads.length < 1) {
-                    return null
-                }
-
-                const visibleLeads = leads.filter(lead => !lead.enabled);
-
-                const formattedLeads = visibleLeads.map(lead => ({
-                    ...lead.toObject ? lead.toObject() : lead,
-                    id: lead.leadID,
-                    name: lead.name,
-                    phone: lead.phone,
-                    status: lead.status
-                }));
-
-                return formattedLeads;
+                return leads
             } catch (err) {
                 req.flash('errorMsg', `Houve um erro ao buscar os dados: ${err}`)
-                return res.redirect('/admin/leads')
             }
         }
 
-        const leadsByUser = await searchLeads();
-
-        res.render('admin/leads/leads', { lead: leadsByUser })
+        res.render('admin/leads/leads', { lead: (await searchLeads()) })
     });
 
 router.get('/leads/new-lead',
@@ -1027,6 +1012,14 @@ router.post('/leads/new-lead/create',
                 throw error;
             }
         };
+
+        function normalizeName(name: string): string {
+            return name
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .trim()
+                .toUpperCase()
+                .replace(/\s+/g, ' ');
+        }
 
         const userLeads = async function queryUserLeads() {
             const companyLeads = await Leads
@@ -1080,10 +1073,17 @@ router.post('/leads/new-lead/create',
                 return res.redirect('/admin/leads')
             }
 
-            const newLead = new Leads({
+            const newLead: ILeads = new Leads({
                 ...formFields,
                 leadID: await generateNewLeadID(),
-                nameSearch: formFields.name.toUpperCase,
+                nameSearch: normalizeName(formFields.name),
+                interests: {
+                    realEstateIT: formFields.realEstateIT !== ''
+                        ? formFields.realEstateIT
+                        : null,
+                    TypeIT: formFields.TypeIT,
+                    cityIT: formFields.cityIT
+                },
                 company: req.session?.selectedCompany?._id,
                 responsibleAgent: req.user?._id
             });
@@ -1104,6 +1104,7 @@ router.post('/leads/new-lead/create',
                         }
 
                         await createRecord(recordInfo, req);
+                        return res.redirect('/admin/leads');
 
                     }
                     catch (err) {
@@ -1125,25 +1126,49 @@ router.post('/leads/export-all',
     ensureAuthenticated,
     async (req: Request, res: Response) => {
 
-        try {
-            let leads = await Leads.find({ responsibleAgent: req.user?.userID })
+        async function searchLeads() {
+            const leads = await Leads.find({
+                company: req.session?.selectedCompany?._id,
+                responsibleAgent: req.user?._id,
+                enabled: true
+            })
                 .sort({ createdAt: -1 })
                 .lean()
                 .exec();
+            return leads
+        }
+
+        function convertToExcelDateSerial(dateInput: string | Date): number {
+            const MILLISECONDS_PER_DAY = 86_400_000
+            const EXCEL_EPOCH = new Date(Date.UTC(1899, 11, 30))
+
+            const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput
+
+            const utcDateOnly = new Date(Date.UTC(
+                date.getUTCFullYear(),
+                date.getUTCMonth(),
+                date.getUTCDate()
+            ));
+
+            const diffInMs = utcDateOnly.getTime() - EXCEL_EPOCH.getTime();
+
+            return Math.floor(diffInMs / MILLISECONDS_PER_DAY);
+        }
+
+        try {
+            const leads: Record<string, any> = await searchLeads()
 
             if (leads.length < 1) {
                 req.flash(`errorMsg`, `Você não possui nenhum lead para exportar.`)
-                return res.redirect('./')
+                return res.redirect('/admin/leads')
             }
 
-            leads = leads.filter(lead => !lead.hidden)
-            leads = leads.map(lead => ({
+            const formattedLeads = leads.map((lead: any) => ({
                 ...lead,
-                createdAt: new Date(lead.createdAt),
-                updatedAt: new Date(lead.updatedAt)
-            }))
+                createdAt: convertToExcelDateSerial(lead.createdAt) || null,
+                updatedAt: convertToExcelDateSerial(lead.updatedAt) || null
+            }));
 
-            // creating a new worksheet
             const workbook = new ExcelJS.Workbook()
             const worksheet = workbook.addWorksheet()
 
@@ -1157,14 +1182,22 @@ router.post('/leads/export-all',
                 { header: 'Imóvel interessado', key: 'sourceCode' },
                 { header: 'Renda bruta familiar', key: 'familyIncome' },
                 { header: 'Status', key: 'status' },
-                { header: 'Data de cadastro', key: 'createdAt', style: { numFmt: 'dd/mm/yyyy' } },
-                { header: 'Última atualização', key: 'updatedAt', style: { numFmt: 'dd/mm/yyyy' } },
+                {
+                    header: 'Data de cadastro',
+                    key: 'createdAt',
+                    style: { numFmt: 'dd/mm/yyyy' }
+                },
+                {
+                    header: 'Última atualização',
+                    key: 'updatedAt',
+                    style: { numFmt: 'dd/mm/yyyy' }
+                },
                 { header: 'Observações', key: 'observations' }
             ]
 
-            worksheet.addRows(leads);
+            worksheet.addRows(formattedLeads);
 
-            // Table header xlsx
+            //* Table header style (blue and white) xlsx
             worksheet.getRow(1).eachCell((cell) => {
                 cell.fill = {
                     type: 'pattern',
@@ -1201,17 +1234,19 @@ router.get('/leads/:leadID',
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const leadID = req.params.leadID;
-            const lead = await Leads.findOne({ leadID: leadID }).lean();
+            const lead = await Leads.findOne({ leadID })
+                .lean()
 
             if (!lead) {
-                req.flash(`Lead não encontrado em sua base.`);
-                return res.redirect('./');
+                req.flash('errorMsg', `Lead não encontrado em sua base.`)
+                return res.redirect('./')
             }
 
-            res.render('admin/leads/leadinfo', { lead });
+            res.render('admin/leads/leadinfo', { lead })
 
         } catch (err) {
-            req.flash(`Houve um erro interno no servidor ao buscar o lead: ${err}`);
+            req.flash('errorMsg',
+                `Houve um erro interno no servidor ao buscar o lead: ${err}`)
             res.redirect('./')
         }
     }
@@ -1221,14 +1256,14 @@ router.post('/leads/:leadID/update',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response) => {
-        const leadID = parseInt(req.params.leadID, 10);
+        const leadID = Number(req.params.leadID);
 
         try {
-            const lead = await Leads.findOne({ leadID: leadID });
+            const lead = await Leads.findOne({ leadID });
 
             if (!lead) {
                 req.flash('errorMsg', 'Lead não encontrado.');
-                return res.redirect('./');
+                return res.redirect(`/admin/leads/${leadID}`);
             }
 
             const updatedData = req.body;
@@ -1255,7 +1290,6 @@ router.post('/leads/:leadID/update',
                 }
             });
 
-            // Salvar mudanças, se houver
             if (Object.keys(changedFields).length > 0) {
                 Object.assign(lead, changedFields);
                 lead.updatedAt = new Date();
@@ -1275,7 +1309,7 @@ router.post('/leads/:leadID/update',
                         oldData: oldLeadData !== undefined ? `"${oldLeadData}"` : "",
                         newData: newLeadData !== undefined ? `"${newLeadData}"` : "",
                         category: "Leads",
-                        company: req.user?.company
+                        company: req.session?.selectedCompany?.companyID
                     };
 
                     await createRecord(recordInfo, req);
@@ -1302,17 +1336,13 @@ router.get('/leads/:leadID/hidden',
         const leadID = req.params.leadID;
 
         try {
-            const dataToHidden = await Leads.findOne({ leadID: leadID });
+            const dataToHidden = await Leads.findOne({ leadID });
             if (!dataToHidden) {
-                req.flash('errorMsg', 'Erro 4400 - vazio inesperado')
-                return res.redirect('./')
+                req.flash('errorMsg', 'Lead não encontrado')
+                return res.redirect('/admin/leads')
             }
 
-            dataToHidden.hidden = true;
-
-            if (!dataToHidden) {
-                req.flash('errorMsg', `Lead ${leadID} não encontrado.`);
-            }
+            dataToHidden.enabled = false;
 
             await dataToHidden.save()
                 .then(async () => {
@@ -1323,7 +1353,7 @@ router.get('/leads/:leadID/hidden',
                         affectedData: String(leadID),
                         action: 'excluiu*',
                         category: 'Leads',
-                        company: req.user?.company
+                        company: req.session?.selectedCompany?.companyID
                     }
 
                     await createRecord(recordInfo, req);

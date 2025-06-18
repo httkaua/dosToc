@@ -12,7 +12,16 @@ export interface ILeads extends Document {
     tags?: string[];
     interests: {
         realEstateIT?: Types.ObjectId[],
-        typeIT?: string[],
+        typeIT?:
+        'Indiferente' |
+        'Casa' |
+        'Sobrado' |
+        'Apartamento' |
+        'Chácara' |
+        'Terreno' |
+        'Studio/Sala comercial' |
+        'Galpão' |
+        'Outros',
         cityIT?: string[]
     };
     financial: {
@@ -28,8 +37,8 @@ export interface ILeads extends Document {
         'Pró-Labore' |
         'Previdência/Aposentadoria' |
         'Misto' |
-        'Outros';
-    };
+        'Outros'
+    }
 
     status?:
     'Primeiro contato' |
