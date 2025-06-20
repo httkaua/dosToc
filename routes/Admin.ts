@@ -714,7 +714,7 @@ router.post('/team/new-member/create',
 
         const formErrors: string[] = []
 
-        const formFields = req.body;
+        const requestData = req.body;
 
         async function verifyFormErrors(form: IUser): Promise<string | null> {
 
@@ -839,7 +839,7 @@ router.post('/team/new-member/create',
                 .replace(/\s+/g, ' ');
         }
 
-        const checkForm = await verifyFormErrors(formFields)
+        const checkForm = await verifyFormErrors(requestData)
 
         if (checkForm !== null) {
             req.flash('errorMsg', `${checkForm}`)
@@ -847,15 +847,15 @@ router.post('/team/new-member/create',
             return res.redirect('/admin/team')
         }
 
-        const positionIndex = positionsNames.indexOf(formFields.position) || 6
+        const positionIndex = positionsNames.indexOf(requestData.position) || 6
 
         const newAcc = new Users({
             userID: await generateNewUserID(),
-            name: formFields.name,
-            nameSearch: normalizeName(formFields.name),
-            phone: formFields.phone,
+            name: requestData.name,
+            nameSearch: normalizeName(requestData.name),
+            phone: requestData.phone,
             companies: [req.session?.selectedCompany?._id],
-            email: formFields.email,
+            email: requestData.email,
             position: positionIndex,
             managers: req.user?._id,
             createdAt: new Date,
@@ -869,7 +869,7 @@ router.post('/team/new-member/create',
                 return res.redirect('./');
             }
 
-            bcrypt.hash(formFields.password, salt, (err, hash) => {
+            bcrypt.hash(requestData.password, salt, (err, hash) => {
                 if (err) {
                     req.flash(`errorMsg', 'Houve um erro ao gerar HASH: ${err}`)
                     return res.redirect('./');
@@ -996,7 +996,7 @@ router.post('/leads/new-lead/create',
     ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response, next: NextFunction) => {
 
-        const formFields = req.body;
+        const requestData = req.body;
 
         const generateNewLeadID = async () => {
             try {
@@ -1028,10 +1028,10 @@ router.post('/leads/new-lead/create',
             return companyLeads
         }()
 
-        async function verifyUndefinedAndNullFields(formFields: Record<string, any>) {
+        async function verifyUndefinedAndNullFields(requestData: Record<string, any>) {
             const errors = {
-                undefined: Object.entries(formFields).some(([key, value]) => value == undefined),
-                null: Object.entries(formFields).some(([key, value]) => value == null)
+                undefined: Object.entries(requestData).some(([key, value]) => value == undefined),
+                null: Object.entries(requestData).some(([key, value]) => value == null)
             };
 
             if (errors.undefined || errors.null) {
@@ -1040,33 +1040,33 @@ router.post('/leads/new-lead/create',
             return null
         }
 
-        async function verifyPhoneDuplicity(formFields: Record<string, any>) {
-            if ((await userLeads).some(lead => lead.phone == formFields.phone)) {
+        async function verifyPhoneDuplicity(requestData: Record<string, any>) {
+            if ((await userLeads).some(lead => lead.phone == requestData.phone)) {
                 return `Este telefone já está ocupado.`
             }
             return null
         }
 
-        async function verifyEmailDuplicity(formFields: Record<string, any>) {
-            if ((await userLeads).find(lead => lead.email == formFields.email)) {
+        async function verifyEmailDuplicity(requestData: Record<string, any>) {
+            if ((await userLeads).find(lead => lead.email == requestData.email)) {
                 return `Este e-mail já está ocupado.`
             }
             return null
         }
 
-        async function verifyNewLeadProblems(formFields: Record<string, any>) {
+        async function verifyNewLeadProblems(requestData: Record<string, any>) {
             const newLeadErrors: (string | null)[] = [];
 
-            newLeadErrors.push(await verifyUndefinedAndNullFields(formFields))
-            newLeadErrors.push(await verifyPhoneDuplicity(formFields))
-            newLeadErrors.push(await verifyEmailDuplicity(formFields))
+            newLeadErrors.push(await verifyUndefinedAndNullFields(requestData))
+            newLeadErrors.push(await verifyPhoneDuplicity(requestData))
+            newLeadErrors.push(await verifyEmailDuplicity(requestData))
 
             return newLeadErrors.filter(error => error !== null) as string[]
         }
 
         try {
 
-            const leadProblems = await verifyNewLeadProblems(formFields)
+            const leadProblems = await verifyNewLeadProblems(requestData)
 
             if (leadProblems.length > 0) {
                 req.flash('errorMsg', leadProblems[0] || 'erro interno de validação.')
@@ -1074,15 +1074,15 @@ router.post('/leads/new-lead/create',
             }
 
             const newLead: ILeads = new Leads({
-                ...formFields,
+                ...requestData,
                 leadID: await generateNewLeadID(),
-                nameSearch: normalizeName(formFields.name),
+                nameSearch: normalizeName(requestData.name),
                 interests: {
-                    realEstateIT: formFields.realEstateIT !== ''
-                        ? formFields.realEstateIT
+                    realEstateIT: requestData.realEstateIT !== ''
+                        ? requestData.realEstateIT
                         : null,
-                    TypeIT: formFields.TypeIT,
-                    cityIT: formFields.cityIT
+                    TypeIT: requestData.TypeIT,
+                    cityIT: requestData.cityIT
                 },
                 company: req.session?.selectedCompany?._id,
                 responsibleAgent: req.user?._id
@@ -1375,27 +1375,42 @@ router.get('/leads/:leadID/hidden',
 
 
 //* ROUTES TYPE: Real Etates
-router.get('/real-states',
+router.get('/real-estates',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response, next: NextFunction) => {
 
-        try {
-            const userCompany = req.user?.company;
-            const RealEstates = await RealEstates.find({ company: userCompany }).lean().exec();
-            const visibleRealStates = RealEstates.filter(realstate => !realstate.hidden);
+        async function searchRealEstates() {
+            const realEstates = await RealEstates
+                .find({
+                    company: req.session?.selectedCompany?._id,
+                    enabled: true
+                })
+                .lean()
+                .exec();
+            return realEstates
+        }
 
-            const formattedRealStates = visibleRealStates.map(realstate => ({
-                src: realstate.src?.[0],
-                id: realstate.realStateID,
-                type: realstate.type,
-                bedrooms: realstate.bedrooms,
-                neighborhood: realstate.neighborhood,
-                city: realstate.city,
-                saleValue: realstate.saleValue
+        async function formatRealEstates(realEstates: Record<string, any>[]) {
+            const formattedRealStates = realEstates.map(realestate => ({
+                media: realestate.media?.[0],
+                id: realestate.realEstateID,
+                classification: realestate.classification,
+                bedrooms: realestate.rooms.bedrooms,
+                neighborhood: realestate.address.neighborhood,
+                city: realestate.address.city,
+                saleValue: realestate.financial.saleValue
             }));
+            return formattedRealStates
+        }
 
-            res.render('admin/RealEstates/real-states', { property: formattedRealStates });
+        try {
+
+            const realEstates = await searchRealEstates()
+
+            const realEstatesForViewPage = formatRealEstates(realEstates)
+
+            res.render('admin/real-estates/real-estates', { property: realEstatesForViewPage });
 
         } catch (err) {
             console.error(`Houve um erro ao buscar os dados: ${err}`);
@@ -1404,27 +1419,34 @@ router.get('/real-states',
     }
 );
 
-router.get('/real-states/new-real-state',
+router.get('/real-estates/new-real-estate',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response, next: NextFunction) => {
-        res.render('admin/RealEstates/new-real-state')
+        res.render('admin/real-estates/new-real-estate')
     }
 );
 
-router.post('/real-states/new-real-state/create',
+router.post('/real-estates/new-real-estate/create',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4]),
     upload.single("uploaded_file"),
     async (req: Request, res: Response, next: NextFunction) => {
 
-        const generateNewRealStateID = async () => {
-            try {
+        const requestData = req.body
 
-                const latestRealState = await RealEstates.findOne().sort({ realStateID: -1 }).exec();
-                const newID = latestRealState && latestRealState.realStateID
-                    ? latestRealState.realStateID + 1
-                    : 60000;
+        const generateNewRealEstateID = async () => {
+            try {
+                const latestRealState = await RealEstates
+                    .findOne({
+                        company: req.session?.selectedCompany?._id
+                    })
+                    .sort({ realEstateID: -1 });
+
+                const newID = latestRealState?.realEstateID
+                    ? latestRealState.realEstateID + 1
+                    : 1;
+
                 return newID;
 
             } catch (error) {
@@ -1435,44 +1457,44 @@ router.post('/real-states/new-real-state/create',
 
         const generateNewOwnerID = async () => {
             try {
+                const latestOwner = await RealEstates
+                    .findOne({ "owner.ownerID": { $exists: true } })
+                    .sort({ "owner.ownerID": -1 });
 
-                const latestOwner = await RealEstates.findOne().lean().sort({ "owner.ownerID": -1 }).exec();
-                if (!latestOwner) {
-                    req.flash('errorMsg', 'Erro 4400 - vazio inesperado')
-                    return res.redirect('./')
-                }
+                const newID = latestOwner?.owner?.ownerID
+                    ? latestOwner.owner.ownerID + 1
+                    : 1;
 
-                const newID = latestOwner && latestOwner.owner?.ownerID
-                    ? parseInt(latestOwner.owner.ownerID, 10) + 1
-                    : 70000;
                 return newID;
-
             } catch (error) {
                 console.error('Erro ao gerar novo ownerID:', error);
                 throw error;
             }
         };
 
-        const newLeadErrors = [];
-
-        const fields = req.body;
-
-        const errors = {
-            undefined: Object.entries(fields).some(([key, value]) => value == undefined),
-            null: Object.entries(fields).some(([key, value]) => value == null)
-        };
-
-        if (errors.undefined) {
-            newLeadErrors.push({ text: 'Erro 1004 - Campos indefinidos. Preencha todos os campos corretamente.' });
+        async function verifyUndefinedAndNullFields(requestData: Record<string, any>) {
+            const errors = {
+                undefined: Object.entries(requestData).some(([key, value]) => value == undefined),
+                null: Object.entries(requestData).some(([key, value]) => value == null)
+            };
+            if (errors.undefined || errors.null) {
+                return 'Campos inválidos. Recarregue a página e tente novamente'
+            }
+            return null
         }
 
-        if (errors.null) {
-            newLeadErrors.push({ text: 'Erro 1005 - Campos nulos. Preencha todos os campos corretamente.' });
+        async function verifyNewRealEstateProblems(requestData: Record<string, any>) {
+            const problems: (string | null)[] = []
+            problems.push(await verifyUndefinedAndNullFields(requestData))
+
+            return problems.filter(i => i !== null) as string[]
         }
 
-        if (newLeadErrors.length > 0) {
-            req.flash('errorMsg', newLeadErrors[0].text);
-            return res.redirect('./');
+        const newRealEtateProblems = await verifyNewRealEstateProblems(requestData)
+
+        if (newRealEtateProblems.length > 0) {
+            req.flash('errorMsg', newRealEtateProblems[0]);
+            return res.redirect('/admin/real-estates');
         }
 
         const propertyOwner = {
@@ -1504,7 +1526,7 @@ router.post('/real-states/new-real-state/create',
         }
 
         newRealState.owner = propertyOwner;
-        newRealState.realStateID = await generateNewRealStateID();
+        newRealState.realStateID = await generateNewRealEstateID();
         newRealState.tags = [];
         newRealState.company = req.user?.company;
         newRealState.responsibleAgent = req.user?.userID;
@@ -1530,11 +1552,11 @@ router.post('/real-states/new-real-state/create',
             req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`);
         }
 
-        return res.redirect('/admin/real-states');
+        return res.redirect('/admin/real-estates');
     }
 );
 
-router.get('/real-states/:realStateID',
+router.get('/real-estates/:realStateID',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response, next: NextFunction) => {
@@ -1545,10 +1567,10 @@ router.get('/real-states/:realStateID',
 
             if (!realS) {
                 req.flash('errorMsg', `Imóvel não encontrado em sua base.`);
-                return res.redirect('admin/RealEstates');
+                return res.redirect('admin/real-estates');
             }
 
-            res.render('admin/RealEstates/real-state-info', { realS });
+            res.render('admin/real-estates/real-estate-info', { realS });
 
         } catch (err) {
             req.flash('errorMsg', `Houve um erro interno no servidor ao buscar o lead: ${err}`);
@@ -1558,7 +1580,7 @@ router.get('/real-states/:realStateID',
 
 );
 
-router.post('/real-states/:realStateID/update',
+router.post('/real-estates/:realStateID/update',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response) => {
@@ -1627,15 +1649,15 @@ router.post('/real-states/:realStateID/update',
                 req.flash('successMsg', 'Nenhum campo foi alterado.');
             }
 
-            res.redirect('/admin/real-states');
+            res.redirect('/admin/real-estates');
         } catch (err) {
             req.flash('errorMsg', `Erro no servidor: ${err}`);
-            res.redirect('/admin/real-states');
+            res.redirect('/admin/real-estates');
         }
     }
 );
 
-router.get('/real-states/:realStateID/hidden',
+router.get('/real-estates/:realStateID/hidden',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response) => {
@@ -1680,7 +1702,7 @@ router.get('/real-states/:realStateID/hidden',
             req.flash('errorMsg', `Erro interno: ${err}`)
         }
 
-        res.redirect('/admin/real-states')
+        res.redirect('/admin/real-estates')
     }
 );
 

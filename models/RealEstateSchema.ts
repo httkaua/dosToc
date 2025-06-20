@@ -2,115 +2,115 @@ import mongoose, { Document, Schema, Types } from "mongoose"
 
 //* TS INTERFACES
 export interface IOwner extends Document {
-    ownerID: string;
+    ownerID: number;
     name: string;
     phoneNumber: string;
     email?: string;
     createdAt: Date;
     updatedAt: Date;
-  }
-  
+}
+
 export interface IRealEstate extends Document {
-_id: Types.ObjectId
-realStateID: number;
-classification?:
-'Casa' |
-'Terreno' |
-'Apartamento' |
-'Sobrado' |
-'Sítio' |
-'Galpão' |
-'Studio/Sala comercial';
+    _id: Types.ObjectId
+    realEstateID: number;
+    classification?:
+    'Casa' |
+    'Terreno' |
+    'Apartamento' |
+    'Sobrado' |
+    'Sítio' |
+    'Galpão' |
+    'Studio/Sala comercial';
 
-condominium: {
-    block: string,
-    internalNumber: string,
-    floor: number
-},
-rentalOrSale?:
-'Venda' |
-'Aluguel' |
-'Ambos';
+    condominium: {
+        block: string,
+        internalNumber: string,
+        floor: number
+    },
+    rentalOrSale?:
+    'Venda' |
+    'Aluguel' |
+    'Ambos';
 
-financial: {
-    saleValue: number;
-    assessedValue: number;
-    financingMaxValue: number;
-    exchange: boolean;
-    currency: string;
-    financeable: boolean;
-    tax: boolean;
-    taxFrequency?:
-    'Único' |
-    'Mensal' |
-    'Anual';
+    financial: {
+        saleValue: number;
+        assessedValue: number;
+        financingMaxValue: number;
+        exchange: boolean;
+        currency: string;
+        financeable: boolean;
+        tax: boolean;
+        taxFrequency?:
+        'Único' |
+        'Mensal' |
+        'Anual';
 
-    taxValue: number;
-},
+        taxValue: number;
+    },
 
-propertySituation?:
-'Novo' |
-'Usado' |
-'Em construção' |
-'Reformado' |
-'Em reforma';
+    propertySituation?:
+    'Novo' |
+    'Usado' |
+    'Em construção' |
+    'Reformado' |
+    'Em reforma';
 
-commercialSituation?:
-'Ativo' |
-'Inativo' |
-'Vendido' |
-'Suspenso' |
-'Alugado' |
-'Permutado';
+    commercialSituation?:
+    'Ativo' |
+    'Inativo' |
+    'Vendido' |
+    'Suspenso' |
+    'Alugado' |
+    'Permutado';
 
-description?: string,
-rooms: {
-    bedrooms?: number;
-    livingRooms?: number;
-    bathrooms?: number;
-    parkingSpaces?: number;
-},
+    description?: string,
+    rooms: {
+        bedrooms?: number;
+        livingRooms?: number;
+        bathrooms?: number;
+        parkingSpaces?: number;
+    },
 
-address: {
-    locationCode?: string;
-    street?: string;
-    streetNumber: number;
-    complement?: string;
-    neighborhood?: string;
-    region?: string;
-    city?: string;
-    state?: string;
-    country?: string;
-},
+    address: {
+        locationCode?: string;
+        street?: string;
+        streetNumber: number;
+        complement?: string;
+        neighborhood?: string;
+        region?: string;
+        city?: string;
+        state?: string;
+        country?: string;
+    },
 
-landArea: number;
-builtUpArea: number;
-face?:
-'Norte' |
-'Nordeste' |
-'Leste' |
-'Sudeste' |
-'Sul' |
-'Sudoeste' |
-'Oeste' |
-'Noroeste' |
-'Não identificado';
+    landArea: number;
+    builtUpArea: number;
+    face?:
+    'Norte' |
+    'Nordeste' |
+    'Leste' |
+    'Sudeste' |
+    'Sul' |
+    'Sudoeste' |
+    'Oeste' |
+    'Noroeste' |
+    'Não identificado';
 
-tags?: string[];
-media?: string[];
-publish: boolean;
-userCreator?: Types.ObjectId;
-owner?: Types.ObjectId;
-company?: Types.ObjectId;
-createdAt: Date;
-updatedAt: Date;
-enabled: boolean;
+    tags?: string[];
+    media?: string[];
+    publish: boolean;
+    userCreator?: Types.ObjectId;
+    owner?: IOwner;
+    company?: Types.ObjectId;
+    createdAt: Date;
+    updatedAt: Date;
+    enabled: boolean;
 }
 
 //* MONGODB SCHEMAS
 const ownerSchema = new Schema<IOwner>({
     ownerID: {
-        type: String,
+        type: Number,
         immutable: true,
         unique: true,
         required: true
@@ -147,7 +147,7 @@ const ownerSchema = new Schema<IOwner>({
 });
 
 const RealStateSchema = new Schema<IRealEstate>({
-    realStateID: {
+    realEstateID: {
         type: Number,
         immutable: true,
         unique: true,
@@ -182,19 +182,19 @@ const RealStateSchema = new Schema<IRealEstate>({
         }
     },
     rentalOrSale: {
-    type: String,
-    enum: [
-        'Venda',
-        'Aluguel',
-        'Ambos'
-    ]
+        type: String,
+        enum: [
+            'Venda',
+            'Aluguel',
+            'Ambos'
+        ]
     },
     financial: {
         saleValue: {
-        type: Number,
-        default: 0,
-        min: 0,
-        max: 99999999
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 99999999
         },
         assessedValue: {
             type: Number,
@@ -268,9 +268,9 @@ const RealStateSchema = new Schema<IRealEstate>({
     },
     rooms: {
         bedrooms: {
-        type: Number,
-        min: 0,
-        max: 100
+            type: Number,
+            min: 0,
+            max: 100
         },
         livingRooms: {
             type: Number,
@@ -356,7 +356,7 @@ const RealStateSchema = new Schema<IRealEstate>({
             'Não identificado'
         ]
     },
-    tags: { //TODO: Custom tags feature 
+    tags: {
         type: [String]
     },
     media: { //* The 0 in array it's the main photo (thumbnail)
