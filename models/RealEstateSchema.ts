@@ -2,17 +2,18 @@ import mongoose, { Document, Schema, Types } from "mongoose"
 
 //* TS INTERFACES
 export interface IOwner extends Document {
-    ownerID: number;
-    name: string;
-    phoneNumber: string;
-    email?: string;
-    createdAt: Date;
-    updatedAt: Date;
+    ownerID: number
+    name: string
+    nameSearch: String
+    phoneNumber: string
+    email?: string
+    createdAt: Date
+    updatedAt: Date
 }
 
 export interface IRealEstate extends Document {
     _id: Types.ObjectId
-    realEstateID: number;
+    realEstateID: number
     classification?:
     'Casa' |
     'Terreno' |
@@ -20,7 +21,7 @@ export interface IRealEstate extends Document {
     'Sobrado' |
     'Sítio' |
     'Galpão' |
-    'Studio/Sala comercial';
+    'Studio/Sala comercial'
 
     condominium: {
         block: string,
@@ -30,22 +31,22 @@ export interface IRealEstate extends Document {
     rentalOrSale?:
     'Venda' |
     'Aluguel' |
-    'Ambos';
+    'Ambos'
 
     financial: {
-        saleValue: number;
-        assessedValue: number;
-        financingMaxValue: number;
-        exchange: boolean;
-        currency: string;
-        financeable: boolean;
-        tax: boolean;
+        saleValue: number
+        assessedValue: number
+        financingMaxValue: number
+        exchange: boolean
+        currency: string
+        financeable: boolean
+        tax: boolean
         taxFrequency?:
         'Único' |
         'Mensal' |
-        'Anual';
+        'Anual'
 
-        taxValue: number;
+        taxValue: number
     },
 
     propertySituation?:
@@ -53,7 +54,7 @@ export interface IRealEstate extends Document {
     'Usado' |
     'Em construção' |
     'Reformado' |
-    'Em reforma';
+    'Em reforma'
 
     commercialSituation?:
     'Ativo' |
@@ -61,30 +62,30 @@ export interface IRealEstate extends Document {
     'Vendido' |
     'Suspenso' |
     'Alugado' |
-    'Permutado';
+    'Permutado'
 
     description?: string,
     rooms: {
-        bedrooms?: number;
-        livingRooms?: number;
-        bathrooms?: number;
-        parkingSpaces?: number;
+        bedrooms?: number
+        livingRooms?: number
+        bathrooms?: number
+        parkingSpaces?: number
     },
 
     address: {
-        locationCode?: string;
-        street?: string;
-        streetNumber: number;
-        complement?: string;
-        neighborhood?: string;
-        region?: string;
-        city?: string;
-        state?: string;
-        country?: string;
+        locationCode?: string
+        street?: string
+        streetNumber: number
+        complement?: string
+        neighborhood?: string
+        region?: string
+        city?: string
+        state?: string
+        country?: string
     },
 
-    landArea: number;
-    builtUpArea: number;
+    landArea: number
+    builtUpArea: number
     face?:
     'Norte' |
     'Nordeste' |
@@ -94,17 +95,17 @@ export interface IRealEstate extends Document {
     'Sudoeste' |
     'Oeste' |
     'Noroeste' |
-    'Não identificado';
+    'Não identificado'
 
-    tags?: string[];
-    media?: string[];
-    publish: boolean;
-    userCreator?: Types.ObjectId;
-    owner?: IOwner;
-    company?: Types.ObjectId;
-    createdAt: Date;
-    updatedAt: Date;
-    enabled: boolean;
+    tags?: string[]
+    media?: string[]
+    publish: boolean
+    userCreator?: Types.ObjectId
+    owner?: IOwner
+    company?: Types.ObjectId
+    createdAt: Date
+    updatedAt: Date
+    enabled: boolean
 }
 
 //* MONGODB SCHEMAS
@@ -118,6 +119,14 @@ const ownerSchema = new Schema<IOwner>({
     name: {
         type: String,
         required: true,
+        trim: true,
+        maxlength: 50
+    },
+    nameSearch: {
+        type: String,
+        required: true,
+        uppercase: true,
+        trim: true,
         maxlength: 50
     },
     phoneNumber: { //* E.164 pattern
@@ -144,7 +153,7 @@ const ownerSchema = new Schema<IOwner>({
         type: Date,
         default: new Date
     }
-});
+})
 
 const RealStateSchema = new Schema<IRealEstate>({
     realEstateID: {
@@ -390,7 +399,7 @@ const RealStateSchema = new Schema<IRealEstate>({
         type: Boolean,
         default: true
     }
-});
+})
 
-const RealEstates = mongoose.model<IRealEstate>("realestates", RealStateSchema);
+const RealEstates = mongoose.model<IRealEstate>("realestates", RealStateSchema)
 export default RealEstates

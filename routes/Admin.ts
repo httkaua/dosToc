@@ -20,6 +20,7 @@ import Leads, { ILeads } from "../models/LeadSchema.js"
 import { ISendedRecord } from "../models/@types_ISendedRecord.js"
 import passport, { use } from "passport";
 import positionsNames from "../helpers/positionNames.js";
+import { InstanceError } from "sequelize";
 
 router.get('/feed-session',
     ensureAuthenticated,
@@ -632,7 +633,7 @@ router.get('/team',
 
                 const member = await Users.findById(id).lean();
                 if (!member) {
-                    req.flash('errorMsg', 'Erro 4400 - vazio inesperado')
+                    req.flash('errorMsg', 'Vazio inesperado')
                     return res.redirect('/admin')
                 }
 
@@ -1405,16 +1406,16 @@ router.get('/real-estates',
         }
 
         try {
-
             const realEstates = await searchRealEstates()
-
             const realEstatesForViewPage = formatRealEstates(realEstates)
 
             res.render('admin/real-estates/real-estates', { property: realEstatesForViewPage });
 
         } catch (err) {
             console.error(`Houve um erro ao buscar os dados: ${err}`);
-            next(err);
+            res.status(500)
+            req.flash('errorMsg', 'Erro interno do servidor.')
+            res.redirect('/admin');
         }
     }
 );
@@ -1453,7 +1454,7 @@ router.post('/real-estates/new-real-estate/create',
                 console.error('Erro ao gerar novo realStateID:', error);
                 throw error;
             }
-        };
+        }
 
         const generateNewOwnerID = async () => {
             try {
@@ -1470,9 +1471,9 @@ router.post('/real-estates/new-real-estate/create',
                 console.error('Erro ao gerar novo ownerID:', error);
                 throw error;
             }
-        };
+        }
 
-        async function verifyUndefinedAndNullFields(requestData: Record<string, any>) {
+        async function verifyUndefinedAndNullFields() {
             const errors = {
                 undefined: Object.entries(requestData).some(([key, value]) => value == undefined),
                 null: Object.entries(requestData).some(([key, value]) => value == null)
@@ -1483,74 +1484,115 @@ router.post('/real-estates/new-real-estate/create',
             return null
         }
 
-        async function verifyNewRealEstateProblems(requestData: Record<string, any>) {
+        async function verifyIfMediaWasSended() {
+            if (!req.file) {
+                return 'Nenhuma mídia foi enviada. Para cadastrar um imóvel, deve ser enviado ao menos uma foto.'
+            }
+            return null
+        }
+
+        async function verifyIfIsValidEmail(email: string) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (email == '' || email == null)
+                return null  //* email is an optional field. Don't need validation if empty
+            return emailRegex.test(email)
+                ? null
+                : 'Formato de e-mail inválido. Verifique e tente novamente. Exemplos de formato correto: "exemplo@gmail.com | exemplo2@outlook.br"'
+        }
+
+        async function verifyNewRealEstateProblems() {
             const problems: (string | null)[] = []
-            problems.push(await verifyUndefinedAndNullFields(requestData))
+            problems.push(await verifyUndefinedAndNullFields())
+            problems.push(await verifyIfMediaWasSended())
+            problems.push(await verifyIfIsValidEmail(requestData.email))
 
             return problems.filter(i => i !== null) as string[]
         }
 
-        const newRealEtateProblems = await verifyNewRealEstateProblems(requestData)
+        async function createNewPropertyOwnerObject() {
+            const propertyOwner = {
+                ownerID: await generateNewOwnerID(),
+                name: requestData.name.trim(),
+                nameSearch: requestData.name.trim(),
+                phoneNumber: requestData.phoneNumber,
+                email: requestData.email.trim()
+            }
+            return propertyOwner
+        }
+
+        async function separateNoNestedFieldsForNewRealEstate() {
+            const noNestedFieldsFromRequest = [
+                'classification',
+                'rentalOrSale',
+                'propertySituation',
+                'commercialSituation',
+                'description',
+                'landArea',
+                'builtUpArea',
+                'face',
+                'publish'
+            ]
+
+            const noNestedFields = Object.fromEntries(
+                Object.entries(requestData)
+                    .filter(([key]) => noNestedFieldsFromRequest.includes(key))
+            )
+            console.log(noNestedFields)
+            return noNestedFields
+        }
+
+        async function setCompanyAndUserForNewRealEstate() {
+            const companyAndUserObject = {
+                company: req.session?.selectedCompany?._id,
+                responsibleAgent: req.user?.userID
+            }
+            return companyAndUserObject
+        }
+
+        async function createNewRealEstateObject() {
+
+            const newRealEstate: Record<string, any> = await separateNoNestedFieldsForNewRealEstate()
+            newRealEstate.owner = await createNewPropertyOwnerObject()
+            newRealEstate.realEstateID = await generateNewRealEstateID()
+            newRealEstate.tags = []
+            return newRealEstate
+        }
+
+        const newRealEtateProblems = await verifyNewRealEstateProblems()
 
         if (newRealEtateProblems.length > 0) {
             req.flash('errorMsg', newRealEtateProblems[0]);
             return res.redirect('/admin/real-estates');
         }
 
-        const propertyOwner = {
-            ownerID: await generateNewOwnerID(),
-            name: req.body.name.trim(),
-            phoneNumber: Number(req.body.phoneNumber),
-            email: req.body.email.trim(),
-            updatedAt: new Date(),
-            createdAt: new Date()
-        };
+        const newRealEstate = new RealEstates(await createNewRealEstateObject())
 
-        const { name, phoneNumber, email, ...fieldsWithoutOwner } = fields;
-        const newRealState: any = new RealEstates(fieldsWithoutOwner);
-        newRealState.src = [];
+        await uploadMedia(req.file!, newRealEstate)
+            .then()
+            .catch((err) => {
+                err instanceof Error
+                    ? req.flash('errorMsg', `Erro ao salvar imagem: ${err.message}`)
+                    : req.flash('errorMsg', `Erro ao salvar imagem: ${err}`)
+                return res.redirect('/admin/real-estates');
+            })
 
-        try {
-            if (!req.file) {
-                req.flash('errorMsg', 'Erro 4400 - vazio inesperado.')
-                return res.redirect('./')
-            }
+        await newRealEstate.save()
+            .then(async () => {
+                const recordInfo: ISendedRecord = {
+                    userWhoChanged: String(req.user?.userID),
+                    affectedType: 'imóvel',
+                    affectedData: String(newRealEstate.realEstateID),
+                    action: 'criou',
+                    category: 'Imóveis',
+                    company: req.session?.selectedCompany?.companyID
+                }
 
-            await uploadMedia(req.file, newRealState);
-        } catch (err) {
-            err instanceof Error ?
-                req.flash('errorMsg', `Erro ao salvar imagem: ${err.message}`)
-                : req.flash('errorMsg', `Erro ao salvar imagem: ${err}`)
-
-            return res.redirect('./');
-        }
-
-        newRealState.owner = propertyOwner;
-        newRealState.realStateID = await generateNewRealEstateID();
-        newRealState.tags = [];
-        newRealState.company = req.user?.company;
-        newRealState.responsibleAgent = req.user?.userID;
-        newRealState.createdAt = new Date();
-        newRealState.updatedAt = new Date();
-
-        try {
-            await newRealState.save();
-            req.flash('successMsg', 'Imóvel cadastrado com sucesso!');
-
-            const recordInfo: ISendedRecord = {
-                userWhoChanged: String(req.user?.userID),
-                affectedType: 'imóvel',
-                affectedData: String(newRealState.realStateID),
-                action: 'criou',
-                category: 'Imóveis',
-                company: req.user?.company
-            }
-
-            createRecord(recordInfo, req)
-
-        } catch (err) {
-            req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`);
-        }
+                await createRecord(recordInfo, req)
+            })
+            .catch((err: any) => {
+                req.flash('errorMsg', `Não foi possível salvar os dados: ${err}`)
+            })
+        req.flash('successMsg', 'Imóvel cadastrado com sucesso!');
 
         return res.redirect('/admin/real-estates');
     }
@@ -1667,7 +1709,7 @@ router.get('/real-estates/:realStateID/hidden',
         try {
             const dataToHidden = await RealEstates.findOne({ realStateID: realStateID });
             if (!dataToHidden) {
-                req.flash('errorMsg', 'Erro 4400 - vazio inesperado')
+                req.flash('errorMsg', 'Vazio inesperado')
                 return res.redirect('./')
             }
 

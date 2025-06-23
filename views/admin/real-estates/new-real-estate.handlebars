@@ -7,7 +7,8 @@
                 </div>
                 <div class="card-body">
                     <!--enctype for Multer library -->
-                    <form method="POST" enctype="multipart/form-data" action="/admin/real-states/new-real-state/create">
+                    <form method="POST" enctype="multipart/form-data"
+                        action="/admin/real-estates/new-real-estate/create">
                         <h4 class="mt-2">Dados essenciais</h4>
 
                         <div class="dropdownMenus col-md-12 mt-4">
@@ -77,13 +78,14 @@
                         <small>Preencher apenas se o imóvel cadastrado fizer parte de um</small>
 
                         <div class="form-group mt-3">
-                            <label for="floor">Andar</label>
-                            <input type="number" class="form-control" id="floor" name="floor" placeholder="2">
+                            <label for="block">Bloco</label>
+                            <input type="text" class="form-control" id="block" name="block" placeholder="2">
                         </div>
 
                         <div class="form-group mt-3">
-                            <label for="floor">Andar</label>
-                            <input type="number" class="form-control" id="floor" name="floor" placeholder="2">
+                            <label for="internalNumber">Número interno</label>
+                            <input type="text" class="form-control" id="internalNumber" name="internalNumber"
+                                placeholder="2">
                         </div>
 
                         <div class="form-group mt-3">
@@ -249,6 +251,7 @@
                             <div class='form-field'>
                                 <label for='face'>Face do imóvel</label>
                                 <select id='face' name="face" class='form-control'>
+                                    <option value="Não identificado" selected>Não identificado</option>
                                     <option value="Sul">Sul</option>
                                     <option value="Sudoeste">Sudoeste</option>
                                     <option value="Oeste">Oeste</option>
@@ -257,7 +260,6 @@
                                     <option value="Nordeste">Nordeste</option>
                                     <option value="Leste">Leste</option>
                                     <option value="Sudeste">Sudeste</option>
-                                    <option value="Não identificado">Não identificado</option>
                                 </select>
                             </div>
                         </div>
@@ -306,7 +308,7 @@
 
                         <div class="form-group">
                             <label for="phoneNumber">Telefone</label>
-                            <input type="number" class="form-control" id="phoneNumber" name="phoneNumber"
+                            <input type="text" class="form-control" id="phoneNumber" name="phoneNumber"
                                 placeholder="+55 41 98000-7000">
                         </div>
 
