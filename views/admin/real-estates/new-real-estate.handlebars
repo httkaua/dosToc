@@ -124,7 +124,7 @@
                             <div class='form-field'>
                                 <label for='rentalOrSale'>Tipo de anúncio</label>
                                 <select id='rentalOrSale' name="rentalOrSale" class='form-control'>
-                                    <option value="Venda">Venda</option>
+                                    <option value="Venda" selected>Venda</option>
                                     <option value="Aluguel">Aluguel</option>
                                     <option value="Ambos">Ambos</option>
                                 </select>
@@ -134,19 +134,19 @@
                         <div class="form-group mt-3">
                             <label for="currency">Moeda</label>
                             <input type="text" class="form-control" id="currency" name="currency"
-                                value="BRL (Real brasileiro)" readonly>
+                                placeholder="BRL (Real brasileiro)" value="BRL" readonly>
                         </div>
 
                         <div class="form-check mt-4">
                             <input class="form-check-input" type="checkbox" value="true" id="financeable"
-                                name="financeable">
+                                name="financeable" checked>
                             <label class="form-check-label" for="financeable">
                                 Financiável?
                             </label>
                         </div>
 
                         <div class="form-check mt-4">
-                            <input class="form-check-input" type="checkbox" value="true" id="tax" name="tax">
+                            <input class="form-check-input" type="checkbox" value="true" id="tax" name="tax" checked>
                             <label class="form-check-label" for="tax">
                                 Imposto a pagar?
                             </label>
@@ -265,7 +265,8 @@
                         </div>
 
                         <div class="form-check mt-3">
-                            <input class="form-check-input" type="checkbox" value="true" id="publish" name="publish">
+                            <input class="form-check-input" type="checkbox" value="true" id="publish" name="publish"
+                                checked>
                             <label class="form-check-label" for="publish">
                                 Publicar no site?
                             </label>
@@ -303,13 +304,14 @@
 
                         <div class="form-group mt-4">
                             <label for="name">Nome completo</label>
-                            <input type="text" class="form-control" id="name" name="name" placeholder="Maria de Castro">
+                            <input type="text" class="form-control" id="name" name="name" placeholder="Maria de Castro"
+                                required>
                         </div>
 
                         <div class="form-group">
                             <label for="phoneNumber">Telefone</label>
                             <input type="text" class="form-control" id="phoneNumber" name="phoneNumber"
-                                placeholder="+55 41 98000-7000">
+                                placeholder="+55 41 98000-7000" required>
                         </div>
 
                         <div class="form-group">

@@ -1388,7 +1388,7 @@ router.get('/real-estates',
                     enabled: true
                 })
                 .lean()
-                .exec();
+                .exec()
             return realEstates
         }
 
@@ -1402,6 +1402,7 @@ router.get('/real-estates',
                 city: realestate.address.city,
                 saleValue: realestate.financial.saleValue
             }));
+            console.log(formattedRealStates)
             return formattedRealStates
         }
 
@@ -1412,10 +1413,9 @@ router.get('/real-estates',
             res.render('admin/real-estates/real-estates', { property: realEstatesForViewPage });
 
         } catch (err) {
-            console.error(`Houve um erro ao buscar os dados: ${err}`);
-            res.status(500)
+            console.error(`Houve um erro ao buscar os dados: ${err}`)
             req.flash('errorMsg', 'Erro interno do servidor.')
-            res.redirect('/admin');
+            res.redirect('/admin')
         }
     }
 );
@@ -1435,6 +1435,8 @@ router.post('/real-estates/new-real-estate/create',
     async (req: Request, res: Response, next: NextFunction) => {
 
         const requestData = req.body
+        console.log(requestData)
+        console.log('\n\n')
 
         const generateNewRealEstateID = async () => {
             try {
@@ -1509,15 +1511,65 @@ router.post('/real-estates/new-real-estate/create',
             return problems.filter(i => i !== null) as string[]
         }
 
-        async function createNewPropertyOwnerObject() {
+        async function createPropertyOwnerNestedObject() {
+            const ownerName = requestData.name
             const propertyOwner = {
                 ownerID: await generateNewOwnerID(),
-                name: requestData.name.trim(),
-                nameSearch: requestData.name.trim(),
+                name: ownerName.trim(),
+                nameSearch: ownerName.trim().toUpperCase(),
                 phoneNumber: requestData.phoneNumber,
                 email: requestData.email.trim()
             }
             return propertyOwner
+        }
+
+        async function createCondominiumNestedObject() {
+            const condominium = {
+                block: requestData.block,
+                internalNumber: requestData.internalNumber,
+                floor: requestData.floor
+            }
+            return condominium
+        }
+
+        async function createFinancialNestedObject() {
+            const financial = {
+                saleValue: requestData.saleValue,
+                assessedValue: requestData.assessedValue,
+                financingMaxValue: requestData.financingMaxValue,
+                exchange: requestData.exchange,
+                currency: requestData.currency,
+                financeable: requestData.financeable,
+                tax: requestData.tax,
+                taxFrequency: requestData.taxFrequency,
+                taxValue: requestData.taxValue
+            }
+            return financial
+        }
+
+        async function createRoomsNestedObject() {
+            const rooms = {
+                bedrooms: requestData.bedrooms,
+                livingRooms: requestData.livingRooms,
+                bathrooms: requestData.bathrooms,
+                parkingSpaces: requestData.parkingSpaces
+            }
+            return rooms
+        }
+
+        async function createAddressNestedObject() {
+            const address = {
+                locationCode: requestData.locationCode,
+                street: requestData.street,
+                streetNumber: requestData.streetNumber,
+                complement: requestData.complement,
+                neighborhood: requestData.neighborhood,
+                region: requestData.region,
+                city: requestData.city,
+                state: requestData.state,
+                country: requestData.country,
+            }
+            return address
         }
 
         async function separateNoNestedFieldsForNewRealEstate() {
@@ -1532,29 +1584,32 @@ router.post('/real-estates/new-real-estate/create',
                 'face',
                 'publish'
             ]
-
-            const noNestedFields = Object.fromEntries(
-                Object.entries(requestData)
-                    .filter(([key]) => noNestedFieldsFromRequest.includes(key))
-            )
-            console.log(noNestedFields)
+            const noNestedFields = Object.fromEntries(Object.entries(requestData)
+                .filter(([key]) => noNestedFieldsFromRequest.includes(key)))
             return noNestedFields
         }
 
-        async function setCompanyAndUserForNewRealEstate() {
-            const companyAndUserObject = {
-                company: req.session?.selectedCompany?._id,
-                responsibleAgent: req.user?.userID
-            }
-            return companyAndUserObject
+        async function setDBReferencesForNewRealEstate(newRealEstate: Record<string, any>) {
+            newRealEstate.realEstateID = await generateNewRealEstateID()
+            newRealEstate.company = req.session?.selectedCompany?._id
+            newRealEstate.userCreator = req.user?._id
+            return newRealEstate
         }
 
-        async function createNewRealEstateObject() {
+        async function fillNestedFieldsForNewRealEstate(newRealEstate: Record<string, any>) {
+            newRealEstate.owner = await createPropertyOwnerNestedObject()
+            newRealEstate.condominium = await createCondominiumNestedObject()
+            newRealEstate.financial = await createFinancialNestedObject()
+            newRealEstate.rooms = await createRoomsNestedObject()
+            newRealEstate.address = await createAddressNestedObject()
+            return newRealEstate
+        }
 
-            const newRealEstate: Record<string, any> = await separateNoNestedFieldsForNewRealEstate()
-            newRealEstate.owner = await createNewPropertyOwnerObject()
-            newRealEstate.realEstateID = await generateNewRealEstateID()
-            newRealEstate.tags = []
+        //* Req.body send us a no-nested file. We need to organize before store it in MongoDB
+        async function createNewRealEstateObject() {
+            const noREFnoNESTEDNewRealEstate: Record<string, any> = await separateNoNestedFieldsForNewRealEstate()
+            const noNESTEDNewRealEstate = await setDBReferencesForNewRealEstate(noREFnoNESTEDNewRealEstate)
+            const newRealEstate = await fillNestedFieldsForNewRealEstate(noNESTEDNewRealEstate)
             return newRealEstate
         }
 
@@ -1566,6 +1621,8 @@ router.post('/real-estates/new-real-estate/create',
         }
 
         const newRealEstate = new RealEstates(await createNewRealEstateObject())
+        console.log('\n\n')
+        console.log(newRealEstate)
 
         await uploadMedia(req.file!, newRealEstate)
             .then()
@@ -1588,11 +1645,12 @@ router.post('/real-estates/new-real-estate/create',
                 }
 
                 await createRecord(recordInfo, req)
+
+                req.flash('successMsg', 'Imóvel cadastrado com sucesso!');
             })
             .catch((err: any) => {
                 req.flash('errorMsg', `Não foi possível salvar os dados: ${err}`)
             })
-        req.flash('successMsg', 'Imóvel cadastrado com sucesso!');
 
         return res.redirect('/admin/real-estates');
     }

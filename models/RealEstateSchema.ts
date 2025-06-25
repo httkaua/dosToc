@@ -24,9 +24,9 @@ export interface IRealEstate extends Document {
     'Studio/Sala comercial'
 
     condominium: {
-        block: string,
-        internalNumber: string,
-        floor: number
+        block?: string,
+        internalNumber?: string,
+        floor?: number
     },
     rentalOrSale?:
     'Venda' |
@@ -34,11 +34,11 @@ export interface IRealEstate extends Document {
     'Ambos'
 
     financial: {
-        saleValue: number
-        assessedValue: number
-        financingMaxValue: number
+        saleValue?: number
+        assessedValue?: number
+        financingMaxValue?: number
         exchange: boolean
-        currency: string
+        currency?: string
         financeable: boolean
         tax: boolean
         taxFrequency?:
@@ -46,7 +46,7 @@ export interface IRealEstate extends Document {
         'Mensal' |
         'Anual'
 
-        taxValue: number
+        taxValue?: number
     },
 
     propertySituation?:
@@ -75,7 +75,7 @@ export interface IRealEstate extends Document {
     address: {
         locationCode?: string
         street?: string
-        streetNumber: number
+        streetNumber?: number
         complement?: string
         neighborhood?: string
         region?: string
@@ -84,8 +84,8 @@ export interface IRealEstate extends Document {
         country?: string
     },
 
-    landArea: number
-    builtUpArea: number
+    landArea?: number
+    builtUpArea?: number
     face?:
     'Norte' |
     'Nordeste' |
@@ -100,9 +100,9 @@ export interface IRealEstate extends Document {
     tags?: string[]
     media?: string[]
     publish: boolean
-    userCreator?: Types.ObjectId
-    owner?: IOwner
-    company?: Types.ObjectId
+    userCreator: Types.ObjectId
+    owner: IOwner
+    company: Types.ObjectId
     createdAt: Date
     updatedAt: Date
     enabled: boolean
@@ -138,7 +138,6 @@ const ownerSchema = new Schema<IOwner>({
     },
     email: {
         type: String,
-        required: true,
         unique: true,
         trim: true,
         maxlength: 50,
@@ -376,6 +375,7 @@ const RealStateSchema = new Schema<IRealEstate>({
         default: false
     },
     userCreator: {
+        required: true,
         type: Schema.Types.ObjectId,
         ref: 'users'
     },
@@ -383,6 +383,7 @@ const RealStateSchema = new Schema<IRealEstate>({
         type: ownerSchema
     },
     company: {
+        required: true,
         type: Schema.Types.ObjectId,
         ref: 'companies'
     },
