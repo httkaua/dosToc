@@ -18,18 +18,19 @@
     {{#each property}}
     <tr>
       <td>
-        <img media="/{{this.media}}" alt="Capa do imóvel" class="img-thumbnail" style="width: 50px; height: 50px;">
+        <img src="/uploads/{{this.media}}" alt="Capa do imóvel" class="img-thumbnail"
+          style="width: 50px; height: 50px;">
       </td>
       <td>{{this.id}}</td>
       <td>{{this.classification}}</td>
-      <td>{{this.bedrooms}}</td>
-      <td>{{this.neighborhood}}</td>
-      <td>{{this.city}}</td>
+      <td>{{this.rooms.bedrooms}}</td>
+      <td>{{this.address.neighborhood}}</td>
+      <td>{{this.address.city}}</td>
       <td>{{this.saleValue}}</td>
       <td>
         <div class="d-grid gap-2 d-md-block">
-          <a href="/admin/real-states/{{this.id}}" class="btn btn-info">Detalhes</a>
-          <a href="/admin/real-states/{{this.id}}/hidden" class="btn btn-danger">🗑</a>
+          <a href="/admin/real-estates/{{this.id}}" class="btn btn-info">Detalhes</a>
+          <a href="/admin/real-estates/{{this.id}}/hidden" class="btn btn-danger">🗑</a>
         </div>
       </td>
     </tr>
@@ -37,7 +38,6 @@
     {{else}}
     <p class="mt-2">Você não cadastrou nenhum imóvel. Cadastre seu primeiro!</p>
     {{/if}}
-
   </tbody>
 </table>
 <a href="/admin" class="btn btn-secondary">Voltar</a>

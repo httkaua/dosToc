@@ -19,7 +19,6 @@ import Admin from "./routes/Admin.js";
 import authHelper, { IUserSession } from "./helpers/Auth.js";
 authHelper(passport);
 import Users, { IUser } from "./models/UserSchema.js"
-//import SelectCompany from "./helpers/SelectCompany.js";
 
 //* Config
 

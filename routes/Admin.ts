@@ -1402,13 +1402,12 @@ router.get('/real-estates',
                 city: realestate.address.city,
                 saleValue: realestate.financial.saleValue
             }));
-            console.log(formattedRealStates)
             return formattedRealStates
         }
 
         try {
             const realEstates = await searchRealEstates()
-            const realEstatesForViewPage = formatRealEstates(realEstates)
+            const realEstatesForViewPage = await formatRealEstates(realEstates)
 
             res.render('admin/real-estates/real-estates', { property: realEstatesForViewPage });
 
@@ -1435,8 +1434,6 @@ router.post('/real-estates/new-real-estate/create',
     async (req: Request, res: Response, next: NextFunction) => {
 
         const requestData = req.body
-        console.log(requestData)
-        console.log('\n\n')
 
         const generateNewRealEstateID = async () => {
             try {
@@ -1621,8 +1618,6 @@ router.post('/real-estates/new-real-estate/create',
         }
 
         const newRealEstate = new RealEstates(await createNewRealEstateObject())
-        console.log('\n\n')
-        console.log(newRealEstate)
 
         await uploadMedia(req.file!, newRealEstate)
             .then()
@@ -1656,46 +1651,45 @@ router.post('/real-estates/new-real-estate/create',
     }
 );
 
-router.get('/real-estates/:realStateID',
+router.get('/real-estates/:realEstateID',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const realStateID = req.params.realStateID;
+            const realEstateID = Number(req.params.realEstateID)
 
-            const realS = await RealEstates.findOne({ realStateID: realStateID }).lean();
+            const realEstateForViewPage = await RealEstates.findOne({ realEstateID }).lean()
 
-            if (!realS) {
+            if (!realEstateForViewPage || !realEstateForViewPage.media) {
                 req.flash('errorMsg', `Imóvel não encontrado em sua base.`);
-                return res.redirect('admin/real-estates');
+                return res.redirect('/admin/real-estates');
             }
 
-            res.render('admin/real-estates/real-estate-info', { realS });
+            res.render('admin/real-estates/real-estate-info', realEstateForViewPage)
 
         } catch (err) {
             req.flash('errorMsg', `Houve um erro interno no servidor ao buscar o lead: ${err}`);
-            res.redirect('./')
+            res.redirect('/admin/real-estates')
         }
     }
-
 );
 
 router.post('/real-estates/:realStateID/update',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response) => {
-        const realStateID = parseInt(req.params.realStateID, 10);
+        const realEstateID = parseInt(req.params.realEstateID, 10);
 
         try {
-            const realS = await RealEstates.findOne({ realStateID: realStateID });
+            const realEstateQuery = await RealEstates.findOne({ realEstateID });
 
-            if (!realS) {
+            if (!realEstateQuery) {
                 req.flash('errorMsg', 'Lead não encontrado.');
                 return res.redirect('./');
             }
 
             const updatedData = req.body;
-            const originalData = realS.toObject();
+            const originalData = realEstateQuery.toObject();
 
             const { updatedAt, ...original } = originalData;
 
@@ -1720,10 +1714,10 @@ router.post('/real-estates/:realStateID/update',
             });
 
             if (Object.keys(changedFields).length > 0) {
-                Object.assign(realS, changedFields);
-                realS.updatedAt = new Date();
+                Object.assign(realEstateQuery, changedFields);
+                realEstateQuery.updatedAt = new Date();
 
-                await realS.save();
+                await realEstateQuery.save();
 
                 for (const key of Object.keys(changedFields)) {
                     const oldData = oldFields[key];
@@ -1732,13 +1726,13 @@ router.post('/real-estates/:realStateID/update',
                     const recordInfo: ISendedRecord = {
                         userWhoChanged: String(req.user?.userID),
                         affectedType: "imóvel",
-                        affectedData: String(realS.realStateID),
+                        affectedData: String(realEstateQuery.realEstateID),
                         action: "atualizou",
                         affectedPropertie: key,
                         oldData: oldData !== undefined ? `"${oldData}"` : "",
                         newData: newData !== undefined ? `"${newData}"` : "",
                         category: "Imóveis",
-                        company: String(req.user?.company)
+                        company: String(req.session?.selectedCompany?.companyID)
                     };
 
                     await createRecord(recordInfo, req);
@@ -1757,24 +1751,24 @@ router.post('/real-estates/:realStateID/update',
     }
 );
 
-router.get('/real-estates/:realStateID/hidden',
+router.get('/real-estates/:realEstateID/hidden',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response) => {
 
-        const realStateID = req.params.realStateID;
+        const realEstateID = req.params.realEstateID;
 
         try {
-            const dataToHidden = await RealEstates.findOne({ realStateID: realStateID });
+            const dataToHidden = await RealEstates.findOne({ realStateID: realEstateID });
             if (!dataToHidden) {
-                req.flash('errorMsg', 'Vazio inesperado')
-                return res.redirect('./')
+                req.flash('errorMsg', 'Não foi possível excluir o imóvel: Vazio inesperado')
+                return res.redirect('/admin/real-estates')
             }
 
-            dataToHidden.hidden = true;
+            dataToHidden.enabled = false;
 
             if (!dataToHidden) {
-                req.flash('errorMsg', `Imóvel ${realStateID} não encontrado.`);
+                req.flash('errorMsg', `Imóvel ${realEstateID} não encontrado.`);
             }
 
             await dataToHidden.save()
@@ -1783,10 +1777,10 @@ router.get('/real-estates/:realStateID/hidden',
                     const recordInfo: ISendedRecord = {
                         userWhoChanged: String(req.user?.userID),
                         affectedType: 'imóvel',
-                        affectedData: realStateID,
+                        affectedData: realEstateID,
                         action: 'excluiu*',
                         category: 'Imóveis',
-                        company: req.user?.company
+                        company: req.session?.selectedCompany?._id
                     }
 
                     await createRecord(recordInfo, req);

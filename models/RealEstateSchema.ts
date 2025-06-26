@@ -78,7 +78,13 @@ export interface IRealEstate extends Document {
         streetNumber?: number
         complement?: string
         neighborhood?: string
-        region?: string
+        region?:
+        'Norte' |
+        'Leste' |
+        'Sul' |
+        'Oeste' |
+        'Central' |
+        'Não identificado'
         city?: string
         state?: string
         country?: string

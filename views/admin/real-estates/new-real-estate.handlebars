@@ -209,6 +209,7 @@
                             <div class='form-field'>
                                 <label for='region'>Região</label>
                                 <select id='region' name="region" class='form-control'>
+                                    <option value="Não identificado">Não identificado</option>
                                     <option value="Sul">Sul</option>
                                     <option value="Oeste">Oeste</option>
                                     <option value="Norte">Norte</option>
@@ -276,7 +277,7 @@
                             <div class='form-field'>
                                 <label for='commercialSituation'>Situação comercial</label>
                                 <select id='commercialSituation' name="commercialSituation" class='form-control'>
-                                    <option value="Ativo">Ativo</option>
+                                    <option value="Ativo" selected>Ativo</option>
                                     <option value="Inativo">Inativo</option>
                                     <option value="Vendido">Vendido</option>
                                     <option value="Suspenso">Suspenso</option>
@@ -284,20 +285,6 @@
                                     <option value="Permutado">Permutado</option>
                                 </select>
                             </div>
-                        </div>
-
-                        <div class="form-check mt-3">
-                            <input class="form-check-input mt-3" type="checkbox" value="true" id="condominium"
-                                name="condominium">
-                            <label class="form-check-label" for="condominium">
-                                Imóvel em condomínio?
-                            </label>
-                        </div>
-
-                        <div class="form-group mt-3">
-                            <label for="condominiumNumber">Nº edifício no condomínio</label>
-                            <input type="number" class="form-control" id="condominiumNumber" name="condominiumNumber"
-                                placeholder="23">
                         </div>
 
                         <h4 class="mt-5">Informações do proprietário</h4>

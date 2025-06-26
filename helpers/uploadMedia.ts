@@ -1,8 +1,8 @@
 interface IObjectWithMedia {
-    src: string[];
+    media: string[];
     [key: string]: any;
-  }
-  
+}
+
 export default async (file: Express.Multer.File, objWithMedia: any): Promise<IObjectWithMedia> => {
     try {
         if (!file || !file.path) {
@@ -11,13 +11,13 @@ export default async (file: Express.Multer.File, objWithMedia: any): Promise<IOb
 
         //console.log(`Arquivo recebido: ${file.filename}`);
 
-        const imagePath = file.path.replace(/\\/g, "/");
+        const imagePath = file.filename.replace(/\\/g, "/");
 
-        if (!Array.isArray(objWithMedia.src)) {
-            objWithMedia.src = [];
+        if (!Array.isArray(objWithMedia.media)) {
+            objWithMedia.media = [];
         }
 
-        objWithMedia.src.push(imagePath);
+        objWithMedia.media.push(imagePath);
 
         //console.log(`Objeto após inserção da imagem:`, objWithMedia);
 
@@ -25,7 +25,7 @@ export default async (file: Express.Multer.File, objWithMedia: any): Promise<IOb
 
     } catch (err) {
         const message =
-        err instanceof Error ? err.message : String(err)
+            err instanceof Error ? err.message : String(err)
 
         console.error(`Erro ao salvar imagem: ${message}`)
         throw new Error(`Erro ao salvar imagem: ${message}`)
