@@ -7,8 +7,7 @@
                 </div>
                 <div class="card-body">
                     <!--enctype for Multer library -->
-                    <form method="POST" enctype="multipart/form-data"
-                        action="/admin/real-estates/{{realEstateID}}/update">
+                    <form method="POST" action="/admin/real-estates/{{realEstateID}}/update">
                         <h4 class="mt-2">Dados essenciais</h4>
 
                         <div class="dropdownMenus col-md-12 mt-4">
@@ -48,27 +47,27 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="bedrooms">Nº quartos</label>
-                            <input type="number" class="form-control" id="bedrooms" name="bedrooms"
+                            <label for="rooms.bedrooms">Nº quartos</label>
+                            <input type="number" class="form-control" id="rooms.bedrooms" name="rooms.bedrooms"
                                 value="{{rooms.bedrooms}}">
                         </div>
 
                         <div class="form-group">
-                            <label for="livingRooms">Nº salas</label>
-                            <input type="number" class="form-control" id="livingRooms" name="livingRooms"
+                            <label for="rooms.livingRooms">Nº salas</label>
+                            <input type="number" class="form-control" id="rooms.livingRooms" name="rooms.livingRooms"
                                 value="{{rooms.livingRooms}}">
                         </div>
 
                         <div class="form-group">
-                            <label for="bathrooms">Nº banheiros</label>
-                            <input type="number" class="form-control" id="bathrooms" name="bathrooms"
+                            <label for="rooms.bathrooms">Nº banheiros</label>
+                            <input type="number" class="form-control" id="rooms.bathrooms" name="rooms.bathrooms"
                                 value="{{rooms.bathrooms}}">
                         </div>
 
                         <div class="form-group">
-                            <label for="parkingSpaces">Vagas de garagem</label>
-                            <input type="number" class="form-control" id="parkingSpaces" name="parkingSpaces"
-                                value="{{rooms.parkingSpaces}}">
+                            <label for="rooms.parkingSpaces">Vagas de garagem</label>
+                            <input type="number" class="form-control" id="rooms.parkingSpaces"
+                                name="rooms.parkingSpaces" value="{{rooms.parkingSpaces}}">
                         </div>
 
                         <h4 class="mt-5">Foto de capa</h4>
@@ -85,41 +84,41 @@
                         <small>Preencher apenas se o imóvel cadastrado fizer parte de um</small>
 
                         <div class="form-group mt-3">
-                            <label for="block">Bloco</label>
-                            <input type="text" class="form-control" id="block" name="block"
+                            <label for="condominium.block">Bloco</label>
+                            <input type="text" class="form-control" id="condominium.block" name="condominium.block"
                                 value="{{condominium.block}}">
                         </div>
 
                         <div class="form-group mt-3">
-                            <label for="internalNumber">Número interno</label>
-                            <input type="text" class="form-control" id="internalNumber" name="internalNumber"
-                                value="{{condominium.internalNumber}}">
+                            <label for="condominium.internalNumber">Número interno</label>
+                            <input type="text" class="form-control" id="condominium.internalNumber"
+                                name="condominium.internalNumber" value="{{condominium.internalNumber}}">
                         </div>
 
                         <div class="form-group mt-3">
-                            <label for="floor">Andar</label>
-                            <input type="number" class="form-control" id="floor" name="floor"
+                            <label for="condominium.floor">Andar</label>
+                            <input type="number" class="form-control" id="condominium.floor" name="condominium.floor"
                                 value="{{condominium.floor}}">
                         </div>
 
                         <h4 class="mt-5">Financeiro</h4>
 
                         <div class="form-group mt-4">
-                            <label for="saleValue">Valor de venda</label>
-                            <input type="number" class="form-control" id="saleValue" name="saleValue"
-                                value="{{financial.saleValue}}">
+                            <label for="financial.saleValue">Valor de venda</label>
+                            <input type="number" class="form-control" id="financial.saleValue"
+                                name="financial.saleValue" value="{{financial.saleValue}}">
                         </div>
 
                         <div class="form-group mt-4">
-                            <label for="assessedValue">Valor de avaliação</label>
-                            <input type="number" class="form-control" id="assessedValue" name="assessedValue"
-                                value="{{financial.assessedValue}}">
+                            <label for="financial.assessedValue">Valor de avaliação</label>
+                            <input type="number" class="form-control" id="financial.assessedValue"
+                                name="financial.assessedValue" value="{{financial.assessedValue}}">
                         </div>
 
                         <div class="form-group">
-                            <label for="financingMaxValue">Valor máximo financiável</label>
-                            <input type="number" class="form-control" id="financingMaxValue" name="financingMaxValue"
-                                value="{{financial.financingMaxValue}}">
+                            <label for="financial.financingMaxValue">Valor máximo financiável</label>
+                            <input type="number" class="form-control" id="financial.financingMaxValue"
+                                name="financial.financingMaxValue" value="{{financial.financingMaxValue}}">
                         </div>
 
                         <div class="form-check">
@@ -142,9 +141,9 @@
                         </div>
 
                         <div class="form-group mt-3">
-                            <label for="currency">Moeda</label>
-                            <input type="text" class="form-control" id="currency" name="currency"
-                                placeholder="BRL (Real brasileiro)" value="{{currency}}" readonly>
+                            <label for="financial.currency">Moeda</label>
+                            <input type="text" class="form-control" id="financial.currency" name="financial.currency"
+                                placeholder="BRL (Real brasileiro)" value="{{financial.currency}}" readonly>
                         </div>
 
                         <div class="form-check mt-4">
@@ -156,17 +155,19 @@
                         </div>
 
                         <div class="form-check mt-4">
-                            <input class="form-check-input" type="checkbox" value="true" id="tax" name="tax" checked>
-                            <label class="form-check-label" for="tax">
+                            <input class="form-check-input" type="checkbox" value="true" id="financial.tax"
+                                name="financial.tax" checked>
+                            <label class="form-check-label" for="financial.tax">
                                 Imposto a pagar?
                             </label>
                         </div>
 
                         <div class="dropdownMenus col-md-12 mt-4">
                             <div class='form-field'>
-                                <label for='taxFrequency'>Frequência de pagamento de impostos (se houver)</label>
-                                <select id='taxFrequency' name="taxFrequency" class='form-control'>
-                                    <option value="{{taxFrequency}}">{{taxFrequency}}</option>
+                                <label for='financial.taxFrequency'>Frequência de pagamento de impostos (se
+                                    houver)</label>
+                                <select id='financial.taxFrequency' name="financial.taxFrequency" class='form-control'>
+                                    <option value="{{financial.taxFrequency}}">{{financial.taxFrequency}}</option>
                                     <option value="Único">Único</option>
                                     <option value="Mensal">Mensal</option>
                                     <option value="Anual">Anual</option>
@@ -175,17 +176,17 @@
                         </div>
 
                         <div class="form-group mt-3">
-                            <label for="taxValue">Total em impostos</label>
-                            <input type="number" class="form-control" id="taxValue" name="taxValue"
-                                value="{{taxValue}}">
+                            <label for="financial.taxValue">Total em impostos</label>
+                            <input type="number" class="form-control" id="financial.taxValue" name="financial.taxValue"
+                                value="{{financial.taxValue}}">
                         </div>
 
                         <h4 class="mt-5">Localização</h4>
 
                         <div class="form-group mt-4">
-                            <label for="locationCode">CEP</label>
-                            <input type="text" class="form-control" id="locationCode" name="locationCode"
-                                value="{{address.locationCode}}" maxlength="9">
+                            <label for="address.locationCode">CEP</label>
+                            <input type="text" class="form-control" id="address.locationCode"
+                                name="address.locationCode" value="{{address.locationCode}}" maxlength="9">
                             <div id="cep-loading" class="text-primary mt-2" style="display: none;">
                                 <small><span class="spinner-border spinner-border-sm me-1" role="status"
                                         aria-hidden="true"></span>Buscando informações do CEP...</small>
@@ -193,33 +194,33 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="street">Rua</label>
-                            <input type="text" class="form-control" id="street" name="street"
+                            <label for="address.street">Rua</label>
+                            <input type="text" class="form-control" id="address.street" name="address.street"
                                 value="{{address.street}}">
                         </div>
 
                         <div class="form-group">
-                            <label for="streetNumber">Número</label>
-                            <input type="number" class="form-control" id="streetNumber" name="streetNumber"
-                                value="{{streetNumber}}">
+                            <label for="address.streetNumber">Número</label>
+                            <input type="number" class="form-control" id="address.streetNumber"
+                                name="address.streetNumber" value="{{address.streetNumber}}">
                         </div>
 
                         <div class="form-group">
-                            <label for="complement">Complemento</label>
-                            <input type="text" class="form-control" id="complement" name="complement"
+                            <label for="address.complement">Complemento</label>
+                            <input type="text" class="form-control" id="address.complement" name="address.complement"
                                 value="{{address.complement}}">
                         </div>
 
                         <div class="form-group">
-                            <label for="neighborhood">Bairro</label>
-                            <input type="text" class="form-control" id="neighborhood" name="neighborhood"
-                                value="{{address.neighborhood}}">
+                            <label for="address.neighborhood">Bairro</label>
+                            <input type="text" class="form-control" id="address.neighborhood"
+                                name="address.neighborhood" value="{{address.neighborhood}}">
                         </div>
 
                         <div class="dropdownMenus col-md-12">
                             <div class='form-field'>
-                                <label for='region'>Região</label>
-                                <select id='region' name="region" class='form-control'>
+                                <label for='address.region'>Região</label>
+                                <select id='address.region' name="address.region" class='form-control'>
                                     <option value="{{address.region}}" selected>{{address.region}}</option>
                                     <option value="Não identificado">Não identificado</option>
                                     <option value="Sul">Sul</option>
@@ -232,18 +233,20 @@
                         </div>
 
                         <div class="form-group mt-3">
-                            <label for="city">Cidade</label>
-                            <input type="text" class="form-control" id="city" name="city" value="{{address.city}}">
+                            <label for="address.city">Cidade</label>
+                            <input type="text" class="form-control" id="address.city" name="address.city"
+                                value="{{address.city}}">
                         </div>
 
                         <div class="form-group">
-                            <label for="state">Estado</label>
-                            <input type="text" class="form-control" id="state" name="state" value="{{address.state}}">
+                            <label for="address.state">Estado</label>
+                            <input type="text" class="form-control" id="address.state" name="address.state"
+                                value="{{address.state}}">
                         </div>
 
                         <div class="form-group">
-                            <label for="country">País</label>
-                            <input type="text" class="form-control" id="country" name="country"
+                            <label for="address.country">País</label>
+                            <input type="text" class="form-control" id="address.country" name="address.country"
                                 value="{{address.country}}">
                         </div>
 
@@ -321,7 +324,7 @@
                         </div>
 
                         <a href="./" class="btn btn-secondary mt-5">Voltar</a>
-                        <a href="/admin/real-states/{{realS.realStateID}}/hidden" class="btn btn-danger mt-5">🗑</a>
+                        <a href="/admin/real-estates/{{realEstateID}}/hidden" class="btn btn-danger mt-5">🗑</a>
                         <button type="submit" class="btn btn-success mt-5">Atualizar</button>
                     </form>
                 </div>

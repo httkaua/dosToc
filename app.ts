@@ -18,7 +18,8 @@ import User from "./routes/User.js";
 import Admin from "./routes/Admin.js";
 import authHelper, { IUserSession } from "./helpers/Auth.js";
 authHelper(passport);
-import Users, { IUser } from "./models/UserSchema.js"
+import Users from "./models/UserSchema.js"
+import upload from "./helpers/Multer.js";
 
 //* Config
 
@@ -147,8 +148,9 @@ app.set('view engine', 'handlebars');
 app.set('views', './views');
 
 //* Body parser
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }))
+app.use(express.json())
+app.use(upload.none())  //* multipart/form-data without files
 
 
 

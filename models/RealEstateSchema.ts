@@ -382,6 +382,7 @@ const RealStateSchema = new Schema<IRealEstate>({
     },
     userCreator: {
         required: true,
+        immutable: true,
         type: Schema.Types.ObjectId,
         ref: 'users'
     },

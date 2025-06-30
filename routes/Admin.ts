@@ -1429,7 +1429,7 @@ router.get('/real-estates/new-real-estate',
 
 router.post('/real-estates/new-real-estate/create',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4]),
+    ensureRole([0, 1, 2, 3, 4, 6]),
     upload.single("uploaded_file"),
     async (req: Request, res: Response, next: NextFunction) => {
 
@@ -1653,7 +1653,7 @@ router.post('/real-estates/new-real-estate/create',
 
 router.get('/real-estates/:realEstateID',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4]),
+    ensureRole([0, 1, 2, 3, 4, 6]),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const realEstateID = Number(req.params.realEstateID)
@@ -1674,79 +1674,238 @@ router.get('/real-estates/:realEstateID',
     }
 );
 
-router.post('/real-estates/:realStateID/update',
+router.post('/real-estates/:realEstateID/update',
     ensureAuthenticated,
-    ensureRole([0, 1, 2, 3, 4]),
+    ensureRole([0, 1, 2, 3, 4, 6]),
     async (req: Request, res: Response) => {
-        const realEstateID = parseInt(req.params.realEstateID, 10);
+        const paramID = Number(req.params.realEstateID)
+        const formData = req.body
+
+        console.log('Dados do formulário (raw):\n')
+        console.log(formData)
+
+        // Função para converter campos com notação de ponto em objetos aninhados
+        function convertDotNotationToNested(obj: Record<string, any>): Record<string, any> {
+            const result: Record<string, any> = {}
+
+            Object.keys(obj).forEach(key => {
+                const value = obj[key]
+
+                if (key.includes('.')) {
+                    const parts = key.split('.')
+                    let current = result
+
+                    // Navega até o penúltimo nível
+                    for (let i = 0; i < parts.length - 1; i++) {
+                        if (!(parts[i] in current)) {
+                            current[parts[i]] = {}
+                        }
+                        current = current[parts[i]]
+                    }
+
+                    // Define o valor final, convertendo tipos apropriados
+                    const finalKey = parts[parts.length - 1]
+                    current[finalKey] = convertValue(value)
+                } else {
+                    result[key] = convertValue(value)
+                }
+            })
+
+            return result
+        }
+
+        // Função para converter valores para os tipos corretos
+        function convertValue(value: any): any {
+            if (value === '' || value === null || value === undefined) {
+                return null
+            }
+
+            // Converte números
+            if (typeof value === 'string' && /^\d+$/.test(value)) {
+                return parseInt(value, 10)
+            }
+
+            // Converte booleanos
+            if (value === 'true') return true
+            if (value === 'false') return false
+
+            return value
+        }
+
+        async function realEstateQuery() {
+            const realEstateQuery = await RealEstates.findOne({
+                realEstateID: paramID,
+                company: req.session?.selectedCompany?._id
+            })
+            return realEstateQuery
+        }
+
+        // Função para comparar objetos aninhados recursivamente
+        function compareNestedObjects(
+            original: Record<string, any>,
+            updated: Record<string, any>,
+            path: string = ''
+        ): Record<string, { old: any, new: any }> {
+            const changes: Record<string, { old: any, new: any }> = {}
+
+            // Combina todas as chaves dos dois objetos
+            const allKeys = new Set([...Object.keys(original), ...Object.keys(updated)])
+
+            allKeys.forEach(key => {
+                const currentPath = path ? `${path}.${key}` : key
+                const originalValue = original[key]
+                const updatedValue = updated[key]
+
+                // Se ambos são objetos (não arrays, não null), compara recursivamente
+                if (
+                    originalValue &&
+                    updatedValue &&
+                    typeof originalValue === 'object' &&
+                    typeof updatedValue === 'object' &&
+                    !Array.isArray(originalValue) &&
+                    !Array.isArray(updatedValue)
+                ) {
+                    const nestedChanges = compareNestedObjects(originalValue, updatedValue, currentPath)
+                    Object.assign(changes, nestedChanges)
+                } else {
+                    // Normaliza valores para comparação
+                    const normalizedOriginal = normalizeValue(originalValue)
+                    const normalizedUpdated = normalizeValue(updatedValue)
+
+                    if (normalizedOriginal !== normalizedUpdated) {
+                        changes[currentPath] = {
+                            old: originalValue,
+                            new: updatedValue
+                        }
+                    }
+                }
+            })
+
+            return changes
+        }
+
+        function normalizeValue(value: any): string {
+            if (value === undefined || value === null) return ''
+            if (Array.isArray(value)) return value.sort().join(',')
+            return String(value)
+        }
+
+        // Função para aplicar mudanças aninhadas no objeto original
+        function applyNestedChanges(target: Record<string, any>, changes: Record<string, any>): void {
+            Object.keys(changes).forEach(path => {
+                const parts = path.split('.')
+                let current = target
+
+                // Navega até o penúltimo nível
+                for (let i = 0; i < parts.length - 1; i++) {
+                    if (!(parts[i] in current)) {
+                        current[parts[i]] = {}
+                    }
+                    current = current[parts[i]]
+                }
+
+                // Define o novo valor
+                current[parts[parts.length - 1]] = changes[path].new
+            })
+        }
+
+        async function forEachChangedKeyCreateARecord(changedFields: Record<string, any>, realEstateID: string) {
+            for (const key of Object.keys(changedFields)) {
+                const oldData = changedFields[key].old
+                const newData = changedFields[key].new
+
+                const recordInfo: ISendedRecord = {
+                    userWhoChanged: String(req.user?.userID),
+                    affectedType: "imóvel",
+                    affectedData: realEstateID,
+                    action: "atualizou",
+                    affectedPropertie: key,
+                    oldData: oldData !== undefined && oldData !== null ? `"${oldData}"` : "",
+                    newData: newData !== undefined && newData !== null ? `"${newData}"` : "",
+                    category: "Imóveis",
+                    company: String(req.session?.selectedCompany?.companyID)
+                }
+
+                await createRecord(recordInfo, req)
+            }
+        }
 
         try {
-            const realEstateQuery = await RealEstates.findOne({ realEstateID });
-
-            if (!realEstateQuery) {
-                req.flash('errorMsg', 'Lead não encontrado.');
-                return res.redirect('./');
+            // Verificar se req.body existe
+            if (!formData) {
+                req.flash('errorMsg', 'Dados do formulário não recebidos.')
+                return res.redirect('/admin/real-estates')
             }
 
-            const updatedData = req.body;
-            const originalData = realEstateQuery.toObject();
+            const realEstateQueryResponse = await realEstateQuery()
 
-            const { updatedAt, ...original } = originalData;
-
-            const normalizeToString = (value: string | null | undefined) => {
-                if (value === undefined || value === null || value === '') return '';
-                if (Array.isArray(value)) return value.sort().join(',');
-                return value.toString();
-            };
-
-            const changedFields: Record<string, any> = {};
-            const oldFields: Record<string, any> = {};
-
-
-            Object.keys(updatedData).forEach((key) => {
-                const updatedValue = normalizeToString(updatedData[key]);
-                const originalValue = normalizeToString(original[key as keyof typeof original]);
-
-                if (updatedValue !== originalValue) {
-                    changedFields[key] = updatedData[key];
-                    oldFields[key] = original[key as keyof typeof original];
-                }
-            });
-
-            if (Object.keys(changedFields).length > 0) {
-                Object.assign(realEstateQuery, changedFields);
-                realEstateQuery.updatedAt = new Date();
-
-                await realEstateQuery.save();
-
-                for (const key of Object.keys(changedFields)) {
-                    const oldData = oldFields[key];
-                    const newData = changedFields[key];
-
-                    const recordInfo: ISendedRecord = {
-                        userWhoChanged: String(req.user?.userID),
-                        affectedType: "imóvel",
-                        affectedData: String(realEstateQuery.realEstateID),
-                        action: "atualizou",
-                        affectedPropertie: key,
-                        oldData: oldData !== undefined ? `"${oldData}"` : "",
-                        newData: newData !== undefined ? `"${newData}"` : "",
-                        category: "Imóveis",
-                        company: String(req.session?.selectedCompany?.companyID)
-                    };
-
-                    await createRecord(recordInfo, req);
-                }
-
-                req.flash('successMsg', 'Imóvel atualizado com sucesso!');
-            } else {
-                req.flash('successMsg', 'Nenhum campo foi alterado.');
+            if (!realEstateQueryResponse) {
+                req.flash('errorMsg', 'Imóvel não encontrado.')
+                return res.redirect('/admin/real-estates')
             }
 
-            res.redirect('/admin/real-estates');
+            const originalData = realEstateQueryResponse.toObject()
+
+            // Remove campos não alteráveis
+            const {
+                updatedAt,
+                realEstateID,
+                userCreator,
+                company,
+                enabled,
+                _id,
+                __v,
+                createdAt,
+                ...originalChangeableData
+            } = originalData
+
+            console.log('Dados alteráveis (original):\n')
+            console.log(originalChangeableData)
+
+            // Converte dados do formulário para estrutura aninhada
+            const updatedData = convertDotNotationToNested(formData)
+            console.log('Dados do formulário (convertidos):\n')
+            console.log(updatedData)
+
+            // Compara os dados originais com os atualizados
+            const changedFields = compareNestedObjects(originalChangeableData, updatedData)
+
+            console.log('Campos alterados:\n')
+            console.log(changedFields)
+
+            if (Object.keys(changedFields).length < 1) {
+                req.flash('successMsg', 'Nenhum campo foi alterado.')
+                return res.redirect('/admin/real-estates')
+            }
+
+            // Aplica as mudanças no objeto original
+            applyNestedChanges(originalChangeableData, changedFields)
+
+            // Atualiza o documento
+            Object.assign(realEstateQueryResponse, originalChangeableData)
+            realEstateQueryResponse.updatedAt = new Date()
+
+            await realEstateQueryResponse
+                .save()
+                .then(async () => {
+                    await forEachChangedKeyCreateARecord(
+                        changedFields,
+                        String(realEstateQueryResponse.realEstateID)
+                    )
+
+                    req.flash('successMsg', 'Imóvel atualizado com sucesso!')
+                    res.redirect('/admin/real-estates')
+                })
+                .catch((err) => {
+                    console.error('Erro ao salvar:', err)
+                    req.flash('errorMsg', `Não foi possível atualizar o imóvel: ${err}`)
+                    res.redirect('/admin/real-estates')
+                })
+
         } catch (err) {
-            req.flash('errorMsg', `Erro no servidor: ${err}`);
-            res.redirect('/admin/real-estates');
+            console.error('Erro no servidor:', err)
+            req.flash('errorMsg', `Erro no servidor: ${err}`)
+            res.redirect('/admin/real-estates')
         }
     }
 );
@@ -1756,10 +1915,10 @@ router.get('/real-estates/:realEstateID/hidden',
     ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response) => {
 
-        const realEstateID = req.params.realEstateID;
+        const realEstateID = Number(req.params.realEstateID)
 
         try {
-            const dataToHidden = await RealEstates.findOne({ realStateID: realEstateID });
+            const dataToHidden = await RealEstates.findOne({ realEstateID })
             if (!dataToHidden) {
                 req.flash('errorMsg', 'Não foi possível excluir o imóvel: Vazio inesperado')
                 return res.redirect('/admin/real-estates')
@@ -1767,17 +1926,13 @@ router.get('/real-estates/:realEstateID/hidden',
 
             dataToHidden.enabled = false;
 
-            if (!dataToHidden) {
-                req.flash('errorMsg', `Imóvel ${realEstateID} não encontrado.`);
-            }
-
             await dataToHidden.save()
                 .then(async () => {
 
                     const recordInfo: ISendedRecord = {
                         userWhoChanged: String(req.user?.userID),
                         affectedType: 'imóvel',
-                        affectedData: realEstateID,
+                        affectedData: String(realEstateID),
                         action: 'excluiu*',
                         category: 'Imóveis',
                         company: req.session?.selectedCompany?._id

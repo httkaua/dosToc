@@ -46,17 +46,17 @@ const generateNewRecordID = async () => {
     }
 };
 
-async function hasSendedErrors (recordInfo: ILocalRecord) {
+async function hasSendedErrors(recordInfo: ILocalRecord) {
     const checkError = Object.entries(recordInfo)
-    .some(value => value == undefined || null)
+        .some(value => value == undefined || null)
 
     //* Log errors
     checkError == true
-    ? Object.entries(recordInfo)
-    .forEach((value) => {
-        if (value == undefined || null) console.log(value)
-    })
-    : null
+        ? Object.entries(recordInfo)
+            .forEach((value) => {
+                if (value == undefined || null) console.log(value)
+            })
+        : null
 
     return checkError
 }
@@ -82,8 +82,8 @@ const recordMessage = async (recordInfo: ILocalRecord) => {
         affectedDataText = pick ? `${pick.name} | id: ${pick.userID}` : 'Dados desconhecidos';
 
     } else if (recordInfo.affectedType === "imóvel") {
-        const pick = await Realestates.findOne({ realStateID: recordInfo.affectedData });
-        affectedDataText = pick ? `${pick.realStateID}` : 'Dados desconhecidos';
+        const pick = await Realestates.findOne({ realEstateID: recordInfo.affectedData });
+        affectedDataText = pick ? `${pick.realEstateID}` : 'Dados desconhecidos';
 
     } else if (recordInfo.affectedType === "empresa") {
         const pick = await Companies.findOne({ companyID: recordInfo.affectedData });
@@ -112,7 +112,8 @@ const recordMessage = async (recordInfo: ILocalRecord) => {
 
 export default async (recordInfo: ILocalRecord, req: Request) => {
     try {
-        const newRecord = {...recordInfo,
+        const newRecord = {
+            ...recordInfo,
             recordID: await generateNewRecordID(),
             message: await recordMessage(recordInfo),
             createdAt: new Date()
