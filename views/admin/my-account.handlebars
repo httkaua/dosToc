@@ -6,76 +6,39 @@
           <h5>Minha Conta</h5>
         </div>
         <div class="card-body">
-          <form method="POST" action="/admin/my-account/{{user.userID}}/update">
+          <form method="POST" action="/admin/my-account/{{user.userID}}/update" id="IVform" novalidate>
             <div class="mb-3">
               <label for="name" class="form-label">Nome</label>
-              <input
-                type="text"
-                class="form-control"
-                id="name"
-                name="name"
-                placeholder="Seu nome"
-                value= "{{user.name}}"
-              />
+              <input type="text" class="form-control IVname" id="name" name="name" placeholder="Seu nome"
+                value="{{user.name}}" />
+              <span class="invalid-feedback IVnameError" id="nameError"></span>
             </div>
             <div class="mb-3">
               <label for="phone" class="form-label">Telefone</label>
-              <input
-                type="tel"
-                class="form-control"
-                id="phone"
-                name="phone"
-                placeholder="Seu telefone"
-                value="{{user.phone}}"
-              />
-            </div>
-            <div class="mb-3">
-              <label for="company" class="form-label">Empresa(s)</label>
-              <input
-                type="text"
-                class="form-control"
-                id="company"
-                name="company"
-                placeholder="Sua(s) empresa(s)"
-                value="{{user.company}}"
-                disabled
-              />
+              <input type="tel" class="form-control IVphone" id="phone" name="phone" placeholder="Seu telefone"
+                value="{{user.phone}}" />
+              <span class="invalid-feedback IVphoneError" id="phoneError"></span>
             </div>
             <div class="mb-3">
               <label for="email" class="form-label">Email</label>
-              <input
-                type="email"
-                class="form-control"
-                id="email"
-                name="email"
-                placeholder="Seu email"
-                value="{{user.email}}"
-              />
-              <small>Caso queira alterar seu e-mail, seu gestor deverá autorizar a alteração para confirmar. Você será notificado.</small>
+              <input type="email" class="form-control IVemail" id="email" name="email" placeholder="Seu email"
+                value="{{user.email}}" />
+              <span class="invalid-feedback IVemailError" id="emailError"></span>
+              <small>Caso queira alterar seu e-mail, seu gestor deverá autorizar a alteração para confirmar. Você será
+                notificado.</small>
             </div>
-            <div class="mb-3">
-              <label for="password" class="form-label">Senha</label>
-              <input
-                type="email"
-                class="form-control"
-                id="password"
-                name="password"
-                placeholder="************"
-                value="************"
-                disabled
-              />
-              <a href="/user/forgot-password" class="btn btn-danger mt-2">Esqueci minha senha</a>
-            </div>
-            
-            <div class="d-flex justify-content-end mt-4">
-              <a href="/admin" class="btn btn-secondary me-2">Voltar</a>
-              <button type="submit" class="btn btn-success">
-                Salvar
-              </button>
-            </div>
-          </form>
+            <a href="/user/forgot-password" class="btn btn-danger mt-2">Esqueci minha senha</a>
         </div>
+
+        <div class="d-flex justify-content-end mt-4">
+          <a href="/admin" class="btn btn-secondary me-2">Voltar</a>
+          <button type="submit" class="btn btn-success">
+            Salvar
+          </button>
+        </div>
+        </form>
       </div>
     </div>
   </div>
+</div>
 </div>

@@ -1,37 +1,41 @@
-<form method="POST" action="/user/newaccount" id="registerForm" novalidate>
+<form method="POST" action="/user/newaccount" id="IVform" novalidate>
     <h4 class="mb-4">Vamos criar a sua conta?</h4>
 
     <div class="form-group mb-3">
         <label for="name">Nome</label>
-        <input type="text" class="form-control" id="name" name="name" placeholder="Walter White" maxlength="50" required>
-        <span class="invalid-feedback" id="nameError"></span>
+        <input type="text" class="form-control IVname" id="name" name="name" placeholder="Walter White" maxlength="50"
+            required>
+        <span class="invalid-feedback IVnameError" id="nameError"></span>
     </div>
 
     <div class="form-group mb-3">
         <label for="phone">Telefone</label>
-        <input type="tel" class="form-control" id="phone" name="phone" placeholder="+554172727272" required>
-        <span class="invalid-feedback" id="phoneError"></span>
+        <input type="tel" class="form-control IVphone" id="phone" name="phone" placeholder="+554172727272" required>
+        <span class="invalid-feedback IVphoneError" id="phoneError"></span>
     </div>
 
     <div class="form-group mb-3">
         <label for="email">Email</label>
-        <input type="email" class="form-control" id="email" name="email" placeholder="example@gmail.com" maxlength="50" required>
-        <span class="invalid-feedback" id="emailError"></span>
+        <input type="email" class="form-control IVemail" id="email" name="email" placeholder="example@gmail.com"
+            maxlength="50" required>
+        <span class="invalid-feedback IVemailError" id="emailError"></span>
     </div>
 
     <div class="form-group mb-3">
         <label for="password">Senha</label>
-        <input type="password" class="form-control" id="password" name="password" placeholder="Senha" minlength="8" maxlength="1000" required>
-        <span class="invalid-feedback" id="passwordError"></span>
+        <input type="password" class="form-control IVpassword" id="password" name="password" placeholder="Senha"
+            minlength="8" maxlength="1000" required>
+        <span class="invalid-feedback IVpasswordError" id="passwordError"></span>
     </div>
 
     <div class="form-group mb-4">
         <label for="passwordConfirm">Confirmar senha</label>
-        <input type="password" class="form-control" id="passwordConfirm" name="passwordConfirm" placeholder="Confirme a senha" required>
-        <span class="invalid-feedback" id="passwordConfirmError"></span>
+        <input type="password" class="form-control IVpasswordConfirm" id="passwordConfirm" name="passwordConfirm"
+            placeholder="Confirme a senha" required>
+        <span class="invalid-feedback IVpasswordConfirmError" id="passwordConfirmError"></span>
     </div>
 
     <button type="submit" class="btn btn-success w-100">Criar</button>
 </form>
 
-<script src="/js/_registerValidation.js"></script>
+<script src="/js/_formGenValidation.js"></script>

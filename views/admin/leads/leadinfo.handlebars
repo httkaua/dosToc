@@ -6,50 +6,37 @@
                     <h5>Informações de {{lead.name}}</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="/admin/leads/{{lead.leadID}}/update">
+                    <form method="POST" action="/admin/leads/{{lead.leadID}}/update" id="IVform" novalidate>
                         <h4>Dados essenciais</h4>
                         <div class="form-group">
                             <label for="name">Nome</label>
-                            <input type="text" class="form-control" id="name" name="name" value="{{lead.name}}"
+                            <input type="text" class="form-control IVname" id="name" name="name" value="{{lead.name}}"
                                 required>
+                            <span class="invalid-feedback IVnameError" id="nameError"></span>
                         </div>
                         <div class="form-group mt-4">
                             <label for="phone">Telefone</label>
-                            <input type="tel" class="form-control" id="phone" name="phone" value="{{lead.phone}}"
-                                required>
+                            <input type="tel" class="form-control IVphone" id="phone" name="phone"
+                                value="{{lead.phone}}" required>
+                            <span class="invalid-feedback IVphoneError" id="phoneError"></span>
                         </div>
                         <div class="form-group mt-4">
                             <label for="document">CPF</label>
-                            <input type="text" class="form-control" id="document" name="document"
+                            <input type="text" class="form-control IVcpf" id="document" name="document"
                                 value="{{lead.document}}">
+                            <span class="invalid-feedback IVcpfError" id="phoneError"></span>
                         </div>
                         <div class="form-group">
                             <label for="email">Email</label>
-                            <input type="email" class="form-control" id="email" name="email"
+                            <input type="email" class="form-control IVemail" id="email" name="email"
                                 aria-describedby="emailHelp" value="{{lead.email}}">
+                            <span class="invalid-feedback IVemailError" id="emailError"></span>
                         </div>
                         <div class="form-group">
                             <label for="sourceCode">Código do imóvel interessado (externo)</label>
                             <input type="sourceCode" class="form-control" id="sourceCode" name="sourceCode"
                                 value="{{lead.sourceCode}}">
                         </div>
-                        <!--
-                    <div class="dropdownMenus col-md-12">
-                        <div class='form-field'>
-                            <label for='pTypeInterested'>Tipo de imóvel interessado</label>
-                            <select id='pTypeInterested' name="pTypeInterested" class='form-control'>
-                            <option value="{{lead.pTypeInterested}}">{{lead.pTypeInterested}}</option selected>
-                            <option value="Casa">Casa</option>
-                            <option value="Terreno">Terreno</option>
-                            <option value="Apartamento">Apartamento</option>
-                            <option value="Sobrado">Sobrado</option>
-                            <option value="Sítio">Sítio</option>
-                            <option value="Galpão">Galpão</option>
-                            <option value="Studio/Sala comercial">Studio/Sala comercial</option>
-                            </select>
-                        </div>
-                    </div>
-                    -->
 
                         <h4 class="mt-5">Interesses</h4>
                         <div class="form-group">
@@ -169,3 +156,5 @@
         </div>
     </div>
 </div>
+
+<script src="/js/_formGenValidation.js"></script>

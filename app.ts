@@ -142,6 +142,13 @@ app.engine('handlebars', engine({
         isChecked: (value: any) => {
             return value === true || value === 'true' ? 'checked' : '';
         },
+        formatCurrency: (value: number) => {
+            if (typeof value !== 'number') return value;
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value);
+        }
     }
 }));
 app.set('view engine', 'handlebars');
@@ -150,7 +157,6 @@ app.set('views', './views');
 //* Body parser
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
-app.use(upload.none())  //* multipart/form-data without files
 
 
 

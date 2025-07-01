@@ -8,7 +8,7 @@
                 <div class="card-body">
                     <!--enctype for Multer library -->
                     <form method="POST" enctype="multipart/form-data"
-                        action="/admin/real-estates/new-real-estate/create">
+                        action="/admin/real-estates/new-real-estate/create" id="IVform" novalidate>
                         <h4 class="mt-2">Dados essenciais</h4>
 
                         <div class="dropdownMenus col-md-12 mt-4">
@@ -173,8 +173,8 @@
 
                         <div class="form-group mt-4">
                             <label for="locationCode">CEP</label>
-                            <input type="text" class="form-control" id="locationCode" name="locationCode"
-                                placeholder="83.000-000" maxlength="9">
+                            <input type="text" class="form-control CEPlocationCode" id="locationCode"
+                                name="locationCode" placeholder="83.000-000" maxlength="9">
                             <div id="cep-loading" class="text-primary mt-2" style="display: none;">
                                 <small><span class="spinner-border spinner-border-sm me-1" role="status"
                                         aria-hidden="true"></span>Buscando informações do CEP...</small>
@@ -183,7 +183,7 @@
 
                         <div class="form-group">
                             <label for="street">Rua</label>
-                            <input type="text" class="form-control" id="street" name="street"
+                            <input type="text" class="form-control CEPstreet" id="street" name="street"
                                 placeholder="Rua do rosário">
                         </div>
 
@@ -201,8 +201,8 @@
 
                         <div class="form-group">
                             <label for="neighborhood">Bairro</label>
-                            <input type="text" class="form-control" id="neighborhood" name="neighborhood"
-                                placeholder="Centro">
+                            <input type="text" class="form-control CEPneighborhood" id="neighborhood"
+                                name="neighborhood" placeholder="Centro">
                         </div>
 
                         <div class="dropdownMenus col-md-12">
@@ -221,18 +221,20 @@
 
                         <div class="form-group mt-3">
                             <label for="city">Cidade</label>
-                            <input type="text" class="form-control" id="city" name="city" placeholder="Campo Grande">
+                            <input type="text" class="form-control CEPcity" id="city" name="city"
+                                placeholder="Campo Grande">
                         </div>
 
                         <div class="form-group">
                             <label for="state">Estado</label>
-                            <input type="text" class="form-control" id="state" name="state"
+                            <input type="text" class="form-control CEPstate" id="state" name="state"
                                 placeholder="Mato Grosso do Sul">
                         </div>
 
                         <div class="form-group">
                             <label for="country">País</label>
-                            <input type="text" class="form-control" id="country" name="country" placeholder="Brasil">
+                            <input type="text" class="form-control CEPcountry" id="country" name="country"
+                                placeholder="Brasil">
                         </div>
 
                         <h4 class="mt-5">Complementares</h4>
@@ -291,20 +293,23 @@
 
                         <div class="form-group mt-4">
                             <label for="name">Nome completo</label>
-                            <input type="text" class="form-control" id="name" name="name" placeholder="Maria de Castro"
-                                required>
+                            <input type="text" class="form-control IVname" id="name" name="name"
+                                placeholder="Maria de Castro" required>
+                            <span class="invalid-feedback IVnameError" id="nameError"></span>
                         </div>
 
                         <div class="form-group">
                             <label for="phoneNumber">Telefone</label>
-                            <input type="text" class="form-control" id="phoneNumber" name="phoneNumber"
+                            <input type="text" class="form-control IVphone" id="phoneNumber" name="phoneNumber"
                                 placeholder="+55 41 98000-7000" required>
+                            <span class="invalid-feedback IVphoneError" id="phoneError"></span>
                         </div>
 
                         <div class="form-group">
                             <label for="email">Email</label>
-                            <input type="email" class="form-control" id="email" name="email"
+                            <input type="email" class="form-control IVemail" id="email" name="email"
                                 placeholder="mariadecastro90@hotmail.com">
+                            <span class="invalid-feedback IVemailError" id="emailError"></span>
                         </div>
 
                         <a href="./" class="btn btn-secondary mt-5">Voltar</a>
@@ -318,3 +323,4 @@
 
 <script src="https://cdn.jsdelivr.net/npm/axios@1.8.4/dist/axios.min.js"></script>
 <script src="/js/_searchcep.js"></script>
+<script src="/js/_formGenValidation.js"></script>

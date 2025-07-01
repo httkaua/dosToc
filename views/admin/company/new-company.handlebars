@@ -1,7 +1,7 @@
 <div class="container mt-5">
   <h2 class="text-center mb-4"><i class="bi bi-plus-square"></i> Criar Nova Empresa</h2>
 
-  <form method="POST" action="/admin/company/new-company/create">
+  <form method="POST" action="/admin/company/new-company/create" id="IVform" novalidate>
 
     <!-- Basic -->
     <div class="card mb-4 shadow-sm">
@@ -11,19 +11,23 @@
       <div class="card-body row g-3">
         <div class="col-md-6">
           <label class="form-label">Nome</label>
-          <input type="text" class="form-control" name="name" required>
+          <input type="text" class="form-control IVname" name="name" required>
+          <span class="invalid-feedback IVnameError" id="nameError"></span>
         </div>
         <div class="col-md-6">
           <label class="form-label">CNPJ</label>
-          <input type="text" class="form-control" name="document">
+          <input type="text" class="form-control IVcnpj" name="document">
+          <span class="invalid-feedback IVcnpjError" id="IVcnpjError"></span>
         </div>
         <div class="col-md-6">
           <label class="form-label">Telefone</label>
-          <input type="tel" class="form-control" name="phone" required placeholder="+5511999999999">
+          <input type="tel" class="form-control IVphone" name="phone" required placeholder="+5511999999999">
+          <span class="invalid-feedback IVphoneError" id="phoneError"></span>
         </div>
         <div class="col-md-6">
           <label class="form-label">Email</label>
-          <input type="email" class="form-control" name="email" required>
+          <input type="email" class="form-control IVemail" name="email" required>
+          <span class="invalid-feedback IVemailError" id="emailError"></span>
         </div>
       </div>
     </div>
@@ -36,15 +40,16 @@
       <div class="card-body row g-3">
         <div class="col-md-4">
           <label class="form-label">CEP</label>
-          <input type="text" class="form-control" id="locationCode" name="address.locationCode">
+          <input type="text" class="form-control CEPlocationCode" id="locationCode" name="address.locationCode">
         </div>
         <div id="cep-loading" class="text-primary mt-2" style="display: none;">
-            <small><span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Buscando informações do CEP...</small>
+          <small><span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Buscando
+            informações do CEP...</small>
         </div>
 
         <div class="col-md-8">
           <label class="form-label">Rua</label>
-          <input type="text" class="form-control" id="address" name="address.street">
+          <input type="text" class="form-control CEPstreet" id="address" name="address.street">
         </div>
         <div class="col-md-2">
           <label class="form-label">Número</label>
@@ -52,19 +57,19 @@
         </div>
         <div class="col-md-5">
           <label class="form-label">Bairro</label>
-          <input type="text" class="form-control" id="neighborhood" name="address.neighborhood">
+          <input type="text" class="form-control CEPneighborhood" id="neighborhood" name="address.neighborhood">
         </div>
         <div class="col-md-5">
           <label class="form-label">Cidade</label>
-          <input type="text" class="form-control" id="city" name="address.city">
+          <input type="text" class="form-control CEPcity" id="city" name="address.city">
         </div>
         <div class="col-md-6">
           <label class="form-label">Estado</label>
-          <input type="text" class="form-control" id="state" name="address.state">
+          <input type="text" class="form-control CEPstate" id="state" name="address.state">
         </div>
         <div class="col-md-6">
           <label class="form-label">País</label>
-          <input type="text" class="form-control" id="country" name="address.country" value="Brasil">
+          <input type="text" class="form-control CEPcountry" id="country" name="address.country" value="Brasil">
         </div>
       </div>
     </div>
@@ -107,7 +112,8 @@
           </select>
         </div>
         <div class="form-check mt-3">
-          <input class="form-check-input" type="checkbox" value="true" name="settings.RealEstateDefaults.ShowTaxFields" checked>
+          <input class="form-check-input" type="checkbox" value="true" name="settings.RealEstateDefaults.ShowTaxFields"
+            checked>
           <label class="form-check-label">Exibir campos de imposto em imóveis</label>
         </div>
         <div class="form-check mt-2">
@@ -127,3 +133,4 @@
 
 <script src="https://cdn.jsdelivr.net/npm/axios@1.8.4/dist/axios.min.js"></script>
 <script src="/js/_searchcep.js"></script>
+<script src="/js/_formGenValidation.js"></script>

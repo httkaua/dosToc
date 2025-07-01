@@ -23,10 +23,10 @@
       </td>
       <td>{{this.id}}</td>
       <td>{{this.classification}}</td>
-      <td>{{this.rooms.bedrooms}}</td>
-      <td>{{this.address.neighborhood}}</td>
-      <td>{{this.address.city}}</td>
-      <td>{{this.saleValue}}</td>
+      <td>{{this.bedrooms}}</td>
+      <td>{{this.neighborhood}}</td>
+      <td>{{this.city}}</td>
+      <td>{{formatCurrency this.saleValue}}</td>
       <td>
         <div class="d-grid gap-2 d-md-block">
           <a href="/admin/real-estates/{{this.id}}" class="btn btn-info">Detalhes</a>

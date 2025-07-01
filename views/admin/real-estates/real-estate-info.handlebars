@@ -7,7 +7,7 @@
                 </div>
                 <div class="card-body">
                     <!--enctype for Multer library -->
-                    <form method="POST" action="/admin/real-estates/{{realEstateID}}/update">
+                    <form method="POST" action="/admin/real-estates/{{realEstateID}}/update" id="IVform" novalidate>
                         <h4 class="mt-2">Dados essenciais</h4>
 
                         <div class="dropdownMenus col-md-12 mt-4">
@@ -185,7 +185,7 @@
 
                         <div class="form-group mt-4">
                             <label for="address.locationCode">CEP</label>
-                            <input type="text" class="form-control" id="address.locationCode"
+                            <input type="text" class="form-control CEPlocationCode" id="address.locationCode"
                                 name="address.locationCode" value="{{address.locationCode}}" maxlength="9">
                             <div id="cep-loading" class="text-primary mt-2" style="display: none;">
                                 <small><span class="spinner-border spinner-border-sm me-1" role="status"
@@ -195,7 +195,7 @@
 
                         <div class="form-group">
                             <label for="address.street">Rua</label>
-                            <input type="text" class="form-control" id="address.street" name="address.street"
+                            <input type="text" class="form-control CEPstreet" id="address.street" name="address.street"
                                 value="{{address.street}}">
                         </div>
 
@@ -213,7 +213,7 @@
 
                         <div class="form-group">
                             <label for="address.neighborhood">Bairro</label>
-                            <input type="text" class="form-control" id="address.neighborhood"
+                            <input type="text" class="form-control CEPneighborhood" id="address.neighborhood"
                                 name="address.neighborhood" value="{{address.neighborhood}}">
                         </div>
 
@@ -234,20 +234,20 @@
 
                         <div class="form-group mt-3">
                             <label for="address.city">Cidade</label>
-                            <input type="text" class="form-control" id="address.city" name="address.city"
+                            <input type="text" class="form-control CEPcity" id="address.city" name="address.city"
                                 value="{{address.city}}">
                         </div>
 
                         <div class="form-group">
                             <label for="address.state">Estado</label>
-                            <input type="text" class="form-control" id="address.state" name="address.state"
+                            <input type="text" class="form-control CEPstate" id="address.state" name="address.state"
                                 value="{{address.state}}">
                         </div>
 
                         <div class="form-group">
                             <label for="address.country">País</label>
-                            <input type="text" class="form-control" id="address.country" name="address.country"
-                                value="{{address.country}}">
+                            <input type="text" class="form-control CEPcountry" id="address.country"
+                                name="address.country" value="{{address.country}}">
                         </div>
 
                         <h4 class="mt-5">Complementares</h4>
@@ -308,19 +308,23 @@
 
                         <div class="form-group mt-4">
                             <label for="name">Nome completo</label>
-                            <input type="text" class="form-control" id="name" name="name" value="{{owner.name}}"
+                            <input type="text" class="form-control IVname" id="name" name="name" value="{{owner.name}}"
                                 required>
+                            <span class="invalid-feedback IVnameError" id="nameError"></span>
                         </div>
 
                         <div class="form-group">
                             <label for="phoneNumber">Telefone</label>
-                            <input type="text" class="form-control" id="phoneNumber" name="phoneNumber"
+                            <input type="text" class="form-control IVphone" id="phoneNumber" name="phoneNumber"
                                 value="{{owner.phoneNumber}}" required>
+                            <span class="invalid-feedback IVphoneError" id="phoneError"></span>
                         </div>
 
                         <div class="form-group">
                             <label for="email">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" value="{{owner.email}}">
+                            <input type="email" class="form-control IVemail" id="email" name="email"
+                                value="{{owner.email}}">
+                            <span class="invalid-feedback IVemailError" id="emailError"></span>
                         </div>
 
                         <a href="./" class="btn btn-secondary mt-5">Voltar</a>
@@ -335,3 +339,4 @@
 
 <script src="https://cdn.jsdelivr.net/npm/axios@1.8.4/dist/axios.min.js"></script>
 <script src="/js/_searchcep.js"></script>
+<script src="/js/_formGenValidation.js"></script>

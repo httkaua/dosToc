@@ -10,22 +10,27 @@
                         <h4>Dados essenciais</h4>
                         <div class="form-group">
                             <label for="name">Nome</label>
-                            <input type="text" class="form-control" id="name" name="name" placeholder="Jessie" required>
+                            <input type="text" class="form-control IVname" id="name" name="name" placeholder="Jessie"
+                                required>
+                            <span class="invalid-feedback IVnameError" id="nameError"></span>
                         </div>
                         <div class="form-group mt-4">
                             <label for="phone">Telefone</label>
-                            <input type="tel" class="form-control" id="phone" name="phone"
+                            <input type="tel" class="form-control IVphone" id="phone" name="phone"
                                 placeholder="+ 55 41 99999-9999">
+                            <span class="invalid-feedback IVphoneError" id="phoneError"></span>
                         </div>
                         <div class="form-group mt-4">
                             <label for="document">CPF</label>
-                            <input type="text" class="form-control" id="document" name="document"
+                            <input type="text" class="form-control IVcpf" id="document" name="document"
                                 placeholder="000.000.000-00">
+                            <span class="invalid-feedback IVcpfError" id="IVcpfError"></span>
                         </div>
                         <div class="form-group">
                             <label for="email">Email</label>
-                            <input type="email" class="form-control" id="email" name="email"
+                            <input type="email" class="form-control IVemail" id="email" name="email"
                                 aria-describedby="emailHelp" placeholder="example@gmail.com">
+                            <span class="invalid-feedback IVemailError" id="emailError"></span>
                         </div>
                         <div class="form-group">
                             <label for="sourceCode">Código do imóvel interessado (externo)</label>
@@ -148,3 +153,5 @@
         </div>
     </div>
 </div>
+
+<script src="/js/_formGenValidation.js"></script>

@@ -237,7 +237,11 @@ router.post('/company/new-company/create',
         const generateNewCompanyID = async () => {
             try {
 
-                const latestCompany = await Companies.findOne().lean().sort({ companyID: -1 }).exec();
+                const latestCompany = await Companies
+                    .findOne()
+                    .sort({ companyID: -1 })
+                    .exec()
+
                 const newID = latestCompany && latestCompany.companyID
                     ? latestCompany.companyID + 1
                     : 40000;
@@ -786,7 +790,11 @@ router.post('/team/new-member/create',
         const generateNewUserID = async () => {
             try {
 
-                const latestUser = await Users.findOne().sort({ userID: -1 }).exec();
+                const latestUser = await Users
+                    .findOne()
+                    .sort({ userID: -1 })
+                    .exec()
+
                 const newID = latestUser && latestUser.userID
                     ? latestUser.userID + 1
                     : 20000;
@@ -1002,7 +1010,11 @@ router.post('/leads/new-lead/create',
         const generateNewLeadID = async () => {
             try {
 
-                const latestLead = await Leads.findOne().sort({ leadID: -1 }).exec();
+                const latestLead = await Leads
+                    .findOne()
+                    .sort({ leadID: -1 })
+                    .exec()
+
                 const newID = latestLead && latestLead.leadID
                     ? latestLead.leadID + 1
                     : 1;
@@ -1438,16 +1450,15 @@ router.post('/real-estates/new-real-estate/create',
         const generateNewRealEstateID = async () => {
             try {
                 const latestRealState = await RealEstates
-                    .findOne({
-                        company: req.session?.selectedCompany?._id
-                    })
-                    .sort({ realEstateID: -1 });
+                    .findOne()
+                    .sort({ realEstateID: -1 })
+                    .exec()
 
                 const newID = latestRealState?.realEstateID
                     ? latestRealState.realEstateID + 1
-                    : 1;
+                    : 1
 
-                return newID;
+                return newID
 
             } catch (error) {
                 console.error('Erro ao gerar novo realStateID:', error);
@@ -1455,20 +1466,22 @@ router.post('/real-estates/new-real-estate/create',
             }
         }
 
-        const generateNewOwnerID = async () => {
+        const generateNewOwnerID = async (): Promise<number> => {
             try {
                 const latestOwner = await RealEstates
-                    .findOne({ "owner.ownerID": { $exists: true } })
-                    .sort({ "owner.ownerID": -1 });
+                    .findOne()
+                    .lean()
+                    .sort({ "owner.ownerID": -1 })
+                    .exec()
 
-                const newID = latestOwner?.owner?.ownerID
+                const newID: number = latestOwner?.owner?.ownerID
                     ? latestOwner.owner.ownerID + 1
-                    : 1;
+                    : 1
 
-                return newID;
+                return newID
             } catch (error) {
-                console.error('Erro ao gerar novo ownerID:', error);
-                throw error;
+                console.error('Erro ao gerar novo ownerID:', error)
+                throw error
             }
         }
 
@@ -1684,7 +1697,7 @@ router.post('/real-estates/:realEstateID/update',
         console.log('Dados do formulário (raw):\n')
         console.log(formData)
 
-        // Função para converter campos com notação de ponto em objetos aninhados
+        // Função para converter flat em aninhado
         function convertDotNotationToNested(obj: Record<string, any>): Record<string, any> {
             const result: Record<string, any> = {}
 
