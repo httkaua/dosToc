@@ -20,7 +20,7 @@ import Leads, { ILeads } from "../models/LeadSchema.js"
 import { ISendedRecord } from "../models/@types_ISendedRecord.js"
 import passport, { use } from "passport";
 import positionsNames from "../helpers/positionNames.js";
-import { InstanceError } from "sequelize";
+import { unflattenObject, compareObjects } from "../helpers/ObjectUnflatter.js"
 
 router.get('/feed-session',
     ensureAuthenticated,
@@ -129,77 +129,18 @@ router.post('/my-account/:userID/update',
     ensureAuthenticated,
     async (req: Request, res: Response) => {
 
-        const userID = parseInt(req.params.userID, 10);
-        try {
-            const originalData = await Users.findOne({ userID: userID });
-            if (!originalData) {
-                req.flash('errorMsg', 'Conta não encontrada.')
-                return res.redirect('/admin')
-            }
+        const paramsUserID = Number(req.params.userID);
+        const formData = unflattenObject(req.body)
+        console.log(formData)
 
-            if (userID !== req.user?.userID) {
-                req.flash('errorMsg', 'O usuário não confere com a solicitação.')
-                return res.redirect('/admin')
-            }
-
-            //* Old (updatedAt discarded for key review)
-            const { updatedAt, ...original } = originalData
-            const oldFields: Record<string, string | number | object> = {}
-
-            //* New
-            const formData = req.body
-            const changedFields: Record<string, string | number | object> = {}
-
-            const changeableFields: string[] = ['name', 'phone', 'email']
-
-            changeableFields.forEach((key) => {
-                if (formData[key] != original[key as keyof typeof original]) {
-
-                    changedFields[key] = formData[key]
-                    oldFields[key] = original[key as keyof typeof original]
-                }
-            })
-
-            if (Object.keys(changedFields).length > 0) {
-                const dataToSave = Object.assign(originalData, changedFields);
-                originalData.updatedAt = new Date();
-
-                await dataToSave.save()
-                    .then(async () => {
-                        for (const key of Object.keys(changedFields)) {
-
-                            const recordInfo: ISendedRecord = {
-                                userWhoChanged: String(req.user?.userID),
-                                affectedType: 'usuário',
-                                affectedData: String(req.user?.userID),
-                                affectedPropertie: key,
-                                oldData: oldFields[key] !== undefined ? `"${oldFields[key]}"` : "",
-                                newData: changedFields[key] !== undefined ? `"${changedFields[key]}"` : "",
-                                action: 'atualizou',
-                                category: 'Usuários',
-                                company: '' //! CORRECT WITH COMPANY OBJECTID
-                            }
-
-                            await createRecord(recordInfo, req)
-                        }
-
-                        req.flash('successMsg', `Dados da conta atualizados com sucesso!`)
-                    })
-                    .catch((err) => {
-                        req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
-                    })
-            }
-
-            else {
-                req.flash('successMsg', 'Nenhum campo foi alterado.')
-            }
-
-            res.redirect('/admin');
-
-        } catch (error) {
-            console.error(error);
-            res.status(500).send('Erro no servidor.');
+        async function userRepositoryQuery() {
+            return Users.find({ userID: paramsUserID }).lean()
         }
+
+        const originalUser = await userRepositoryQuery()
+        console.log('Original data: \n')
+        console.log(originalUser)
+        console.log('\n')
 
     })
 
@@ -412,128 +353,26 @@ router.get('/company/details/:companyID/change-plan',
         }
     })
 
-//TODO: --- Still not working
 router.post('/company/details/:companyID/update',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3]),
     async (req: Request, res: Response, next: NextFunction) => {
 
-        const paramID = Number(req.params?.companyID)
-        const userClaimant = req.user?._id
+        const paramsCompanyID = Number(req.params?.companyID)
+        const formData = unflattenObject(req.body)
+        console.log(formData)
 
-        function normalizeObject(obj: Record<string, any>) {
-            const res: Record<string, any> = {}
-
-            for (const key in obj) {
-                if (obj[key] == 'true') res[key] = true;
-                if (obj[key] == 'false') res[key] = false;
-                if (!isNaN(obj[key]) &&
-                    obj[key] != '' &&
-                    key != 'phone')
-                    res[key] = Number(obj[key])
-
-                else res[key] = obj[key];
-            }
-
-            return res
+        async function companyRepositoryQuery() {
+            return Companies.find({ companyID: paramsCompanyID }).lean()
         }
 
-        function flatten(obj: object, prefix = ''): Record<string, any> {
-            return Object.entries(obj).reduce((acc, [key, value]) => {
-                const fullKey = prefix ? `${prefix}.${key}` : key;
-                if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                    Object.assign(acc, flatten(value, fullKey));
-                } else {
-                    acc[fullKey] = value;
-                }
-                return acc;
-            }, {} as Record<string, any>);
-        }
+        const originalCompany = await companyRepositoryQuery()
+        console.log('Original data:')
+        console.log(originalCompany)
+        console.log('\n')
 
-
-        try {
-            const originalData = await Companies.findOne({ companyID: paramID }).select('+team.owner');
-
-            if (!originalData) {
-                req.flash('errorMsg', 'Dados não encontrados.')
-                return res.redirect('/admin/company')
-            }
-
-            const originalNormalized = flatten(originalData.toObject())
-
-            if (!originalData?.team.owner) {
-                req.flash('errorMsg', 'Empresa não encontrada.')
-                return res.redirect('/admin/company')
-            }
-
-            if (!originalData.team.owner.equals(userClaimant)) {
-                req.flash('errorMsg', 'O usuário não confere com a solicitação.')
-                return res.redirect('/admin/company')
-            }
-
-            //* Old (timestamps keys discarded for value review)
-            const oldFields: Record<string, string | number | object> = {}
-
-            //* New
-            const formData = req.body
-            const formNormalized = normalizeObject(formData)
-
-            const changedFields: Record<string, string | number | object> = {}
-
-            Object.keys(formNormalized).forEach((key) => {
-                if (formNormalized[key] != originalNormalized[key]) {
-
-                    changedFields[key] = formNormalized[key]
-                    oldFields[key] = originalNormalized[key]
-                }
-            })
-
-            if (Object.keys(changedFields).length > 0) {
-                const dataToSave = Object.assign(originalData, changedFields);
-                originalData.updatedAt = new Date();
-
-                /*
-                            await dataToSave.save()
-                .then(async() => {
-                    for (const key of Object.keys(changedFields)) {
-                        
-                        const recordInfo: ISendedRecord = {
-                            userWhoChanged: String(req.user?.userID),
-                            affectedType: 'empresa',
-                            affectedData: String(dataToSave.companyID),
-                            affectedPropertie: key,
-                            oldData: oldFields[key] !== undefined ? `"${oldFields[key]}"` : "",
-                            newData: changedFields[key] !== undefined ? `"${changedFields[key]}"` : "",
-                            action: 'atualizou',
-                            category: 'Empresas',
-                            company: String(dataToSave.companyID)
-                        }
-    
-                        await createRecord(recordInfo, req)
-                    }
-    
-                    req.flash('successMsg', `Dados da conta atualizados com sucesso!`)
-                })
-                .catch((err) => {
-                    req.flash('errorMsg', `Erro 2004 - Houve um erro ao salvar os dados: ${err}`)
-                })
-                */
-
-            }
-
-            else {
-                req.flash('successMsg', 'Nenhum campo foi alterado.')
-            }
-
-            res.redirect('/admin');
-
-        } catch (error) {
-            console.error(error);
-            res.status(500).send('Erro no servidor.');
-        }
     })
 
-//* Specifically in the plans page
 router.post('/company/details/:companyID/change-plan/update',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3]),
@@ -1269,75 +1108,20 @@ router.post('/leads/:leadID/update',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4]),
     async (req: Request, res: Response) => {
-        const leadID = Number(req.params.leadID);
 
-        try {
-            const lead = await Leads.findOne({ leadID });
+        const paramsLeadID = Number(req.params.leadID);
+        const formData = unflattenObject(req.body)
+        console.log(formData)
 
-            if (!lead) {
-                req.flash('errorMsg', 'Lead não encontrado.');
-                return res.redirect(`/admin/leads/${leadID}`);
-            }
-
-            const updatedData = req.body;
-            const originalData = lead.toObject();
-
-            const { updatedAt, ...original } = originalData;
-
-            const normalizeToString = (value: string | null | undefined) => {
-                if (value === undefined || value === null || value === '') return '';
-                if (Array.isArray(value)) return value.sort().join(',');
-                return value.toString();
-            };
-
-            const changedFields: Record<string, any> = {};
-            const oldFields: Record<string, any> = {};
-
-            Object.keys(updatedData).forEach((key) => {
-                const updatedValue = normalizeToString(updatedData[key]);
-                const originalValue = normalizeToString(original[key as keyof typeof original]);
-
-                if (updatedValue !== originalValue) {
-                    changedFields[key] = updatedData[key];
-                    oldFields[key] = original[key as keyof typeof original];
-                }
-            });
-
-            if (Object.keys(changedFields).length > 0) {
-                Object.assign(lead, changedFields);
-                lead.updatedAt = new Date();
-
-                await lead.save();
-
-                for (const key of Object.keys(changedFields)) {
-                    const oldLeadData = oldFields[key];
-                    const newLeadData = changedFields[key];
-
-                    const recordInfo: ISendedRecord = {
-                        userWhoChanged: String(req.user?.userID),
-                        affectedType: "lead",
-                        affectedData: String(leadID),
-                        action: "atualizou",
-                        affectedPropertie: key,
-                        oldData: oldLeadData !== undefined ? `"${oldLeadData}"` : "",
-                        newData: newLeadData !== undefined ? `"${newLeadData}"` : "",
-                        category: "Leads",
-                        company: req.session?.selectedCompany?.companyID
-                    };
-
-                    await createRecord(recordInfo, req);
-                }
-
-                req.flash('successMsg', 'Lead atualizado com sucesso!');
-            } else {
-                req.flash('successMsg', 'Nenhum campo foi alterado.');
-            }
-
-            res.redirect('../');
-        } catch (err) {
-            req.flash('errorMsg', `Erro no servidor: ${err}`);
-            res.redirect('./');
+        async function leadRepositoryQuery() {
+            return Leads.find({ leadID: paramsLeadID }).lean()
         }
+
+        const originalLead = await leadRepositoryQuery()
+        console.log('Original data:')
+        console.log(originalLead)
+        console.log('\n')
+
     }
 );
 
@@ -1691,235 +1475,50 @@ router.post('/real-estates/:realEstateID/update',
     ensureAuthenticated,
     ensureRole([0, 1, 2, 3, 4, 6]),
     async (req: Request, res: Response) => {
-        const paramID = Number(req.params.realEstateID)
-        const formData = req.body
 
-        console.log('Dados do formulário (raw):\n')
+        //* ---------- STEP 1: keep front-end data
+        const paramsRealEstateID = Number(req.params.realEstateID)
+        const formData = unflattenObject(req.body)
         console.log(formData)
 
-        // Função para converter flat em aninhado
-        function convertDotNotationToNested(obj: Record<string, any>): Record<string, any> {
-            const result: Record<string, any> = {}
-
-            Object.keys(obj).forEach(key => {
-                const value = obj[key]
-
-                if (key.includes('.')) {
-                    const parts = key.split('.')
-                    let current = result
-
-                    // Navega até o penúltimo nível
-                    for (let i = 0; i < parts.length - 1; i++) {
-                        if (!(parts[i] in current)) {
-                            current[parts[i]] = {}
-                        }
-                        current = current[parts[i]]
-                    }
-
-                    // Define o valor final, convertendo tipos apropriados
-                    const finalKey = parts[parts.length - 1]
-                    current[finalKey] = convertValue(value)
-                } else {
-                    result[key] = convertValue(value)
-                }
-            })
-
-            return result
+        //* ---------- STEP 2: search the current object in DB
+        async function realEstateRepositoryQuery() {
+            return RealEstates.findOne({ realEstateID: paramsRealEstateID }).lean()
         }
 
-        // Função para converter valores para os tipos corretos
-        function convertValue(value: any): any {
-            if (value === '' || value === null || value === undefined) {
-                return null
-            }
+        const originalRealEstate = await realEstateRepositoryQuery()
+        console.log('Original data:')
+        console.log(originalRealEstate)
+        console.log('\n')
 
-            // Converte números
-            if (typeof value === 'string' && /^\d+$/.test(value)) {
-                return parseInt(value, 10)
-            }
-
-            // Converte booleanos
-            if (value === 'true') return true
-            if (value === 'false') return false
-
-            return value
+        //* ---------- STEP 3: return error if current object don't exists
+        if (!originalRealEstate) {
+            req.flash('errorMsg', 'Dado não encontrado na base.')
+            return res.redirect('/admin/real-estates')
         }
 
-        async function realEstateQuery() {
-            const realEstateQuery = await RealEstates.findOne({
-                realEstateID: paramID,
-                company: req.session?.selectedCompany?._id
-            })
-            return realEstateQuery
-        }
+        //* ---------- STEP 4: set the keys that can be updated by form
+        const {
+            _id,
+            realEstateID,
+            media,
+            userCreator,
+            company,
+            createdAt,
+            updatedAt,
+            enabled,
+            ...originalRealEstateOnlyChangeableFields
+        } = originalRealEstate
 
-        // Função para comparar objetos aninhados recursivamente
-        function compareNestedObjects(
-            original: Record<string, any>,
-            updated: Record<string, any>,
-            path: string = ''
-        ): Record<string, { old: any, new: any }> {
-            const changes: Record<string, { old: any, new: any }> = {}
+        //* ---------- STEP 5: compare the objects and return the different fields
+        const differencesToUpdate = compareObjects(originalRealEstateOnlyChangeableFields, formData)
+        console.log(differencesToUpdate)
 
-            // Combina todas as chaves dos dois objetos
-            const allKeys = new Set([...Object.keys(original), ...Object.keys(updated)])
+        //* ---------- STEP 6: create the update object with the fields changed
+        //* ---------- STEP 7: update the object in the DB
+        //* ---------- STEP 8: create the records for each changed field
+        //* ---------- STEP 9: redirect the user or return error
 
-            allKeys.forEach(key => {
-                const currentPath = path ? `${path}.${key}` : key
-                const originalValue = original[key]
-                const updatedValue = updated[key]
-
-                // Se ambos são objetos (não arrays, não null), compara recursivamente
-                if (
-                    originalValue &&
-                    updatedValue &&
-                    typeof originalValue === 'object' &&
-                    typeof updatedValue === 'object' &&
-                    !Array.isArray(originalValue) &&
-                    !Array.isArray(updatedValue)
-                ) {
-                    const nestedChanges = compareNestedObjects(originalValue, updatedValue, currentPath)
-                    Object.assign(changes, nestedChanges)
-                } else {
-                    // Normaliza valores para comparação
-                    const normalizedOriginal = normalizeValue(originalValue)
-                    const normalizedUpdated = normalizeValue(updatedValue)
-
-                    if (normalizedOriginal !== normalizedUpdated) {
-                        changes[currentPath] = {
-                            old: originalValue,
-                            new: updatedValue
-                        }
-                    }
-                }
-            })
-
-            return changes
-        }
-
-        function normalizeValue(value: any): string {
-            if (value === undefined || value === null) return ''
-            if (Array.isArray(value)) return value.sort().join(',')
-            return String(value)
-        }
-
-        // Função para aplicar mudanças aninhadas no objeto original
-        function applyNestedChanges(target: Record<string, any>, changes: Record<string, any>): void {
-            Object.keys(changes).forEach(path => {
-                const parts = path.split('.')
-                let current = target
-
-                // Navega até o penúltimo nível
-                for (let i = 0; i < parts.length - 1; i++) {
-                    if (!(parts[i] in current)) {
-                        current[parts[i]] = {}
-                    }
-                    current = current[parts[i]]
-                }
-
-                // Define o novo valor
-                current[parts[parts.length - 1]] = changes[path].new
-            })
-        }
-
-        async function forEachChangedKeyCreateARecord(changedFields: Record<string, any>, realEstateID: string) {
-            for (const key of Object.keys(changedFields)) {
-                const oldData = changedFields[key].old
-                const newData = changedFields[key].new
-
-                const recordInfo: ISendedRecord = {
-                    userWhoChanged: String(req.user?.userID),
-                    affectedType: "imóvel",
-                    affectedData: realEstateID,
-                    action: "atualizou",
-                    affectedPropertie: key,
-                    oldData: oldData !== undefined && oldData !== null ? `"${oldData}"` : "",
-                    newData: newData !== undefined && newData !== null ? `"${newData}"` : "",
-                    category: "Imóveis",
-                    company: String(req.session?.selectedCompany?.companyID)
-                }
-
-                await createRecord(recordInfo, req)
-            }
-        }
-
-        try {
-            // Verificar se req.body existe
-            if (!formData) {
-                req.flash('errorMsg', 'Dados do formulário não recebidos.')
-                return res.redirect('/admin/real-estates')
-            }
-
-            const realEstateQueryResponse = await realEstateQuery()
-
-            if (!realEstateQueryResponse) {
-                req.flash('errorMsg', 'Imóvel não encontrado.')
-                return res.redirect('/admin/real-estates')
-            }
-
-            const originalData = realEstateQueryResponse.toObject()
-
-            // Remove campos não alteráveis
-            const {
-                updatedAt,
-                realEstateID,
-                userCreator,
-                company,
-                enabled,
-                _id,
-                __v,
-                createdAt,
-                ...originalChangeableData
-            } = originalData
-
-            console.log('Dados alteráveis (original):\n')
-            console.log(originalChangeableData)
-
-            // Converte dados do formulário para estrutura aninhada
-            const updatedData = convertDotNotationToNested(formData)
-            console.log('Dados do formulário (convertidos):\n')
-            console.log(updatedData)
-
-            // Compara os dados originais com os atualizados
-            const changedFields = compareNestedObjects(originalChangeableData, updatedData)
-
-            console.log('Campos alterados:\n')
-            console.log(changedFields)
-
-            if (Object.keys(changedFields).length < 1) {
-                req.flash('successMsg', 'Nenhum campo foi alterado.')
-                return res.redirect('/admin/real-estates')
-            }
-
-            // Aplica as mudanças no objeto original
-            applyNestedChanges(originalChangeableData, changedFields)
-
-            // Atualiza o documento
-            Object.assign(realEstateQueryResponse, originalChangeableData)
-            realEstateQueryResponse.updatedAt = new Date()
-
-            await realEstateQueryResponse
-                .save()
-                .then(async () => {
-                    await forEachChangedKeyCreateARecord(
-                        changedFields,
-                        String(realEstateQueryResponse.realEstateID)
-                    )
-
-                    req.flash('successMsg', 'Imóvel atualizado com sucesso!')
-                    res.redirect('/admin/real-estates')
-                })
-                .catch((err) => {
-                    console.error('Erro ao salvar:', err)
-                    req.flash('errorMsg', `Não foi possível atualizar o imóvel: ${err}`)
-                    res.redirect('/admin/real-estates')
-                })
-
-        } catch (err) {
-            console.error('Erro no servidor:', err)
-            req.flash('errorMsg', `Erro no servidor: ${err}`)
-            res.redirect('/admin/real-estates')
-        }
     }
 );
 

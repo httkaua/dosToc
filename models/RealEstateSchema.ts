@@ -387,7 +387,8 @@ const RealStateSchema = new Schema<IRealEstate>({
         ref: 'users'
     },
     owner: { //* Owner of the porperty (maybe is the constructor person)
-        type: ownerSchema
+        type: ownerSchema,
+        required: true
     },
     company: {
         required: true,
