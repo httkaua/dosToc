@@ -20,7 +20,7 @@ import Leads, { ILeads } from "../models/LeadSchema.js"
 import { ISendedRecord } from "../models/@types_ISendedRecord.js"
 import passport, { use } from "passport";
 import positionsNames from "../helpers/positionNames.js";
-import { unflattenObject, compareObjects } from "../helpers/ObjectUnflatter.js"
+import { unflattenObject, ConvertObjectTypes, compareObjects } from "../helpers/ObjectUnflatter.js"
 
 router.get('/feed-session',
     ensureAuthenticated,
@@ -1479,12 +1479,61 @@ router.post('/real-estates/:realEstateID/update',
         //* ---------- STEP 1: keep front-end data
         const paramsRealEstateID = Number(req.params.realEstateID)
         const formData = unflattenObject(req.body)
+        console.log('form data: \n')
         console.log(formData)
 
         //* ---------- STEP 2: search the current object in DB
         async function realEstateRepositoryQuery() {
             return RealEstates.findOne({ realEstateID: paramsRealEstateID }).lean()
         }
+
+        async function setChangeableFieldsForRealEstates(originalRealEstate: Record<string, any>): Promise<Record<string, any>> {
+            const {
+                _id,
+                realEstateID,
+                media,
+                userCreator,
+                company,
+                tags,
+                __v,
+                createdAt,
+                updatedAt,
+                enabled,
+                owner,
+                ...rest
+            } = originalRealEstate
+
+            const {
+                _id: ownerIDToRemove,
+                nameSearch,
+                createdAt: ownerCreatedAtToRemove,
+                updatedAt: ownerUpdatedAtToRemove,
+                ownerID: ownerOwnerIDToRemove,
+                ...cleanOwner
+            } = owner || {}
+
+            const originalRealEstateOnlyChangeableFields = {
+                ...rest,
+                owner: cleanOwner
+            }
+
+            return originalRealEstateOnlyChangeableFields
+        }
+
+        /*
+        function checkBooleanFieldsAndConvertUndefinedToFalse<T = any>(obj: any): T {
+
+            // If it's an array, process each item
+            if (Array.isArray(obj) || obj.length > 1) {
+                if (typeof (obj[0]) == Boolean) {
+
+                }
+                return obj as T;
+            }
+
+            return obj;
+        }
+        */
 
         const originalRealEstate = await realEstateRepositoryQuery()
         console.log('Original data:')
@@ -1498,27 +1547,38 @@ router.post('/real-estates/:realEstateID/update',
         }
 
         //* ---------- STEP 4: set the keys that can be updated by form
-        const {
-            _id,
-            realEstateID,
-            media,
-            userCreator,
-            company,
-            createdAt,
-            updatedAt,
-            enabled,
-            ...originalRealEstateOnlyChangeableFields
-        } = originalRealEstate
+        const originalRealEstateChangeableFields = await setChangeableFieldsForRealEstates(originalRealEstate)
 
         //* ---------- STEP 5: compare the objects and return the different fields
-        const differencesToUpdate = compareObjects(originalRealEstateOnlyChangeableFields, formData)
-        console.log(differencesToUpdate)
+        const realEstatesComparision = compareObjects(
+            originalRealEstateChangeableFields,
+            formData
+        )
+        console.log(realEstatesComparision)
 
         //* ---------- STEP 6: create the update object with the fields changed
+        if (Object(realEstatesComparision.differentKeys).keys == 0) {
+            req.flash('successMsg', `Nenhum campo foi alterado.`)
+            return res.redirect('admin/real-estates')
+        }
+
+        const fieldsToUpdateWithUndefineds = ConvertObjectTypes(unflattenObject(realEstatesComparision.differentKeys))
+        console.log('fields to update: \n')
+        console.log(fieldsToUpdateWithUndefineds)
+
+        const realEstateToUpdate = Object.assign(
+            fieldsToUpdateWithUndefineds,
+            originalRealEstateChangeableFields
+        )
+        console.log('Real Estate to update: \n')
+        console.log(realEstateToUpdate)
+
         //* ---------- STEP 7: update the object in the DB
         //* ---------- STEP 8: create the records for each changed field
         //* ---------- STEP 9: redirect the user or return error
 
+
+        res.redirect('./')
     }
 );
 

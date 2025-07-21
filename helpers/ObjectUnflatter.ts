@@ -30,53 +30,140 @@ function unflattenObject(flatObj: Record<string, any>): Record<string, any> {
     return result;
 }
 
-// Exemplo de uso
-const flatObject = {
-    "address.street": "Rua das Flores, 123",
-    "address.neighborhood": "Centro",
-    "address.city": "São Paulo",
-    "owner.name": "João Silva",
-    "owner.phone": "(11) 99999-9999",
-    "owner.email": "joao@email.com",
-    "property.type": "apartamento",
-    "property.rooms": 3,
-    "property.area": 80.5,
-    "metadata.created": "2024-01-15",
-    "metadata.updated": "2024-01-20"
-};
-
-const nestedObject = unflattenObject(flatObject);
-console.log(JSON.stringify(nestedObject, null, 2));
-
 
 
 
 
 //* ---------- HANDLER 2: NORMALIZER ----------
 /**
- * Converts strange keys, like "true" into true (boolean)
- * @param unevenObj - Object with irregular keys (ex: "true", NaN, undefined, null, "null", "460", etc.)
- * @returns Object with regular keys (strings converts to correct type)
+ * Recursively converts string values to their appropriate types in an object
+ * @param obj - Any object, array, or primitive value to be converted
+ * @returns Object with converted types (strings to numbers, booleans, null, etc.)
  */
-function normalizeObject(unevenObj: Record<string, any>) {
+function ConvertObjectTypes<T = any>(obj: any): T {
+    // If it's not a valid object, return as is
+    if (obj === null || obj === undefined) {
+        return obj;
+    }
 
-    let newObject: Record<string, any> = {}
+    // If it's a string, try to convert it
+    if (typeof obj === 'string') {
+        return convertString(obj) as T;
+    }
 
-    const traverse = (current: any) => {
-        for (const value of Object.entries(current)) {
+    // If it's an array, process each item
+    if (Array.isArray(obj)) {
+        return obj.map(item => ConvertObjectTypes(item)) as T;
+    }
 
+    // If it's an object, process each property
+    if (typeof obj === 'object') {
+        const result: any = {};
 
+        for (const [key, value] of Object.entries(obj)) {
+            result[key] = ConvertObjectTypes(value);
+        }
 
-            if (value && typeof value === 'object' && !Array.isArray(value)) {
-                traverse(value);
-            }
+        return result as T;
+    }
+
+    // For other types (number, boolean, etc), return as is
+    return obj;
+}
+
+function convertString(str: string): any {
+    // Remove whitespace
+    const trimmed = str.trim();
+
+    // Convert 'null' to null
+    if (trimmed.toLowerCase() === 'null') {
+        return null;
+    }
+
+    // Convert 'undefined' to undefined
+    if (trimmed.toLowerCase() === 'undefined') {
+        return undefined;
+    }
+
+    // Convert 'true'/'false' to boolean
+    if (trimmed.toLowerCase() === 'true') {
+        return true;
+    }
+    if (trimmed.toLowerCase() === 'false') {
+        return false;
+    }
+
+    // Try to convert to number
+    if (trimmed !== '' && !isNaN(Number(trimmed))) {
+        const num = Number(trimmed);
+        // Check if it's a valid integer or decimal number
+        if (Number.isFinite(num)) {
+            return num;
         }
     }
 
-    const normalizedObj = traverse(unevenObj)
-    return normalizedObj
+    // Try to convert JSON (objects/arrays as string)
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+        (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+        try {
+            const parsed = JSON.parse(trimmed);
+            return ConvertObjectTypes(parsed);
+        } catch {
+            // If it fails, return the original string
+            return str;
+        }
+    }
 
+    // If couldn't convert, return the original string
+    return str;
 }
+
+// Example usage:
+/*
+const example = {
+  id: '123',
+  name: 'John',
+  age: '30',
+  active: 'true',
+  salary: '2500.50',
+  notes: 'null',
+  tags: ['tag1', '456', 'false'],
+  address: {
+    street: 'Street A',
+    number: '100',
+    active: 'true',
+    coordinates: {
+      lat: '-23.5505',
+      lng: '-46.6333'
+    }
+  },
+  settings: '{"theme": "dark", "notifications": "true"}'
+};
+
+const result = ConvertObjectTypes(example);
+console.log(result);
+
+/* Expected result:
+{
+  id: 123,
+  name: 'John',
+  age: 30,
+  active: true,
+  salary: 2500.5,
+  notes: null,
+  tags: ['tag1', 456, false],
+  address: {
+    street: 'Street A',
+    number: 100,
+    active: true,
+    coordinates: {
+      lat: -23.5505,
+      lng: -46.6333
+    }
+  },
+  settings: { theme: 'dark', notifications: true }
+}
+*/
 
 
 
@@ -128,12 +215,62 @@ function compareObjects(
         if (value === 'null') return null;
         if (value === 'undefined') return undefined;
 
+        // Convert string numbers
+        if (value !== '' && !isNaN(Number(value)) && !isNaN(parseFloat(value))) {
+            // Check if it's an integer
+            if (Number.isInteger(parseFloat(value))) {
+                return parseInt(value, 10);
+            }
+            // Otherwise it's a float
+            return parseFloat(value);
+        }
+
         return value;
     };
 
+    // Helper function to fix type based on original value type
+    const fixTypeBasedOnOriginal = (originalValue: any, newValue: any): any => {
+        // If original is null/undefined, return converted new value as is
+        if (originalValue === null || originalValue === undefined) {
+            return convertStringToType(newValue);
+        }
+
+        const originalType = typeof originalValue;
+        const convertedNewValue = convertStringToType(newValue);
+
+        // If new value is undefined and original is boolean, treat as false
+        if (originalType === 'boolean' && (newValue === undefined || newValue === null)) {
+            return false;
+        }
+
+        // If types match after conversion, return converted value
+        if (typeof convertedNewValue === originalType) {
+            return convertedNewValue;
+        }
+
+        // If original is number and new value is string number, convert it
+        if (originalType === 'number' && typeof newValue === 'string') {
+            const numValue = convertStringToType(newValue);
+            if (typeof numValue === 'number') {
+                return numValue;
+            }
+        }
+
+        // If original is boolean and new value is string boolean, convert it
+        if (originalType === 'boolean' && typeof newValue === 'string') {
+            if (newValue === 'true') return true;
+            if (newValue === 'false') return false;
+            // If it's a truthy/falsy string, convert accordingly
+            if (newValue === '1' || newValue === 'yes' || newValue === 'on') return true;
+            if (newValue === '0' || newValue === 'no' || newValue === 'off') return false;
+        }
+
+        return convertedNewValue;
+    };
+
     // Helper function to fully normalize a value
-    const normalizeValue = (value: any): any => {
-        const converted = convertStringToType(value);
+    const normalizeValue = (value: any, originalValue: any = null): any => {
+        const converted = originalValue !== null ? fixTypeBasedOnOriginal(originalValue, value) : convertStringToType(value);
         return normalizeEmptyValues(converted);
     };
 
@@ -177,14 +314,16 @@ function compareObjects(
     for (const key in oldObj) {
         if (oldObj.hasOwnProperty(key)) {
             const fullKeyPath = buildKeyPath(key);
-            const oldValue = normalizeValue(oldObj[key]);
-            const newValue = normalizeValue(newObj[key]);
+            const originalOldValue = oldObj[key];
+            const originalNewValue = newObj[key];
+            const oldValue = normalizeValue(originalOldValue);
+            const newValue = normalizeValue(originalNewValue, originalOldValue);
 
             // Check if the key exists in the second object
             if (!(key in newObj)) {
                 // Only add if the old value is not null/empty
                 if (oldValue !== null) {
-                    result.differentKeys[fullKeyPath] = [oldObj[key], undefined];
+                    result.differentKeys[fullKeyPath] = [originalOldValue, undefined];
                 }
                 continue;
             }
@@ -203,7 +342,7 @@ function compareObjects(
                 !Array.isArray(oldValue) &&
                 !Array.isArray(newValue)
             ) {
-                const nestedResult = compareObjects(oldValue, newValue, fullKeyPath);
+                const nestedResult = compareObjects(originalOldValue, originalNewValue, fullKeyPath);
                 // Merge nested results into the main result
                 Object.assign(result.differentKeys, nestedResult.differentKeys);
                 continue;
@@ -211,7 +350,7 @@ function compareObjects(
 
             // For arrays and primitives, do a comparison
             if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
-                result.differentKeys[fullKeyPath] = [oldObj[key], newObj[key]];
+                result.differentKeys[fullKeyPath] = [originalOldValue, originalNewValue];
             }
         }
     }
@@ -224,13 +363,15 @@ function compareObjects(
     return result;
 }
 
-//* Example usage:
+// Example usage:
 /*
 const obj1 = {
   name: "Jhon",
   age: 24,
   active: true,
+  price: 420000,
   description: null,
+  financeable: true,
   address: {
     street: "123 Main St",
     city: "New York",
@@ -241,9 +382,11 @@ const obj1 = {
 
 const obj2 = {
   name: "John",
-  age: 25,
+  age: "25",
   active: "true",
+  price: "420000",
   description: "",
+  financeable: undefined,
   address: {
     street: "123 Main St",
     city: "Boston",
@@ -258,16 +401,17 @@ console.log(differences);
  Output: {
    differentKeys: {
      name: ["Jhon", "John"],
-     age: [24, 25],
+     age: [24, "25"],
+     financeable: [true, undefined],
      "address.city": ["New York", "Boston"],
      hobbies: [["reading", "swimming"], ["reading", "running"]]
    },
    missingKeys: ["email"]
  }
 
-//* Note: active (true vs "true"), description (null vs ""), and zipCode ("" vs null) are not shown as they're equivalent
+//* Note: (true vs "true"), (null vs ""), ("" vs null), (478 vs "478") are not shown as they're equivalent here
 */
 
 
 
-export { unflattenObject, compareObjects };
+export { unflattenObject, ConvertObjectTypes, compareObjects };
