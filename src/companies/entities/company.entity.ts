@@ -60,7 +60,7 @@ export class Company {
   zipCode: string;
 
   @Column()
-  streetAddress: string;
+  street: string;
 
   @Column()
   streetNumber: string;
