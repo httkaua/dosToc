@@ -1,0 +1,343 @@
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h5>Imóvel {{realEstateID}}</h5>
+                </div>
+                <div class="card-body">
+                    <!--enctype for Multer library -->
+                    <form method="POST" action="/admin/real-estates/{{realEstateID}}/update" id="IVform" novalidate>
+                        <h4 class="mt-2">Dados essenciais</h4>
+
+                        <div class="dropdownMenus col-md-12 mt-4">
+                            <div class='form-field'>
+                                <label for='classification'>Tipo de imóvel</label>
+                                <select id='classification' name="classification" class='form-control'>
+                                    <option value="{{classification}}">{{classification}}</option>
+                                    <option value="Casa">Casa</option>
+                                    <option value="Terreno">Terreno</option>
+                                    <option value="Apartamento">Apartamento</option>
+                                    <option value="Sobrado">Sobrado</option>
+                                    <option value="Sítio">Sítio</option>
+                                    <option value="Galpão">Galpão</option>
+                                    <option value="Studio/Sala comercial">Studio/Sala comercial</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="dropdownMenus col-md-12">
+                            <div class='form-field'>
+                                <label for='propertySituation'>Situação do imóvel</label>
+                                <select id='propertySituation' name="propertySituation" class='form-control'>
+                                    <option value="{{propertySituation}}">{{propertySituation}}</option>
+                                    <option value="Novo">Novo</option>
+                                    <option value="Usado">Usado</option>
+                                    <option value="Em construção">Em construção</option>
+                                    <option value="Reformado">Reformado</option>
+                                    <option value="Em reforma">Em reforma</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <label for="description">Descrição do imóvel</label>
+                            <input type="text" class="form-control" id="description" name="description"
+                                value="{{description}}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="rooms.bedrooms">Nº quartos</label>
+                            <input type="number" class="form-control" id="rooms.bedrooms" name="rooms.bedrooms"
+                                value="{{rooms.bedrooms}}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="rooms.livingRooms">Nº salas</label>
+                            <input type="number" class="form-control" id="rooms.livingRooms" name="rooms.livingRooms"
+                                value="{{rooms.livingRooms}}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="rooms.bathrooms">Nº banheiros</label>
+                            <input type="number" class="form-control" id="rooms.bathrooms" name="rooms.bathrooms"
+                                value="{{rooms.bathrooms}}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="rooms.parkingSpaces">Vagas de garagem</label>
+                            <input type="number" class="form-control" id="rooms.parkingSpaces"
+                                name="rooms.parkingSpaces" value="{{rooms.parkingSpaces}}">
+                        </div>
+
+                        <h4 class="mt-5">Foto de capa</h4>
+                        <div class="d-flex justify-content-center mt-2 mb-2">
+                            <img src="/uploads/{{media.[0]}}" alt="Foto do imóvel" class="img-thumbnail"
+                                style="width: 20vw; height: 20vw; object-fit: cover;">
+                        </div>
+                        <small>
+                            Nesta versão (2.1.0), ainda não é possível atualizar a foto ou inserir mais de uma.
+                            Fique de olho nas atualizações!
+                        </small>
+
+                        <h4 class="mt-5">Condomínio</h4>
+                        <small>Preencher apenas se o imóvel cadastrado fizer parte de um</small>
+
+                        <div class="form-group mt-3">
+                            <label for="condominium.block">Bloco</label>
+                            <input type="text" class="form-control" id="condominium.block" name="condominium.block"
+                                value="{{condominium.block}}">
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <label for="condominium.internalNumber">Número interno</label>
+                            <input type="text" class="form-control" id="condominium.internalNumber"
+                                name="condominium.internalNumber" value="{{condominium.internalNumber}}">
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <label for="condominium.floor">Andar</label>
+                            <input type="number" class="form-control" id="condominium.floor" name="condominium.floor"
+                                value="{{condominium.floor}}">
+                        </div>
+
+                        <h4 class="mt-5">Financeiro</h4>
+
+                        <div class="form-group mt-4">
+                            <label for="financial.saleValue">Valor de venda</label>
+                            <input type="number" class="form-control" id="financial.saleValue"
+                                name="financial.saleValue" value="{{financial.saleValue}}">
+                        </div>
+
+                        <div class="form-group mt-4">
+                            <label for="financial.assessedValue">Valor de avaliação</label>
+                            <input type="number" class="form-control" id="financial.assessedValue"
+                                name="financial.assessedValue" value="{{financial.assessedValue}}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="financial.financingMaxValue">Valor máximo financiável</label>
+                            <input type="number" class="form-control" id="financial.financingMaxValue"
+                                name="financial.financingMaxValue" value="{{financial.financingMaxValue}}">
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="true" id="financial.exchange"
+                                name="financial.exchange">
+                            <label class="form-check-label" for="financial.exchange">
+                                Aceita permuta?
+                            </label>
+                        </div>
+
+                        <div class="dropdownMenus col-md-12 mt-3">
+                            <div class='form-field'>
+                                <label for='rentalOrSale'>Tipo de anúncio</label>
+                                <select id='rentalOrSale' name="rentalOrSale" class='form-control'>
+                                    <option value="{{rentalOrSale}}" selected>{{rentalOrSale}}</option>
+                                    <option value="Venda">Venda</option>
+                                    <option value="Aluguel">Aluguel</option>
+                                    <option value="Ambos">Ambos</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <label for="financial.currency">Moeda</label>
+                            <input type="text" class="form-control" id="financial.currency" name="financial.currency"
+                                placeholder="BRL (Real brasileiro)" value="{{financial.currency}}" readonly>
+                        </div>
+
+                        <div class="form-check mt-4">
+                            <input class="form-check-input" type="checkbox" value="true" id="financeable"
+                                name="financeable" checked>
+                            <label class="form-check-label" for="financeable">
+                                Financiável?
+                            </label>
+                        </div>
+
+                        <div class="form-check mt-4">
+                            <input class="form-check-input" type="checkbox" value="true" id="financial.tax"
+                                name="financial.tax" checked>
+                            <label class="form-check-label" for="financial.tax">
+                                Imposto a pagar?
+                            </label>
+                        </div>
+
+                        <div class="dropdownMenus col-md-12 mt-4">
+                            <div class='form-field'>
+                                <label for='financial.taxFrequency'>Frequência de pagamento de impostos (se
+                                    houver)</label>
+                                <select id='financial.taxFrequency' name="financial.taxFrequency" class='form-control'>
+                                    <option value="{{financial.taxFrequency}}">{{financial.taxFrequency}}</option>
+                                    <option value="Único">Único</option>
+                                    <option value="Mensal">Mensal</option>
+                                    <option value="Anual">Anual</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <label for="financial.taxValue">Total em impostos</label>
+                            <input type="number" class="form-control" id="financial.taxValue" name="financial.taxValue"
+                                value="{{financial.taxValue}}">
+                        </div>
+
+                        <h4 class="mt-5">Localização</h4>
+
+                        <div class="form-group mt-4">
+                            <label for="address.locationCode">CEP</label>
+                            <input type="text" class="form-control CEPlocationCode" id="address.locationCode"
+                                name="address.locationCode" value="{{address.locationCode}}" maxlength="9">
+                            <div id="cep-loading" class="text-primary mt-2" style="display: none;">
+                                <small><span class="spinner-border spinner-border-sm me-1" role="status"
+                                        aria-hidden="true"></span>Buscando informações do CEP...</small>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="address.street">Rua</label>
+                            <input type="text" class="form-control CEPstreet" id="address.street" name="address.street"
+                                value="{{address.street}}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="address.streetNumber">Número</label>
+                            <input type="number" class="form-control" id="address.streetNumber"
+                                name="address.streetNumber" value="{{address.streetNumber}}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="address.complement">Complemento</label>
+                            <input type="text" class="form-control" id="address.complement" name="address.complement"
+                                value="{{address.complement}}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="address.neighborhood">Bairro</label>
+                            <input type="text" class="form-control CEPneighborhood" id="address.neighborhood"
+                                name="address.neighborhood" value="{{address.neighborhood}}">
+                        </div>
+
+                        <div class="dropdownMenus col-md-12">
+                            <div class='form-field'>
+                                <label for='address.region'>Região</label>
+                                <select id='address.region' name="address.region" class='form-control'>
+                                    <option value="{{address.region}}" selected>{{address.region}}</option>
+                                    <option value="Não identificado">Não identificado</option>
+                                    <option value="Sul">Sul</option>
+                                    <option value="Oeste">Oeste</option>
+                                    <option value="Norte">Norte</option>
+                                    <option value="Leste">Leste</option>
+                                    <option value="Central">Central</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <label for="address.city">Cidade</label>
+                            <input type="text" class="form-control CEPcity" id="address.city" name="address.city"
+                                value="{{address.city}}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="address.state">Estado</label>
+                            <input type="text" class="form-control CEPstate" id="address.state" name="address.state"
+                                value="{{address.state}}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="address.country">País</label>
+                            <input type="text" class="form-control CEPcountry" id="address.country"
+                                name="address.country" value="{{address.country}}">
+                        </div>
+
+                        <h4 class="mt-5">Complementares</h4>
+
+                        <div class="form-group mt-4">
+                            <label for="landArea">Área total</label>
+                            <input type="number" class="form-control" id="landArea" name="landArea"
+                                value="{{landArea}}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="builtUpArea">Área construída</label>
+                            <input type="number" class="form-control" id="builtUpArea" name="builtUpArea"
+                                value="{{builtUpArea}}">
+                        </div>
+
+                        <div class="dropdownMenus col-md-12">
+                            <div class='form-field'>
+                                <label for='face'>Face do imóvel</label>
+                                <select id='face' name="face" class='form-control'>
+                                    <option value="{{face}}" selected>{{face}}</option>
+                                    <option value="Sul">Sul</option>
+                                    <option value="Sudoeste">Sudoeste</option>
+                                    <option value="Oeste">Oeste</option>
+                                    <option value="Noroeste">Noroeste</option>
+                                    <option value="Norte">Norte</option>
+                                    <option value="Nordeste">Nordeste</option>
+                                    <option value="Leste">Leste</option>
+                                    <option value="Sudeste">Sudeste</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" value="true" id="publish" name="publish"
+                                checked>
+                            <label class="form-check-label" for="publish">
+                                Publicar no site?
+                            </label>
+                        </div>
+
+                        <div class="dropdownMenus col-md-12 mt-3">
+                            <div class='form-field'>
+                                <label for='commercialSituation'>Situação comercial</label>
+                                <select id='commercialSituation' name="commercialSituation" class='form-control'>
+                                    <option value="{{commercialSituation}}" selected>{{commercialSituation}}</option>
+                                    <option value="Ativo">Ativo</option>
+                                    <option value="Inativo">Inativo</option>
+                                    <option value="Vendido">Vendido</option>
+                                    <option value="Suspenso">Suspenso</option>
+                                    <option value="Alugado">Alugado</option>
+                                    <option value="Permutado">Permutado</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <h4 class="mt-5">Informações do proprietário</h4>
+
+                        <div class="form-group mt-4">
+                            <label for="owner.name">Nome completo</label>
+                            <input type="text" class="form-control IVname" id="owner.name" name="owner.name"
+                                value="{{owner.name}}" required>
+                            <span class="invalid-feedback IVnameError" id="nameError"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="owner.phoneNumber">Telefone</label>
+                            <input type="text" class="form-control IVphone" id="owner.phoneNumber"
+                                name="owner.phoneNumber" value="{{owner.phoneNumber}}" required>
+                            <span class="invalid-feedback IVphoneError" id="phoneError"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="owner.email">Email</label>
+                            <input type="email" class="form-control IVemail" id="owner.email" name="owner.email"
+                                value="{{owner.email}}">
+                            <span class="invalid-feedback IVemailError" id="emailError"></span>
+                        </div>
+
+                        <a href="./" class="btn btn-secondary mt-5">Voltar</a>
+                        <a href="/admin/real-estates/{{realEstateID}}/hidden" class="btn btn-danger mt-5">🗑</a>
+                        <button type="submit" class="btn btn-success mt-5">Atualizar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios@1.8.4/dist/axios.min.js"></script>
+<script src="/js/_searchcep.js"></script>
+<script src="/js/_formGenValidation.js"></script>

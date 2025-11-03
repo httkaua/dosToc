@@ -1,53 +1,57 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
-        <div class="card shadow-lg">
-            <div class="card-header bg-primary text-white text-center">
-            <h5>Minha Empresa</h5>
-            </div>
-            <div class="card-body">
-                <form method="POST" action="/admin/team/new-member/create">
-                    <h4>Criar novo usuário</h4>
-                    <div class="form-group">
-                        <label for="firstName">Nome</label>
-                        <input type="text" class="form-control" id="firstName" name="firstName" placeholder="Sophia">
-                    </div>
-                    <div class="form-group">
-                        <label for="lastName">Sobrenome</label>
-                        <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Jones">
-                    </div>
-                    <div class="dropdownMenus col-md-12">
-                        <div class='form-field'>
-                            <label for='position'>Função</label>
-                            <select id='position' name="position" class='form-control'>
-                            {{#each positions}}
-                            <option value="{{this}}">{{this}}</option>
-                            {{/each}}
-                            </select>
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h5>Minha Empresa</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/admin/team/new-member/create" id="IVform" novalidate>
+                        <h4>Criar novo usuário</h4>
+                        <div class="form-group">
+                            <label for="name">Nome</label>
+                            <input type="text" class="form-control IVname" id="name" name="name" placeholder="Sophia">
+                            <span class="invalid-feedback IVnameError" id="nameError"></span>
                         </div>
-                    </div>
+                        <div class="dropdownMenus col-md-12">
+                            <div class='form-field'>
+                                <label for='position'>Função</label>
+                                <select id='position' name="position" class='form-control'>
+                                    {{#each positions}}
+                                    <option value="{{this}}">{{this}}</option>
+                                    {{/each}}
+                                </select>
+                            </div>
+                        </div>
 
-                    <div class="form-group mt-4">
-                        <label for="phone">Telefone</label>
-                        <input type="tel" class="form-control" id="phone" name="phone" placeholder="+ 55 41 99999-9999">
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" aria-describedby="emailHelp" placeholder="example@gmail.com">
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Senha</label>
-                        <button type="button" class="btn btn-warning ml-3" id="generate-password-btn">Gerar senha aleatória</button>
-                        <input type="text" class="form-control mt-2" id="generated-password" name="password" placeholder="Senha gerada" readonly>
-                    </div>
-                    <a href="/admin/team" class="btn btn-secondary">Voltar</a>
-                    <button type="submit" class="btn btn-success">Criar</button>
-                </form>
+                        <div class="form-group mt-4">
+                            <label for="phone">Telefone</label>
+                            <input type="tel" class="form-control IVphone" id="phone" name="phone"
+                                placeholder="+ 55 41 99999-9999">
+                            <span class="invalid-feedback IVphoneError" id="phoneError"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" class="form-control IVemail" id="email" name="email"
+                                aria-describedby="emailHelp" placeholder="example@gmail.com">
+                            <span class="invalid-feedback IVemailError" id="emailError"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Senha</label>
+                            <button type="button" class="btn btn-warning ml-3" id="generate-password-btn">Gerar senha
+                                aleatória</button>
+                            <input type="text" class="form-control mt-2 IVpassword" id="generated-password"
+                                name="password" placeholder="Senha gerada" readonly>
+                            <span class="invalid-feedback IVpasswordError" id="passwordError"></span>
+                        </div>
+                        <a href="/admin/team" class="btn btn-secondary">Voltar</a>
+                        <button type="submit" class="btn btn-success">Criar</button>
+                    </form>
+                </div>
             </div>
-        </div>
         </div>
     </div>
 </div>
 
-    <script src="/js/_generatepassword.js">
-    </script>
+<script src="/js/_generatepassword.js"></script>
+<script src="/js/_formGenValidation.js"></script>

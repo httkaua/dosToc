@@ -1,34 +1,41 @@
-<form method="POST" action="/user/newaccount">
-    <h4>Vamos criar a sua conta?</h4>
-    <div class="form-group">
-        <label for="claimantFirstName">Nome</label>
-        <input type="text" class="form-control" id="claimantFirstName" name="claimantFirstName" placeholder="Sophia">
+<form method="POST" action="/user/newaccount" id="IVform" novalidate>
+    <h4 class="mb-4">Vamos criar a sua conta?</h4>
+
+    <div class="form-group mb-3">
+        <label for="name">Nome</label>
+        <input type="text" class="form-control IVname" id="name" name="name" placeholder="Walter White" maxlength="50"
+            required>
+        <span class="invalid-feedback IVnameError" id="nameError"></span>
     </div>
-    <div class="form-group">
-        <label for="claimantLastName">Sobrenome</label>
-        <input type="text" class="form-control" id="claimantLastName" name="claimantLastName" placeholder="Jones">
+
+    <div class="form-group mb-3">
+        <label for="phone">Telefone</label>
+        <input type="tel" class="form-control IVphone" id="phone" name="phone" placeholder="+554172727272" required>
+        <span class="invalid-feedback IVphoneError" id="phoneError"></span>
     </div>
-        <div class="form-group">
-        <label for="claimantPhone">Telefone</label>
-        <input type="tel" class="form-control" id="claimantPhone" name="claimantPhone" placeholder="+ 55 41 99999-9999">
+
+    <div class="form-group mb-3">
+        <label for="email">Email</label>
+        <input type="email" class="form-control IVemail" id="email" name="email" placeholder="example@gmail.com"
+            maxlength="50" required>
+        <span class="invalid-feedback IVemailError" id="emailError"></span>
     </div>
-    <div class="form-group">
-        <label for="claimantCompany">Empresa</label>
-        <input type="text" class="form-control" id="claimantCompany" name="claimantCompany" placeholder="My Company S.A.">
+
+    <div class="form-group mb-3">
+        <label for="password">Senha</label>
+        <input type="password" class="form-control IVpassword" id="password" name="password" placeholder="Senha"
+            minlength="8" maxlength="1000" required>
+        <span class="invalid-feedback IVpasswordError" id="passwordError"></span>
     </div>
-    <div class="form-group">
-        <label for="claimantEmail">Email</label>
-        <input type="email" class="form-control" id="claimantEmail" name="claimantEmail" aria-describedby="emailHelp" placeholder="example@gmail.com">
-        <small id="emailHelp" class="form-text text-muted">Nós nunca compartilharemos seu e-mail com outros.</small>
+
+    <div class="form-group mb-4">
+        <label for="passwordConfirm">Confirmar senha</label>
+        <input type="password" class="form-control IVpasswordConfirm" id="passwordConfirm" name="passwordConfirm"
+            placeholder="Confirme a senha" required>
+        <span class="invalid-feedback IVpasswordConfirmError" id="passwordConfirmError"></span>
     </div>
-    <div class="form-group">
-        <label for="claimantPassword">Senha</label>
-        <input type="password" class="form-control" id="claimantPassword" name="claimantPassword" placeholder="Password">
-        <small id="passwordHelp" class="form-text text-muted">Escolha uma senha forte, com pelo menos um número e um caractere especial.</small>
-    </div>
-    <div class="form-group">
-        <label for="claimantPasswordConfirm">Confirmar senha</label>
-        <input type="password" class="form-control" id="claimantPasswordConfirm" name="claimantPasswordConfirm" placeholder="Password">
-    </div>
-    <button type="submit" class="btn btn-success">Criar</button>
+
+    <button type="submit" class="btn btn-success w-100">Criar</button>
 </form>
+
+<script src="/js/_formGenValidation.js"></script>

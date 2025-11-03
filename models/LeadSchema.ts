@@ -1,81 +1,207 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Document, Schema, Types } from "mongoose";
 
-interface ILeads extends Document {
-  leadID: number;
-  name: string;
-  phone?: string;
-  document?: string;
-  email?: string;
-  sourceCode?: string;
-  currentCity?: string;
-  currentState?: string;
-  currentCountry?: string;
-  tags?: string[];
-  
-  // p == property
-  pTypeInterested?: 'Casa' | 'Terreno' | 'Apartamento' | 'Sobrado' | 'Sítio' | 'Galpão' | 'Studio/Sala comercial';
-  pCityInterested?: string[];
-  pStateInterested?: string[];
-  pCountryInterested?: string[];
-  condominiumInterested?: string[];
-  familyIncome?: number;
-  inputValue?: number;
-  pMaxValue?: number;
-  pMaxMonthlyPortion?: number;
-  sourceOfIncome?: 'Desconhecido' | 'Emprego em CLT' | 'Autônomo' | 'Funcionário público' | 'Pró-Labore' | 'Previdência/Aposentadoria' | 'Misto' | 'Outros';
-  status?: 'Primeiro contato' | 'Em conversa' | 'Visita marcada' | 'Com restrição' | 'Cliente futuro' | 'Encerrado';
-  sourceOfLead?: 'Facebook' | 'Instagram' | 'Internet' | 'Visita à loja' | 'Indicação' | 'Outros';
-  observations?: string;
-  company?: string;
-  responsibleAgent?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  hidden: boolean;
+export interface ILeads extends Document {
+    _id: Types.ObjectId
+    leadID: number;
+    name: string;
+    nameSearch: string;
+    phone: string;
+    document?: string;
+    email?: string;
+    sourceCode?: string;
+    tags?: string[];
+    interests: {
+        realEstateIT?: Types.ObjectId[],
+        typeIT?:
+        'Indiferente' |
+        'Casa' |
+        'Sobrado' |
+        'Apartamento' |
+        'Chácara' |
+        'Terreno' |
+        'Studio/Sala comercial' |
+        'Galpão' |
+        'Outros',
+        cityIT?: string[]
+    };
+    financial: {
+        familyIncome?: number;
+        inputValue?: number;
+        propertyMaxValue?: number;
+        propertyMaxMonthlyPortion?: number;
+        sourceOfIncome?:
+        'Desconhecido' |
+        'Emprego em CLT' |
+        'Autônomo' |
+        'Funcionário público' |
+        'Pró-Labore' |
+        'Previdência/Aposentadoria' |
+        'Misto' |
+        'Outros'
+    }
+
+    status?:
+    'Primeiro contato' |
+    'Em conversa' |
+    'Visita marcada' |
+    'Com restrição' |
+    'Cliente futuro' |
+    'Encerrado';
+
+    sourceOfLead?:
+    'Facebook' |
+    'Instagram' |
+    'Internet' |
+    'Visita à loja' |
+    'Indicação' |
+    'Outros';
+
+    observations?: string;
+    company?: Types.ObjectId;
+    responsibleAgent?: Types.ObjectId;
+    createdAt: Date;
+    updatedAt: Date;
+    enabled: boolean;
 }
 
 const leadSchema = new Schema<ILeads>({
-    leadID: {type: Number, required: true, immutable: true, unique: true},
-    name: {type: String, required: true},
-    phone: {type: String},
-    document: {type: String},
-    email: {type: String},
-    sourceCode: {type: String},
-    currentCity: {type: String},
-    currentState: {type: String},
-    currentCountry: {type: String},
-    tags: [String],
+    leadID: {
+        type: Number,
+        required: true,
+        immutable: true,
+        unique: true
+    },
+    name: { //* To be showed for the user
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: 50
+    },
+    nameSearch: { //* Normalized name for queries
+        type: String,
+        required: true,
+        trim: true,
+        uppercase: true,
+        maxlength: 50,
+        match: /^[A-Z\s]+$/
+    },
+    phone: { //* E.164 pattern
+        type: String,
+        required: true,
+        minlength: 8,
+        maxlength: 16,
+        match: /^\+[0-9]{6,14}$/
+    },
+    document: {
+        type: String,
+        maxlength: 20,
+    },
+    email: {
+        type: String,
+        trim: true,
+        maxlength: 50,
+        match: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    },
+    sourceCode: { //* ID or code of another system
+        type: String,
+        trim: true,
+        maxlength: 16,
+    },
+    tags: {
+        type: [String]
+    },
+    interests: { //* IT = interested
+        realEstateIT: {
+            type: Schema.Types.ObjectId,
+            ref: 'realestates'
+        },
+        TypeIT: {
+            type: [String],
+            enum: [
+                'Indiferente',
+                'Casa',
+                'Sobrado',
+                'Apartamento',
+                'Chácara',
+                'Terreno',
+                'Studio/Sala comercial',
+                'Galpão',
+                'Outros'
+            ]
+        },
+        cityIT: {
+            type: [String]
+        },
+    },
 
-    // p == property
-    pTypeInterested: {
-        type: String,
-        enum: ['Casa', 'Terreno', 'Apartamento', 'Sobrado', 'Sítio', 'Galpão', 'Studio/Sala comercial']
+    financial: {
+        familyIncome: Number,
+        inputValue: Number,
+        propertyMaxValue: Number,
+        propertyMaxMonthlyPortion: Number,
+        sourceOfIncome: {
+            type: String,
+            enum: [
+                'Desconhecido',
+                'Emprego em CLT',
+                'Autônomo',
+                'Funcionário público',
+                'Pró-Labore',
+                'Previdência/Aposentadoria',
+                'Misto',
+                'Outros'
+            ]
+        }
     },
-    pCityInterested: [String],
-    pStateInterested: [String],
-    pCountryInterested: [String],
-    condominiumInterested: [String],
-    familyIncome: {type: Number},
-    inputValue: {type: Number},
-    pMaxValue: {type: Number},
-    pMaxMonthlyPortion: {type: Number},
-    sourceOfIncome: {
-        type: String,
-        enum: ['Desconhecido', 'Emprego em CLT', 'Autônomo', 'Funcionário público', 'Pró-Labore', 'Previdência/Aposentadoria', 'Misto', 'Outros']
-    },
+
     status: {
         type: String,
-        enum: ['Primeiro contato', 'Em conversa', 'Visita marcada', 'Com restrição', 'Cliente futuro', 'Encerrado']
+        enum: [
+            'Primeiro contato',
+            'Em conversa',
+            'Visita marcada',
+            'Com restrição',
+            'Cliente futuro',
+            'Encerrado'
+        ]
     },
     sourceOfLead: {
         type: String,
-        enum: ['Facebook', 'Instagram', 'Chaves na mão', 'Internet', 'Visita à loja', 'Indicação', 'Outros']
+        enum: [
+            'Facebook',
+            'Instagram',
+            'Chaves na mão',
+            'Internet',
+            'Visita à loja',
+            'Indicação',
+            'Outros'
+        ]
     },
-    observations: {type: String},
-    company: {type: String},
-    responsibleAgent: {type: String},
-    createdAt: {type: Date, default: new Date, immutable: true},
-    updatedAt: {type: Date, default: new Date},
-    hidden: {type: Boolean, default: false}
+    observations: {
+        type: String,
+        maxlength: 2000
+    },
+    company: {
+        type: Schema.Types.ObjectId,
+        ref: 'companies'
+    },
+    responsibleAgent: {
+        type: Schema.Types.ObjectId,
+        ref: 'users'
+    },
+    createdAt: {
+        type: Date,
+        default: new Date,
+        immutable: true
+    },
+    updatedAt: {
+        type: Date,
+        default: new Date
+    },
+    enabled: {
+        type: Boolean,
+        default: true
+    }
 })
 
 const Leads = mongoose.model<ILeads>('leads', leadSchema);

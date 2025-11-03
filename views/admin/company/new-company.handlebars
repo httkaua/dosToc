@@ -1,0 +1,136 @@
+<div class="container mt-5">
+  <h2 class="text-center mb-4"><i class="bi bi-plus-square"></i> Criar Nova Empresa</h2>
+
+  <form method="POST" action="/admin/company/new-company/create" id="IVform" novalidate>
+
+    <!-- Basic -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-primary text-white">
+        <i class="bi bi-building"></i> Informações Gerais
+      </div>
+      <div class="card-body row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Nome</label>
+          <input type="text" class="form-control IVname" name="name" required>
+          <span class="invalid-feedback IVnameError" id="nameError"></span>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">CNPJ</label>
+          <input type="text" class="form-control IVcnpj" name="document">
+          <span class="invalid-feedback IVcnpjError" id="IVcnpjError"></span>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Telefone</label>
+          <input type="tel" class="form-control IVphone" name="phone" required placeholder="+5511999999999">
+          <span class="invalid-feedback IVphoneError" id="phoneError"></span>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control IVemail" name="email" required>
+          <span class="invalid-feedback IVemailError" id="emailError"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Address -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-secondary text-white">
+        <i class="bi bi-geo-alt-fill"></i> Endereço
+      </div>
+      <div class="card-body row g-3">
+        <div class="col-md-4">
+          <label class="form-label">CEP</label>
+          <input type="text" class="form-control CEPlocationCode" id="locationCode" name="address.locationCode">
+        </div>
+        <div id="cep-loading" class="text-primary mt-2" style="display: none;">
+          <small><span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Buscando
+            informações do CEP...</small>
+        </div>
+
+        <div class="col-md-8">
+          <label class="form-label">Rua</label>
+          <input type="text" class="form-control CEPstreet" id="address" name="address.street">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Número</label>
+          <input type="number" class="form-control" name="address.streetNumber">
+        </div>
+        <div class="col-md-5">
+          <label class="form-label">Bairro</label>
+          <input type="text" class="form-control CEPneighborhood" id="neighborhood" name="address.neighborhood">
+        </div>
+        <div class="col-md-5">
+          <label class="form-label">Cidade</label>
+          <input type="text" class="form-control CEPcity" id="city" name="address.city">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Estado</label>
+          <input type="text" class="form-control CEPstate" id="state" name="address.state">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">País</label>
+          <input type="text" class="form-control CEPcountry" id="country" name="address.country" value="Brasil">
+        </div>
+      </div>
+    </div>
+
+    <!-- Plan -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-info text-white">
+        <i class="bi bi-stars"></i> Plano
+      </div>
+      <div class="card-body">
+        <label class="form-label">Selecione o plano:</label>
+        <select class="form-select" name="plan" required>
+          <option value="free">Free</option>
+          <option value="single">Single (individual)</option>
+          <option value="business">Business (completo | empresarial)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Initial settings -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-success text-white">
+        <i class="bi bi-sliders"></i> Configurações Iniciais
+      </div>
+      <div class="card-body row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Dias para resposta de leads</label>
+          <input type="number" class="form-control" name="settings.DeadlineRespondLeads" value="5" min="0" max="30">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Máx. leads por agente</label>
+          <input type="number" class="form-control" name="settings.MaxLeadsPerAgent" value="100" min="0" max="300">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Moeda padrão</label>
+          <select class="form-select" name="settings.RealEstateDefaults.DefaultCurrency">
+            <option value="BRL" selected>BRL</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+          </select>
+        </div>
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" value="true" name="settings.RealEstateDefaults.ShowTaxFields"
+            checked>
+          <label class="form-check-label">Exibir campos de imposto em imóveis</label>
+        </div>
+        <div class="form-check mt-2">
+          <input class="form-check-input" type="checkbox" value="true" name="settings.DeadlineLeadsOption" checked>
+          <label class="form-check-label">Colocar lead na fila após prazo expirar</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex justify-content-between">
+      <a href="/admin" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Voltar</a>
+      <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle"></i> Criar Empresa</button>
+    </div>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios@1.8.4/dist/axios.min.js"></script>
+<script src="/js/_searchcep.js"></script>
+<script src="/js/_formGenValidation.js"></script>

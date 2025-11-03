@@ -1,21 +1,21 @@
 <h4>Home administrativa</h4>
-<small>Seja bem-vindo, {{user.firstName}} {{user.lastName}}</small>
+<small>Seja bem-vindo, {{user.name}}</small>
 {{#if user}}
-    <div class="card mt-4" style="width: 18rem;">
-        <div class="card-body">
-            <h5 class="card-title">{{user.firstName}} {{user.lastName}}</h5>
-            <h6 class="card-subtitle mb-2 text-muted">{{user.position}}</h6>
-            <small>ID de usuário: {{user.userID}}<br></small>
-            <a href="/admin" class="card-link">Home</a><br>
-            <a href="/admin/leads" class="card-link">Clientes</a><br>
-            <a href="/admin/real-states" class="card-link">Imóveis</a><br>
-            <a href="/admin/my-account/{{user.userID}}" class="card-link">Conta</a><br>
-            <a href="/admin/team" class="card-link">Equipe</a><br>
-            <a href="/admin/company" class="card-link">Empresa</a><br>
-        </div>
+<div class="card mt-4" style="width: 18rem;">
+    <div class="card-body">
+        <h5 class="card-title">{{user.name}}</h5>
+        <h6 class="card-subtitle mb-2 text-muted">{{user.positionName}}</h6>
+        <small>ID: {{user.userID}}<br></small>
+        <a href="/admin" class="card-link">Home</a><br>
+        <a href="/admin/leads" class="card-link">Clientes</a><br>
+        <a href="/admin/real-estates" class="card-link">Imóveis</a><br>
+        <a href="/admin/my-account/{{user.userID}}" class="card-link">Conta</a><br>
+        <a href="/admin/team" class="card-link">Equipe</a><br>
+        <a href="/admin/company" class="card-link">Empresa</a><br>
     </div>
+</div>
 
 {{else}}
-    <a href="/user/login" class="card-link">Iniciar sessão </a>
-    <div>{{user}}</div>
+<a href="/user/login" class="card-link">Iniciar sessão </a>
+<div>{{user}}</div>
 {{/if}}

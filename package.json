@@ -1,7 +1,7 @@
 {
   "name": "dostoc",
-  "version": "2.0.0",
-  "description": "A system for real state companies",
+  "version": "2.1.0",
+  "description": "A system for real estate companies",
   "main": "app.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
