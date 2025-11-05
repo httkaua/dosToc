@@ -1,38 +1,79 @@
 import { Company } from 'src/companies/entities/company.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, VersionColumn, ForeignKey, OneToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, VersionColumn, ForeignKey, OneToOne, JoinColumn, OneToMany, ManyToOne } from 'typeorm';
  
 @Entity()
 export class Record {
   @PrimaryGeneratedColumn()
   recordID: number;
 
-  @OneToOne(() => User, (user) => user.userID)
+  @ManyToOne(() => User, (user) => user.userID, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'userID' })
   userWhoMadeTheAction: User;
   
-  @Column()
+  @Column({
+    nullable: false,
+  })
   affectedType: string;
 
-  @Column()
+  @Column({
+    nullable: false,
+  })
   affectedData: string;
 
-  @Column()
+  @Column({
+    nullable: false,
+  })
   affectedPropertie: string;
 
-  //* ENUM */
-  @Column()
+  @Column({
+    type: 'enum',
+    enum: [
+      'CREATE',
+      'UPDATE',
+      'DELETE',
+      'SOFTDELETE',
+      'REMOVE',
+      'LOGIN',
+      'LOGOUT',
+      'OTHER'
+    ],
+    nullable: false,
+  })
   actionType: string;
 
-  //* ENUM */
-  @Column()
+  @Column({
+    type: 'enum',
+    enum: [
+      'USERS',
+      'COMPANIES',
+      'REAL-ESTATES',
+      'TASKS',
+      'LEADS',
+      'TEAMS',
+      'OTHER'
+    ],
+    nullable: false,
+  })
   category: string;
 
-  @Column()
+  @Column({
+    nullable: false,
+  })
   message: string;
 
-  @OneToOne(() => Company, (company) => company.companyID)
+  @ManyToOne(() => Company, (company) => company.companyID, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'companyID' })
   company: Company;
+
+  @CreateDateColumn({ name: "createdAt" })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: "updatedAt" })
+  updatedAt: Date;
 
 }

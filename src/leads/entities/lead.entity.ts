@@ -1,6 +1,7 @@
 import { Company } from 'src/companies/entities/company.entity';
+import { RealEstate } from 'src/realestates/entities/real-estate.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, VersionColumn, ForeignKey, OneToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, VersionColumn, ForeignKey, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable, ManyToOne } from 'typeorm';
  
 @Entity()
 export class Lead {
@@ -27,7 +28,6 @@ export class Lead {
     length: 500,
     unique: true,
     nullable: false,
-    update: false,
   })
   nationalDocument: string;
 
@@ -48,39 +48,121 @@ export class Lead {
   @Column()
   tags: string[];
 
-  //* <FK>
-  @Column()
-  realEstateCodeInterested: string
+  @ManyToMany(() => RealEstate, (realEstate) => realEstate.interestedLeads)
+  @JoinTable({
+    name: "lead_realestates_interested",
+    joinColumn: {
+      name: "leadID",
+      referencedColumnName: "leadID",
+    },
+    inverseJoinColumn: {
+      name: "realEstateID",
+      referencedColumnName: "realEstateID",
+    },
+  })
+  realEstatesInterested: RealEstate[];
 
-  //* ENUM
-  @Column()
-  typeInterested: string[];
+  @Column({
+    type: 'enum',
+    enum: [
+      'HOUSE',
+      'LAND',
+      'APARTMENT',
+      'TOWNHOUSE',
+      'SITE',
+      'WAREHOUSE',
+      'STUDIO/ COMMERCIAL ROOM'
+    ],
+    nullable: false,
+  })
+  propertyTypesInterested: string[];
 
   @Column()
-  cityInterested: string[];
+  citiesInterested: string[];
 
-  @Column()
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+  })
   familyIncome: number;
 
-  @Column()
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+  })
   inputValue: number;
 
-  @Column()
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+  })
   realEstateMaxValue: number;
 
-  @Column()
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+  })
   realEstateMaxMonthlyFee: number;
 
-  //* ENUM
-  @Column()
+  @Column({
+    type: 'enum',
+    enum: [
+      'UNKNOWN',
+      'EMPLOYMENT',
+      'AUTONOMOUS',
+      'FREELANCER',
+      'CIVIL SERVANT',
+      'BUSINESS OWNER',
+      'RETIRED',
+      'MIXED',
+      'UNEMPLOYED',
+      'OTHERS'
+    ],
+    nullable: false,
+    default: 'UNKNOWN',
+  })
   sourceOfIncome: string;
 
-  //* ENUM
-  @Column()
+  @Column({
+    type: 'enum',
+    enum: [
+      'NEW',
+      'IN CONVERSATION',
+      'INTERESTED',
+      'SCHEDULED VISIT',
+      'FINANCIAL CONSTRAINT',
+      'FUTURE CONTACT',
+      'DISCARDED'
+    ],
+    nullable: false,
+    default: 'NEW',
+  })
   status: string;
 
-  //* ENUM
-  @Column()
+  @Column({
+    type: 'enum',
+    enum: [
+      'META ADS',
+      'FACEBOOK ORGANIC',
+      'INSTAGRAM ORGANIC',
+      'WEBSITE "CHAVES NA MÃO"',
+      'WEBSITE "IMÓVELWEB"',
+      'OTHER WEBSITES',
+      'GOOGLE',
+      'REFERRAL',
+      'WALK-IN',
+      'COLD CALL',
+      'EVENT OR TRADE SHOW',
+      'UNKNOWN FROM INTERNET',
+      'OTHER'
+    ],
+    nullable: false,
+    default: 'OTHER',
+  })
   sourceOfLead: string;
 
   @Column({
@@ -88,15 +170,24 @@ export class Lead {
   })
   observations: string;
 
-  @OneToOne(() => User, (user) => user.userID)
+  @ManyToOne(() => User, (user) => user.userID)
   @JoinColumn({ name: 'attendingUser' })
   attendingUser: User;
 
-  @OneToMany(() => Company, (company) => company.companyID)
+  @ManyToOne(() => Company, (company) => company.companyID)
   @JoinColumn({ name: 'companyID' })
   companyID: Company;
 
-  @Column()
+  @CreateDateColumn({ name: "createdAt" })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: "updatedAt" })
+  updatedAt: Date;
+
+  @Column({
+    nullable: false,
+    default: true,
+  })
   enabled: boolean;
   
 }

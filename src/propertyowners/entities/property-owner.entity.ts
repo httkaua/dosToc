@@ -8,25 +8,77 @@ export class PropertyOwner {
   @PrimaryGeneratedColumn()
   propertyOwnerID: number;
 
-  @Column()
+  @Column({
+    length: 100,
+    nullable: false,
+  })
   name: string;
 
-  //* ENUM */
-  @Column()
+  @Column({
+    length: 100,
+    nullable: false,
+  })
+  searchableName: string;
+
+  @Column({
+    type: 'enum',
+    enum: [
+      'PERSON PROPERTY OWNER',
+      'CONSTRUCTION COMPANY',
+      'COMPANY PROPERTY OWNER',
+    ],
+    nullable: false,
+    default: 'PERSON PROPERTY OWNER',
+  })
   type: string;
 
-  @Column()
+  @Column({
+    nullable: false,
+    length: 16,
+  })
   phoneNumber: string;
 
-  @Column()
+  @Column({
+    length: 80,
+    nullable: false,
+  })
   email: string;
 
-  @ManyToOne(() => Company, (company) => company.companyID)
+  @Column({
+    type: 'enum',
+    enum: [
+      'META ADS',
+      'FACEBOOK ORGANIC',
+      'INSTAGRAM ORGANIC',
+      'WEBSITE "CHAVES NA MÃO"',
+      'WEBSITE "IMÓVELWEB"',
+      'OTHER WEBSITES',
+      'GOOGLE',
+      'REFERRAL',
+      'WALK-IN',
+      'COLD CALL',
+      'EVENT OR TRADE SHOW',
+      'UNKNOWN FROM INTERNET',
+      'OTHER'
+    ],
+    nullable: false,
+    default: 'OTHER',
+  })
+  sourceOfPropertyOwner: string;
+
+  @ManyToOne(() => Company, (company) => company.companyID, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'companyID' })
   company: Company;
 
-  @ManyToMany(() => RealEstate, (realEstate) => realEstate.realEstateID)
-  @JoinColumn({ name: 'properties' })
+  @OneToMany(() => RealEstate, (realEstate) => realEstate.realEstateID)
   properties: RealEstate[];
+
+  @CreateDateColumn({ name: "createdAt" })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: "updatedAt" })
+  updatedAt: Date;
 
 }

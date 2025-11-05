@@ -1,39 +1,47 @@
 import { Company } from 'src/companies/entities/company.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, VersionColumn, ForeignKey, ManyToMany, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, VersionColumn, ForeignKey, ManyToMany, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
   userID: number;
 
-  @ManytoOne(() => Company, (company) => company.companyID)
+  @ManyToOne(() => Company, (company) => company.companyID)
   @JoinColumn({ name: 'companyID' })
   companyID: Company;
 
   @Column({
-    length: 500,
+    length: 150,
     unique: true,
     nullable: false,
     update: false,
+    transformer: {
+      to: (value: string) => value?.trim(),
+      from: (value: string) => value?.trim(),
+    },
   })
   name: string;
 
   @Column({
-    length: 500,
+    length: 150,
     unique: true,
     nullable: false,
     update: false,
+    transformer: {
+      to: (value: string) => value?.trim(),
+      from: (value: string) => value?.trim(),
+    },
   })
   searchableName: string;
 
   @Column({
-    length: 100,
+    length: 50,
     unique: true,
   })
   nationalDocument: string;
 
   @Column({
-    length: 18,
+    length: 16,
     unique: true,
     nullable: false,
   })
@@ -48,6 +56,8 @@ export class User {
 
   @Column({
     nullable: false,
+    length: 255,
+    select: false,
   })
   password: string;
 
@@ -56,6 +66,8 @@ export class User {
 
   @Column({
     nullable: false,
+    enum: [1, 2, 3, 4, 5, 6, 7],
+    default: 6,
   })
   userClassification: number;
 
@@ -76,11 +88,17 @@ export class User {
   })
   underManagement: number[];
 
-  @Column()
+  @CreateDateColumn({ name: "createdAt" })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: "updatedAt" })
+  updatedAt: Date;
+
+  @Column({
+    nullable: false,
+    default: true,
+  })
   enabled: boolean;
   
-}
-function ManytoOne(arg0: () => typeof Company, arg1: (company: any) => any): (target: User, propertyKey: "companyID") => void {
-  throw new Error('Function not implemented.');
 }
 

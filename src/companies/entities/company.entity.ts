@@ -1,5 +1,10 @@
+import { RealEstate } from 'src/realestates/entities/real-estate.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, VersionColumn, ForeignKey, OneToOne, JoinColumn, OneToMany } from 'typeorm';
+import type { Permissions as supervisorPermissionsInterface } from './supervisorPermissions.interface';
+import type { Permissions as agentPermissionsInterface } from './agentPermissions.interface';
+import type { Permissions as assistantPermissionsInterface } from './assistantPermissions.interface';
+import type { Settings as notificationSettingsInterface } from './notificationSettings.interface';
  
 @Entity()
 export class Company {
@@ -7,23 +12,25 @@ export class Company {
   companyID: number;
 
   @Column({
-    length: 500,
+    length: 150,
     unique: true,
     nullable: false,
-    update: false,
+    transformer: {
+      to: (value: string) => value?.trim(),
+      from: (value: string) => value?.trim(),
+    },
   })
   name: string;
 
   @Column({
-    length: 500,
+    length: 50,
     unique: true,
     nullable: false,
-    update: false,
   })
   nationalDocument: string;
 
   @Column({
-    length: 18,
+    length: 16,
     unique: true,
     nullable: false,
   })
@@ -36,76 +43,152 @@ export class Company {
   })
   email: string;
 
-  @OneToOne(() => User, (user) => user.userID)
+  @OneToOne(() => User, (user) => user.userID, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'owner' })
   owner: User;
 
   @OneToMany(() => User, (user) => user.userID)
-  @JoinColumn({ name: 'owner' })
-  supervisors: User;
+  supervisors: User[];
 
   @OneToMany(() => User, (user) => user.userID)
-  @JoinColumn({ name: 'owner' })
-  agents: User;
+  agents: User[];
 
   @OneToMany(() => User, (user) => user.userID)
-  @JoinColumn({ name: 'owner' })
-  assistants: User;
+  assistants: User[];
 
-  //* <FK>
-  @Column()
-  realEstates: number[];
+  @OneToMany(() => RealEstate, (realEstate) => realEstate.realEstateID)
+  realEstatesEntity: RealEstate[];
 
-  @Column()
+  @Column({
+    length: 20,
+    transformer: {
+      to: (value: string) => value?.trim(),
+      from: (value: string) => value?.trim(),
+    },
+    nullable: false,
+  })
   zipCode: string;
 
-  @Column()
+  @Column({
+    length: 100,
+    transformer: {
+      to: (value: string) => value?.trim(),
+      from: (value: string) => value?.trim(),
+    },
+    nullable: false,
+  })
   street: string;
 
-  @Column()
+  @Column({
+    length: 6,
+  })
   streetNumber: string;
 
-  @Column()
+  @Column({
+    length: 100,
+    transformer: {
+      to: (value: string) => value?.trim(),
+      from: (value: string) => value?.trim(),
+    },
+    nullable: false,
+  })
   neighborhood: string;
 
-  @Column()
+  @Column({
+    length: 100,
+    transformer: {
+      to: (value: string) => value?.trim(),
+      from: (value: string) => value?.trim(),
+    },
+    nullable: false,
+  })
   city: string;
 
-  @Column()
+  @Column({
+    length: 100,
+    transformer: {
+      to: (value: string) => value?.trim(),
+      from: (value: string) => value?.trim(),
+    },
+    nullable: false,
+  })
   state: string;
 
-  @Column()
+  @Column({
+    length: 100,
+    transformer: {
+      to: (value: string) => value?.trim(),
+      from: (value: string) => value?.trim(),
+    },
+    nullable: false,
+    default: 'Brazil',
+  })
   country: string;
 
-  //* ENUM
-  @Column()
+  @Column({
+    type: 'enum',
+    enum: [
+      'FREE',
+      'SINGLE',
+      'BUSINESS',
+    ],
+    nullable: false,
+    default: 'free',
+  })
   signPlan: string;
 
-  @Column()
-  supervisorPermissions: object;
+  @Column({ type: 'json' })
+  supervisorPermissions: supervisorPermissionsInterface;
 
-  @Column()
-  agentPermissions: object;
+  @Column({ type: 'json' })
+  agentPermissions: agentPermissionsInterface;
 
-  @Column()
-  assistantPermissions: object;
+  @Column({ type: 'json' })
+  assistantPermissions: assistantPermissionsInterface;
 
-  @Column()
-  notificationSettings: object;
+  @Column({ type: 'json' })
+  notificationSettings: notificationSettingsInterface;
 
-  @Column()
-  deadlineRespondOption: boolean;
+  @Column({
+    nullable: false,
+    default: true,
+  })
+  deadlineToRespondOption: boolean;
 
-  @Column()
+  @Column({
+    nullable: false,
+    default: 5,
+    unsigned: true,
+    type: 'smallint',
+  })
   deadlineDaysToRespond: number;
 
-  @Column()
+  @Column({
+    nullable: false,
+    default: 150,
+    unsigned: true,
+    type: 'smallint',
+  })
   maxLeadsPerAgent: number;
 
-  @Column()
+  @Column({
+    nullable: false,
+    default: 'BRL',
+  })
   defaultCurrency: string;
 
-  @Column()
+  @CreateDateColumn({ name: "createdAt" })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: "updatedAt" })
+  updatedAt: Date;
+
+  @Column({
+    nullable: false,
+    default: true,
+  })
   enabled: boolean;
   
 }
