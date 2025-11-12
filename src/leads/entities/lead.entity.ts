@@ -45,7 +45,7 @@ export class Lead {
   })
   email: string; 
 
-  @Column()
+  @Column("text", { array: true })
   tags: string[];
 
   @ManyToMany(() => RealEstate, (realEstate) => realEstate.interestedLeads)
@@ -77,7 +77,7 @@ export class Lead {
   })
   propertyTypesInterested: string[];
 
-  @Column()
+  @Column("text", { array: true })
   citiesInterested: string[];
 
   @Column({
@@ -167,6 +167,7 @@ export class Lead {
 
   @Column({
     length: 1000,
+    nullable: true,
   })
   observations: string;
 

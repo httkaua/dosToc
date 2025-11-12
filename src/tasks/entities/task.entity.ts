@@ -10,13 +10,13 @@ export class Task {
   @ManyToOne(() => User, (user) => user.userID, {
     nullable: false,
   })
-  @JoinColumn({ name: 'userID' })
+  @JoinColumn({ name: 'creatorUserID' })
   creatorUser: User;
 
   @ManyToOne(() => User, (user) => user.userID, {
     nullable: false,
   })
-  @JoinColumn({ name: 'userID' })
+  @JoinColumn({ name: 'responsibleUserID' })
   responsibleUser: User;
 
   @ManyToOne(() => Company, (company) => company.companyID, {
@@ -35,7 +35,7 @@ export class Task {
       'OTHER'
     ],
     nullable: false,
-    default: 'Other',
+    default: 'OTHER',
   })
   type: string;
 
@@ -45,7 +45,7 @@ export class Task {
   observations: string;
 
   @CreateDateColumn({ name: "deadline",
-    type: 'timestamp with local time zone',
+    type: 'timestamp',
     nullable: false
   })
   deadline: Date;

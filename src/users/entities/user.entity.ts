@@ -61,7 +61,9 @@ export class User {
   })
   password: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   profilePhoto: string;
 
   @Column({
@@ -78,12 +80,14 @@ export class User {
   })
   isDevUser: boolean;
 
-  @Column({
+  @Column("text", {
+    array: true,
     nullable: false,
   })
   managers: number[];
 
-  @Column({
+  @Column("text", {
+    array: true,
     nullable: false,
   })
   underManagement: number[];

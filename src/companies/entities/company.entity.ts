@@ -83,6 +83,7 @@ export class Company {
 
   @Column({
     length: 6,
+    nullable: true,
   })
   streetNumber: string;
 
@@ -135,7 +136,7 @@ export class Company {
       'BUSINESS',
     ],
     nullable: false,
-    default: 'free',
+    default: 'FREE',
   })
   signPlan: string;
 

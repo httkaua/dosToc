@@ -143,7 +143,7 @@ export class RealEstate {
     },
     nullable: false,
   })
-  streetNumber: number;
+  streetNumber: string;
 
   @Column({
     length: 100,
@@ -239,10 +239,11 @@ export class RealEstate {
   })
   face: string;
 
-  @Column()
+  @Column("text", { array: true })
   tags: string[];
 
-  @Column({
+  @Column("text", {
+    array: true,
     nullable: false,
   })
   media: string[];
