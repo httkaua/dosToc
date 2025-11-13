@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, InternalServerErrorException, Query } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.module';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
@@ -38,6 +38,51 @@ export class UsersService {
         const user = this.userRepository.create({
             ...createUserDto,
             password: hashedPassword,
+            isDevUser: false,
+            enabled: true,
+            searchableName,
+            managers: createUserDto.managers || [],
+            underManagement: createUserDto.underManagement || [],
+        });
+
+        return await this.userRepository.save(user);
+    }
+
+    async createDevUser(createUserDto: CreateUserDto, query: Record<string, any>): Promise<User> {
+
+        if (!process.env.DEV_USER_ENV_KEY) {
+        throw new InternalServerErrorException('key not set in environment');
+        }
+
+        if (query.devKey !== process.env.DEV_USER_ENV_KEY) {
+            throw new ForbiddenException('Forbidden');
+        }
+        
+        const existingUser = await this.userRepository.findOne({
+            where: [
+                { email: createUserDto.email },
+                { nationalDocument: createUserDto.nationalDocument },
+                { phoneNumber: createUserDto.phoneNumber },
+            ]
+        });
+
+        if (existingUser) {
+            throw new ConflictException('User with this email, document, or phone already exists');
+        }
+
+        const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
+        const searchableName = createUserDto.name
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+
+        const user = this.userRepository.create({
+            ...createUserDto,
+            password: hashedPassword,
+            isDevUser: true,
+            userClassification: 2,
+            enabled: true,
             searchableName,
             managers: createUserDto.managers || [],
             underManagement: createUserDto.underManagement || [],
@@ -106,16 +151,18 @@ export class UsersService {
         await this.userRepository.remove(user);
     }
 
-    async softDelete(id: number): Promise<void> {
+    async softDelete(id: number): Promise<User> {
         const user = await this.findOne(id);
         user.enabled = false;
         await this.userRepository.save(user);
+        return user;
     }
 
-    async restore(id: number): Promise<void> {
+    async restore(id: number): Promise<User> {
         const user = await this.findOne(id);
         user.enabled = true;
         await this.userRepository.save(user);
+        return user;
     }
 
     /* ----- CREATING -----
