@@ -14,12 +14,14 @@ import {
   Query,
   HttpException,
   ForbiddenException,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ResponseUserDto } from './dto/response-user.dto';
 import { ConfigService } from '@nestjs/config';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('users')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -33,6 +35,7 @@ export class UsersController {
         return new ResponseUserDto(user);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Post('development')
     @HttpCode(HttpStatus.CREATED)
     async createDevUser(
@@ -43,18 +46,21 @@ export class UsersController {
         return new ResponseUserDto(user);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get()
     async findAll(): Promise<ResponseUserDto[]> {
         const users = await this.usersService.findAll();
         return users.map(user => new ResponseUserDto(user));
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get(':id')
     async findOne(@Param('id', ParseIntPipe) id: number): Promise<ResponseUserDto> {
         const user = await this.usersService.findOne(id);
         return new ResponseUserDto(user);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Patch(':id')
     async update(
         @Param('id', ParseIntPipe) id: number,
@@ -64,18 +70,21 @@ export class UsersController {
         return new ResponseUserDto(user);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Delete(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
     async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
         await this.usersService.remove(id)
     }
 
+    @UseGuards(JwtAuthGuard)
     @Patch(':id/disable')
     async disable(@Param('id', ParseIntPipe) id: number): Promise<ResponseUserDto> {
         const user = await this.usersService.softDelete(id)
         return new ResponseUserDto(user)
     }
 
+    @UseGuards(JwtAuthGuard)
     @Patch(':id/enable')
     async enable(@Param('id', ParseIntPipe) id: number): Promise<ResponseUserDto> {
         const user = await this.usersService.restore(id)

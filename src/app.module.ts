@@ -12,12 +12,14 @@ import { RecordsModule } from './records/records.module';
 import { PropertyownersModule } from './propertyowners/propertyowners.module';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
+import { AuthService } from './auth/auth.service';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',      
+      envFilePath: '.env',
     }),
     DatabaseModule,
     UsersModule,

@@ -111,9 +111,19 @@ export class UsersService {
         return user
     }
 
-    async findOneByUsername(username: string): Promise<User | undefined> {
-    const users = await this.findAll()
-    return users.find(user => user.username === username);
+    async findOneByUsername(username: string): Promise<User | null> {
+        const user = await this.userRepository.findOne({
+            where: { username }
+        })
+        return user
+  }
+
+    async findUserWithPassword(username: string): Promise<User | null> {
+        const user = await this.userRepository.findOne({
+            where: { username },
+            select: ['userID', 'username', 'password']
+        })
+        return user
   }
 
     async findByEmail(email: string): Promise<User | null> {
