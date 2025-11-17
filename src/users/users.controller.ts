@@ -26,7 +26,7 @@ import { ConfigService } from '@nestjs/config';
 export class UsersController {
     constructor(private readonly usersService: UsersService) {}
 
-    @Post()
+    @Post('create')
     @HttpCode(HttpStatus.CREATED)
     async create(@Body() createUserDto: CreateUserDto): Promise<ResponseUserDto> {
         const user = await this.usersService.create(createUserDto);
@@ -35,7 +35,10 @@ export class UsersController {
 
     @Post('development')
     @HttpCode(HttpStatus.CREATED)
-    async createDevUser(@Body() createUserDto: CreateUserDto, @Query() query: Record<string, any>): Promise<ResponseUserDto> {
+    async createDevUser(
+        @Body() createUserDto: CreateUserDto,
+        @Query() query: Record<string, any>
+    ): Promise<ResponseUserDto> {
         const user = await this.usersService.createDevUser(createUserDto, query);
         return new ResponseUserDto(user);
     }

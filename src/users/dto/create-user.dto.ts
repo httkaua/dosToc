@@ -2,13 +2,14 @@ import { IsEmail, IsString, IsNotEmpty, MinLength, MaxLength, IsOptional, IsNumb
 
 export class CreateUserDto {
     @IsNumber()
+    @IsOptional()
     companyID: { companyID: number };
 
     @IsString()
     @IsNotEmpty()
     @MinLength(3)
     @MaxLength(150)
-    name: string;
+    username: string;
 
     @IsString()
     @MaxLength(50)
@@ -36,7 +37,7 @@ export class CreateUserDto {
     profilePhoto?: string;
 
     @IsNumber()
-    @IsNotEmpty()
+    @IsOptional()
     userClassification: number;
 
     @IsArray()

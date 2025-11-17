@@ -30,7 +30,7 @@ export class UsersService {
 
         const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
-        const searchableName = createUserDto.name
+        const searchableName = createUserDto.username
             .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '');
@@ -50,8 +50,8 @@ export class UsersService {
 
     async createDevUser(createUserDto: CreateUserDto, query: Record<string, any>): Promise<User> {
 
-        if (!process.env.DEV_USER_ENV_KEY) {
-        throw new InternalServerErrorException('key not set in environment');
+        if (!query.devKey || !process.env.DEV_USER_ENV_KEY) {
+            throw new InternalServerErrorException('Missing keys');
         }
 
         if (query.devKey !== process.env.DEV_USER_ENV_KEY) {
@@ -72,7 +72,7 @@ export class UsersService {
 
         const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
-        const searchableName = createUserDto.name
+        const searchableName = createUserDto.username
             .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '');
@@ -111,6 +111,11 @@ export class UsersService {
         return user
     }
 
+    async findOneByUsername(username: string): Promise<User | undefined> {
+    const users = await this.findAll()
+    return users.find(user => user.username === username);
+  }
+
     async findByEmail(email: string): Promise<User | null> {
         return await this.userRepository.findOne({
             where: { email },
@@ -135,8 +140,8 @@ export class UsersService {
             }
         }
 
-        if (updateUserDto.name) {
-            updateUserDto['searchableName'] = updateUserDto.name
+        if (updateUserDto.username) {
+            updateUserDto['searchableName'] = updateUserDto.username
                 .toLowerCase()
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '');

@@ -20,7 +20,7 @@ export class User {
       from: (value: string) => value?.trim(),
     },
   })
-  name: string;
+  username: string;
 
   @Column({
     length: 150,

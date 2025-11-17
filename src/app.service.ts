@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AppService {
-  getHello(): string {
-    return 'Hello World!';
+
+  homePage(): string {
+    return 'welcome to Dostoc: A brazilian system for real estate companies and agents';
   }
+
 }
