@@ -35,8 +35,18 @@ export class UsersController {
         return new ResponseUserDto(user);
     }
 
+    //TODO:
+    /*TODO:
+    @Post('create-by-manager')
+    @HttpCode(HttpStatus.CREATED)
+    async createByManager(@Body() createUserDto: CreateUserDto): Promise<ResponseUserDto> {
+        const user = await this.usersService.createByManager(createUserDto);
+        return new ResponseUserDto(user);
+    }
+    */
+
     @UseGuards(JwtAuthGuard)
-    @Post('development')
+    @Post('create/development')
     @HttpCode(HttpStatus.CREATED)
     async createDevUser(
         @Body() createUserDto: CreateUserDto,

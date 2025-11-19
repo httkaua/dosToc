@@ -1,4 +1,4 @@
-import { Controller, Request, Get, Post, UseGuards } from '@nestjs/common';
+import { Controller, Request, Get, Post, UseGuards, Redirect } from '@nestjs/common';
 import { AppService } from './app.service';
 import { AuthService } from './auth/auth.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -25,6 +25,8 @@ export class AppController {
   @UseGuards(LocalAuthGuard)
   @Post('auth/logout')
   async logout(@Request() req) {
-    return req.logout();
+    return req.logout(() => {
+      Redirect('../')
+    });
   }
 }

@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, InternalServerErrorException, Query } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, InternalServerErrorException, Query, UnauthorizedException } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.module';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
@@ -26,6 +26,10 @@ export class UsersService {
 
         if (existingUser) {
             throw new ConflictException('User with this email, document, or phone already exists');
+        }
+
+        if (createUserDto.companyID) {
+            throw new ConflictException('This routes allows to create only tottaly new users. To create an user that belongs to a company, use another route.')
         }
 
         const hashedPassword = await bcrypt.hash(createUserDto.password, 10);

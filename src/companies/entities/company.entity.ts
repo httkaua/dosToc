@@ -82,10 +82,18 @@ export class Company {
   street: string;
 
   @Column({
-    length: 6,
-    nullable: true,
+    length: 6
   })
   streetNumber: string;
+
+  @Column({
+    length: 50,
+    transformer: {
+      to: (value: string) => value?.trim(),
+      from: (value: string) => value?.trim(),
+    }
+  })
+  complement: string;
 
   @Column({
     length: 100,
@@ -140,16 +148,28 @@ export class Company {
   })
   signPlan: string;
 
-  @Column({ type: 'json' })
+  @Column({
+    type: 'json',
+    nullable: true
+  })
   supervisorPermissions: supervisorPermissionsInterface;
 
-  @Column({ type: 'json' })
+  @Column({
+    type: 'json',
+    nullable: true
+  })
   agentPermissions: agentPermissionsInterface;
 
-  @Column({ type: 'json' })
+  @Column({
+    type: 'json',
+    nullable: true
+  })
   assistantPermissions: assistantPermissionsInterface;
 
-  @Column({ type: 'json' })
+  @Column({
+    type: 'json',
+    nullable: true
+  })
   notificationSettings: notificationSettingsInterface;
 
   @Column({
