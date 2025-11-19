@@ -7,11 +7,9 @@ export class Record {
   @PrimaryGeneratedColumn()
   recordID: number;
 
-  @ManyToOne(() => User, (user) => user.userID, {
-    nullable: false,
-  })
-  @JoinColumn({ name: 'userID' })
-  userWhoMadeTheAction: User;
+  @ManyToOne(() => User, (user) => user.userWhoMadeTheActionOf, { nullable: false })
+  @JoinColumn({ name: 'userWhoMadeTheAction' })
+  userWhoMadeTheAction: User; 
   
   @Column({
     nullable: false,
@@ -64,11 +62,9 @@ export class Record {
   })
   message: string;
 
-  @ManyToOne(() => Company, (company) => company.companyID, {
-    nullable: false,
-  })
-  @JoinColumn({ name: 'companyID' })
-  company: Company;
+  @ManyToOne(() => Company, (company) => company.recordCompanyOf, { nullable: false })
+  @JoinColumn({ name: 'company' })
+  recordCompany: Company;
 
   @CreateDateColumn({ name: "createdAt" })
   createdAt: Date;

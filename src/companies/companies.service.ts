@@ -12,8 +12,7 @@ import { UsersService } from 'src/users/users.service';
 export class CompaniesService {
     constructor(
         @InjectRepository(Company)
-        private readonly companyRepository: Repository<Company>,
-        private readonly usersService: UsersService
+        private readonly companyRepository: Repository<Company>
     ) {}
 
     async create(createCompanyDto: CreateCompanyDto): Promise<Company> {

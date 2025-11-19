@@ -45,7 +45,10 @@ export class Lead {
   })
   email: string; 
 
-  @Column("text", { array: true })
+  @Column("text", {
+    array: true,
+    nullable: true,
+  })
   tags: string[];
 
   @ManyToMany(() => RealEstate, (realEstate) => realEstate.interestedLeads)
@@ -73,17 +76,21 @@ export class Lead {
       'WAREHOUSE',
       'STUDIO/ COMMERCIAL ROOM'
     ],
-    nullable: false,
+    nullable: true,
   })
   propertyTypesInterested: string[];
 
-  @Column("text", { array: true })
+  @Column("text", {
+    array: true,
+    nullable: true,
+  })
   citiesInterested: string[];
 
   @Column({
     type: 'decimal',
     precision: 12,
     scale: 2,
+    nullable: true,
   })
   familyIncome: number;
 
@@ -91,6 +98,7 @@ export class Lead {
     type: 'decimal',
     precision: 12,
     scale: 2,
+    nullable: true,
   })
   inputValue: number;
 
@@ -98,6 +106,7 @@ export class Lead {
     type: 'decimal',
     precision: 12,
     scale: 2,
+    nullable: true,
   })
   realEstateMaxValue: number;
 
@@ -105,8 +114,9 @@ export class Lead {
     type: 'decimal',
     precision: 12,
     scale: 2,
+    nullable: true,
   })
-  realEstateMaxMonthlyFee: number;
+  realEstateMaxMonthlyFee: number; 
 
   @Column({
     type: 'enum',
@@ -158,10 +168,11 @@ export class Lead {
       'COLD CALL',
       'EVENT OR TRADE SHOW',
       'UNKNOWN FROM INTERNET',
+      'UNKNOWN',
       'OTHER'
     ],
     nullable: false,
-    default: 'OTHER',
+    default: 'UNKNOWN',
   })
   sourceOfLead: string;
 
@@ -171,13 +182,13 @@ export class Lead {
   })
   observations: string;
 
-  @ManyToOne(() => User, (user) => user.userID)
+  @ManyToOne(() => User, (user) => user.attendingUserOf, { nullable: true })
   @JoinColumn({ name: 'attendingUser' })
   attendingUser: User;
 
-  @ManyToOne(() => Company, (company) => company.companyID)
+  @ManyToOne(() => Company, (company) => company.leadCompanyOf, { nullable: true })
   @JoinColumn({ name: 'companyID' })
-  companyID: Company;
+  leadCompany: Company;
 
   @CreateDateColumn({ name: "createdAt" })
   createdAt: Date;

@@ -7,19 +7,19 @@ export class Task {
   @PrimaryGeneratedColumn()
   taskID: number;
 
-  @ManyToOne(() => User, (user) => user.userID, {
+  @ManyToOne(() => User, (user) => user.taskCreatorUserOf, {
     nullable: false,
   })
-  @JoinColumn({ name: 'creatorUserID' })
+  @JoinColumn({ name: 'creatorUser' })
   creatorUser: User;
 
-  @ManyToOne(() => User, (user) => user.userID, {
+  @ManyToOne(() => User, (user) => user.taskResponsibleUserOf, {
     nullable: false,
   })
-  @JoinColumn({ name: 'responsibleUserID' })
+  @JoinColumn({ name: 'responsibleUser' })
   responsibleUser: User;
 
-  @ManyToOne(() => Company, (company) => company.companyID, {
+  @ManyToOne(() => Company, (company) => company.taskCompanyOf, {
     nullable: false,
   })
   @JoinColumn({ name: 'companyID' })
@@ -37,10 +37,11 @@ export class Task {
     nullable: false,
     default: 'OTHER',
   })
-  type: string;
+  taskType: string;
 
   @Column({
     length: 500,
+    nullable: true,
   })
   observations: string;
 
@@ -65,6 +66,7 @@ export class Task {
       'OVERDUE'
     ],
     nullable: false,
+    default: 'PENDING'
   })
   status: string;
 

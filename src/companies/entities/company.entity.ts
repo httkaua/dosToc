@@ -1,10 +1,14 @@
 import { RealEstate } from 'src/realestates/entities/real-estate.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, VersionColumn, ForeignKey, OneToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, VersionColumn, ForeignKey, OneToOne, JoinColumn, OneToMany, ManyToOne } from 'typeorm';
 import type { Permissions as supervisorPermissionsInterface } from './supervisorPermissions.interface';
 import type { Permissions as agentPermissionsInterface } from './agentPermissions.interface';
 import type { Permissions as assistantPermissionsInterface } from './assistantPermissions.interface';
 import type { Settings as notificationSettingsInterface } from './notificationSettings.interface';
+import { Lead } from 'src/leads/entities/lead.entity';
+import { PropertyOwner } from 'src/propertyowners/entities/property-owner.entity';
+import { Record } from 'src/records/entities/record.entity';
+import { Task } from 'src/tasks/entities/task.entity';
  
 @Entity()
 export class Company {
@@ -43,23 +47,23 @@ export class Company {
   })
   email: string;
 
-  @OneToOne(() => User, (user) => user.userID, {
+  @OneToOne(() => User, (user) => user.companyOwned, {
     nullable: false,
   })
   @JoinColumn({ name: 'owner' })
   owner: User;
 
-  @OneToMany(() => User, (user) => user.userID)
+  @OneToMany(() => User, (user) => user.supervisorOf)
+  @JoinColumn({ name: 'supervisors' })
   supervisors: User[];
 
-  @OneToMany(() => User, (user) => user.userID)
+  @OneToMany(() => User, (user) => user.agentOf)
+  @JoinColumn({ name: 'agents' })
   agents: User[];
 
-  @OneToMany(() => User, (user) => user.userID)
+  @OneToMany(() => User, (user) => user.assistantOf)
+  @JoinColumn({ name: 'assistants' })
   assistants: User[];
-
-  @OneToMany(() => RealEstate, (realEstate) => realEstate.realEstateID)
-  realEstatesEntity: RealEstate[];
 
   @Column({
     length: 20,
@@ -82,7 +86,8 @@ export class Company {
   street: string;
 
   @Column({
-    length: 6
+    length: 6,
+    nullable: true,
   })
   streetNumber: string;
 
@@ -91,7 +96,8 @@ export class Company {
     transformer: {
       to: (value: string) => value?.trim(),
       from: (value: string) => value?.trim(),
-    }
+    },
+    nullable: true,
   })
   complement: string;
 
@@ -104,6 +110,25 @@ export class Company {
     nullable: false,
   })
   neighborhood: string;
+
+  @Column({
+    type: 'enum',
+    enum: [
+      'CENTRAL',
+      'NORTH',
+      'NORTHEAST',
+      'EAST',
+      'SOUTHEAST',
+      'SOUTH',
+      'SOUTHWEST',
+      'WEST',
+      'NORTHWEST',
+      'UNKNOWN'
+    ],
+    nullable: false,
+    default: 'UNKNOWN',
+  })
+  cityRegion: string;
 
   @Column({
     length: 100,
@@ -135,18 +160,6 @@ export class Company {
     default: 'Brazil',
   })
   country: string;
-
-  @Column({
-    type: 'enum',
-    enum: [
-      'FREE',
-      'SINGLE',
-      'BUSINESS',
-    ],
-    nullable: false,
-    default: 'FREE',
-  })
-  signPlan: string;
 
   @Column({
     type: 'json',
@@ -200,6 +213,18 @@ export class Company {
   })
   defaultCurrency: string;
 
+  @Column({
+    type: 'enum',
+    enum: [
+      'FREE',
+      'SINGLE',
+      'BUSINESS',
+    ],
+    nullable: false,
+    default: 'FREE',
+  })
+  signPlan: string;
+
   @CreateDateColumn({ name: "createdAt" })
   createdAt: Date;
 
@@ -211,5 +236,26 @@ export class Company {
     default: true,
   })
   enabled: boolean;
+
+
+
+  @OneToMany(() => User, (user) => user.userCompany)
+  userCompanyOf: User[];
+
+  @OneToMany(() => RealEstate, (realEstate) => realEstate.realEstateCompany)
+  realEstateCompanyOf: RealEstate[];
+
+  @OneToMany(() => Lead, (lead) => lead.leadCompany)
+  leadCompanyOf: Lead[]
+
+  @OneToMany(() => PropertyOwner, (propertyOwner) => propertyOwner.company)
+  propertyOwnerCompanyOf: PropertyOwner[]
+
+  @OneToMany(() => Record, (record) => record.recordCompany)
+  recordCompanyOf: Record[]
+
+  @OneToMany(() => Task, (task) => task.company)
+  taskCompanyOf: Task[]
+
   
 }

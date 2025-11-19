@@ -28,7 +28,7 @@ export class UsersService {
             throw new ConflictException('User with this email, document, or phone already exists');
         }
 
-        if (createUserDto.companyID) {
+        if (createUserDto.userCompany) {
             throw new ConflictException('This routes allows to create only tottaly new users. To create an user that belongs to a company, use another route.')
         }
 
@@ -97,7 +97,7 @@ export class UsersService {
 
     async findAll(): Promise<User[]> {
         return await this.userRepository.find({
-            relations: ['companyID'],
+            relations: ['userCompany'],
             order: { createdAt: 'DESC' }
         });
     }
@@ -105,7 +105,7 @@ export class UsersService {
     async findOne(id: number): Promise<User> {
         const user = await this.userRepository.findOne({
             where: { userID: id },
-            relations: ['companyID'],
+            relations: ['userCompany'],
         });
 
         if (!user) {

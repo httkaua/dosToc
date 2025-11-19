@@ -3,7 +3,7 @@ import { IsEmail, IsString, IsNotEmpty, MinLength, MaxLength, IsOptional, IsNumb
 export class CreateUserDto {
     @IsNumber()
     @IsOptional()
-    companyID: { companyID: number };
+    userCompany: { companyID: number };
 
     @IsString()
     @IsNotEmpty()

@@ -21,18 +21,6 @@ export class PropertyOwner {
   searchableName: string;
 
   @Column({
-    type: 'enum',
-    enum: [
-      'PERSON PROPERTY OWNER',
-      'CONSTRUCTION COMPANY',
-      'COMPANY PROPERTY OWNER',
-    ],
-    nullable: false,
-    default: 'PERSON PROPERTY OWNER',
-  })
-  type: string;
-
-  @Column({
     nullable: false,
     length: 16,
   })
@@ -43,6 +31,18 @@ export class PropertyOwner {
     nullable: false,
   })
   email: string;
+
+  @Column({
+    type: 'enum',
+    enum: [
+      'PERSON PROPERTY OWNER',
+      'CONSTRUCTION COMPANY',
+      'COMPANY PROPERTY OWNER',
+    ],
+    nullable: false,
+    default: 'PERSON PROPERTY OWNER',
+  })
+  propertyOwnerType: string;
 
   @Column({
     type: 'enum',
@@ -59,21 +59,23 @@ export class PropertyOwner {
       'COLD CALL',
       'EVENT OR TRADE SHOW',
       'UNKNOWN FROM INTERNET',
+      'UNKNOWN',
       'OTHER'
     ],
     nullable: false,
-    default: 'OTHER',
+    default: 'UNKNOWN',
   })
   sourceOfPropertyOwner: string;
 
-  @ManyToOne(() => Company, (company) => company.companyID, {
+  @ManyToOne(() => Company, (company) => company.propertyOwnerCompanyOf, {
     nullable: false,
   })
-  @JoinColumn({ name: 'companyID' })
+  @JoinColumn({ name: 'company' })
   company: Company;
 
-  @OneToMany(() => RealEstate, (realEstate) => realEstate.realEstateID)
-  properties: RealEstate[];
+  @OneToMany(() => RealEstate, (realEstate) => realEstate.realEstatesOwningOf)
+  @JoinColumn({ name: 'realEstatesOwning' })
+  realEstatesOwning: RealEstate[];
 
   @CreateDateColumn({ name: "createdAt" })
   createdAt: Date;

@@ -1,5 +1,6 @@
 import { Company } from 'src/companies/entities/company.entity';
 import { Lead } from 'src/leads/entities/lead.entity';
+import { PropertyOwner } from 'src/propertyowners/entities/property-owner.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, VersionColumn, ForeignKey, OneToOne, JoinColumn, OneToMany, ManyToOne, ManyToMany } from 'typeorm';
  
@@ -9,7 +10,6 @@ export class RealEstate {
   realEstateID: number;
 
   @Column({
-    unique: true,
     nullable: false,
     update: false,
   })
@@ -29,22 +29,25 @@ export class RealEstate {
     nullable: false,
     update: false,
   })
-  type: string;
+  propertyType: string;
 
   @Column({
     length: 20,
+    nullable: true,
   })
   condominiumBlock: string;
 
   @Column({
     length: 20,
+    nullable: true,
   })
   condominiumInternalNumber: string;
 
   @Column({
     type: 'smallint',
+    nullable: true,
   })
-  floor: number;
+  condominiumFloor: number;
 
   @Column({
     type: 'enum',
@@ -57,6 +60,89 @@ export class RealEstate {
     default: 'SALE',
   })
   rentalOrSale: string;
+
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
+  saleValue: number
+
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
+  rentalValue: number
+
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
+  assessedValue: number
+
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
+  financingMaxValue: number
+
+  @Column({
+    nullable: false,
+    default: false
+  })
+  exchange: boolean
+
+  @Column({
+    type: 'enum',
+    enum: [
+      'BRL',
+      'USD',
+      'EUR',
+      'ARS',
+      'PYG'
+    ],
+    nullable: false,
+    default: 'BRL',
+  })
+  currency: string;
+
+  @Column({
+    nullable: false,
+    default: true
+  })
+  financeable: boolean
+
+  @Column({
+    nullable: false,
+    default: false
+  })
+  includesTax: boolean
+
+  @Column({
+    type: 'enum',
+    enum: [
+      'MONTHLY',
+      'ANNUAL',
+    ],
+    default: 'MONTHLY',
+    nullable: true,
+  })
+  taxFrequency: string;
+
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
+  taxValue: number
 
   @Column({
     type: 'enum',
@@ -97,21 +183,25 @@ export class RealEstate {
 
   @Column({
     type: 'smallint',
+    nullable: true,
   })
   bedrooms: number;
 
   @Column({
     type: 'smallint',
+    nullable: true,
   })
   livingRooms: number;
 
   @Column({
     type: 'smallint',
+    nullable: true,
   })
   bathrooms: number;
 
   @Column({
     type: 'smallint',
+    nullable: true,
   })
   parkingSpaces: number;
 
@@ -146,6 +236,16 @@ export class RealEstate {
   streetNumber: string;
 
   @Column({
+    length: 50,
+    transformer: {
+      to: (value: string) => value?.trim(),
+      from: (value: string) => value?.trim(),
+    },
+    nullable: true,
+  })
+  complement: string;
+
+  @Column({
     length: 100,
     transformer: {
       to: (value: string) => value?.trim(),
@@ -154,16 +254,6 @@ export class RealEstate {
     nullable: false,
   })
   neighborhood: string;
-
-  @Column({
-    length: 50,
-    transformer: {
-      to: (value: string) => value?.trim(),
-      from: (value: string) => value?.trim(),
-    },
-    nullable: false,
-  })
-  complement: string;
 
   @Column({
     type: 'enum',
@@ -215,10 +305,18 @@ export class RealEstate {
   })
   country: string;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
   landArea: number;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
   builtUpArea: number;
 
   @Column({
@@ -239,12 +337,15 @@ export class RealEstate {
   })
   face: string;
 
-  @Column("text", { array: true })
+  @Column("text", {
+    array: true,
+    nullable: true,
+  })
   tags: string[];
 
   @Column("text", {
     array: true,
-    nullable: false,
+    nullable: true,
   })
   media: string[];
 
@@ -254,20 +355,17 @@ export class RealEstate {
   })
   published: boolean;
 
-  @ManyToOne(() => User, (user) => user.userID, {
+  @ManyToOne(() => User, (user) => user.realEstateCreatorUser, {
     nullable: false,
   })
-  @JoinColumn({ name: 'userID' })
+  @JoinColumn({ name: 'creatorUser' })
   creatorUser: User;
 
-  @ManyToOne(() => Company, (company) => company.companyID, {
+  @ManyToOne(() => Company, (company) => company.realEstateCompanyOf, {
     nullable: false,
-  })
-  @JoinColumn({ name: 'companyID' })
-  company: Company;
-
-  @ManyToMany(() => Lead, (lead) => lead.realEstatesInterested)
-  interestedLeads: Lead[];
+  }) 
+  @JoinColumn({ name: 'realEstateCompany' })
+  realEstateCompany: Company;
 
   @CreateDateColumn({ name: "createdAt" })
   createdAt: Date;
@@ -280,5 +378,13 @@ export class RealEstate {
     default: true,
   })
   enabled: boolean;
+
+
+
+  @ManyToOne(() => PropertyOwner, (propertyOwner) => propertyOwner.realEstatesOwning)
+  realEstatesOwningOf: PropertyOwner
+
+  @ManyToMany(() => Lead, (lead) => lead.realEstatesInterested)
+  interestedLeads: Lead[];
 
 }

@@ -2,7 +2,7 @@ import { Exclude } from 'class-transformer';
 
 export class ResponseUserDto {
   userID: number;
-  companyID: { companyID: number };
+  userCompany: { companyID: number };
   username: string;
   searchableName: string;
   nationalDocument: string;
