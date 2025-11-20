@@ -25,7 +25,7 @@ import { JwtStrategy } from './jwt.strategy';
         
         return {
           secret: secret,
-          signOptions: { expiresIn: '60s' },
+          signOptions: { expiresIn: '36000s' },
         };
       },
       inject: [ConfigService],

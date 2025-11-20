@@ -79,8 +79,13 @@ export class UsersController {
     async update(
         @Param('id', ParseIntPipe) id: number,
         @Body() updateUserDto: UpdateUserDto, 
+        @Request() req
     ): Promise<ResponseUserDto> {
-        const user = await this.usersService.update(id, updateUserDto);
+        const updateUsers = {
+            reqUser: req.user.userID,
+            userToUpdate: id
+        }
+        const user = await this.usersService.update(updateUsers, updateUserDto);
         return new ResponseUserDto(user);
     }
 

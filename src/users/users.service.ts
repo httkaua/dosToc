@@ -7,12 +7,16 @@ import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ResponseUserDto } from './dto/response-user.dto';
+import { Company } from 'src/companies/entities/company.entity';
 
 @Injectable()
 export class UsersService {
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
+
+        @InjectRepository(Company)
+        private readonly companyRepository: Repository<Company>,
     ) {}
 
     async create(createUserDto: CreateUserDto): Promise<User> {
@@ -106,21 +110,35 @@ export class UsersService {
             throw new ConflictException('User with this email, document, or phone already exists');
         }
 
-        console.log(req)
         if (!req || !req.userID) {
             throw new NotFoundException('User not found. Please logout, then login again.')
         }
 
         const reqUser = await this.userRepository.findOne({
-            where: { userID: req.userID }
+            where: [
+                { userID: req.userID },
+                { enabled: true },
+            ],
+            relations: ['userCompany'],
         });
 
-        if (!reqUser) {
+        if (!reqUser || typeof(reqUser) == undefined || typeof(reqUser) == null) {
             throw new NotFoundException('User not found. Please logout, then login again. 2000X')
         }
 
         if (!reqUser.userCompany) {
             throw new ConflictException(`You do not belong to any company, so you can't create another user right now. Please, create a company or request to your manager to insert you into your current company.`)
+        }
+
+        const company = await this.companyRepository.findOne({
+            where: [
+                { companyID: reqUser.userCompany.companyID },
+                { enabled: true }
+            ]
+        })
+
+        if (!company) {
+            throw new ConflictException(`Company not found, please ensure you belong to a company and contact your manager or support.`)
         }
 
         const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
@@ -136,6 +154,7 @@ export class UsersService {
             isDevUser: false,
             enabled: true,
             searchableName,
+            userCompany: company
         });
 
         await this.userRepository.save(user);
@@ -187,8 +206,9 @@ export class UsersService {
         });
     }
 
-    async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-        const user = await this.findOne(id);
+    async update(id: Record<string, any>, updateUserDto: UpdateUserDto): Promise<User> {
+        const userToUpdate = await this.findOne(id.userToUpdate);
+        const reqUser = await this.findOne(id.reqUser);
 
         if (updateUserDto.email || updateUserDto.nationalDocument || updateUserDto.phoneNumber) {
             const conflictUser = await this.userRepository.findOne({
@@ -199,9 +219,17 @@ export class UsersService {
                 ]
             });
 
-        if (conflictUser && conflictUser.userID !== id) {
+        if (conflictUser && conflictUser.userID !== id.userToUpdate) {
             throw new ConflictException('User with this email, document, or phone already exists');
             }
+        }
+
+        if (!reqUser.userCompany || !userToUpdate.userCompany) {
+            throw new ConflictException(`The user don't belong to any company`);
+        }
+
+        if (reqUser.userCompany !== userToUpdate.userCompany) {
+            throw new ConflictException(`You are not of the same company as the user to update.`);
         }
 
         if (updateUserDto.username) {
@@ -211,9 +239,9 @@ export class UsersService {
                 .replace(/[\u0300-\u036f]/g, '');
         }
 
-        Object.assign(user, updateUserDto);
-        await this.userRepository.save(user);
-        return user
+        Object.assign(userToUpdate, updateUserDto);
+        await this.userRepository.save(userToUpdate);
+        return userToUpdate
     }
 
     async remove(id: number): Promise<void> {
