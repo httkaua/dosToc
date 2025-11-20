@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, InternalServerErrorException, Query, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException, Query, UnauthorizedException } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.module';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ResponseUserDto } from './dto/response-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -44,9 +45,7 @@ export class UsersService {
             password: hashedPassword,
             isDevUser: false,
             enabled: true,
-            searchableName,
-            managers: createUserDto.managers || [],
-            underManagement: createUserDto.underManagement || [],
+            searchableName
         });
 
         return await this.userRepository.save(user);
@@ -88,11 +87,62 @@ export class UsersService {
             userClassification: 2,
             enabled: true,
             searchableName,
-            managers: createUserDto.managers || [],
-            underManagement: createUserDto.underManagement || [],
         });
 
         return await this.userRepository.save(user);
+    }
+
+    async createByManager(createUserDto: CreateUserDto, req: Partial<User>): Promise<User> {
+        
+        const existingUser = await this.userRepository.findOne({
+            where: [
+                { email: createUserDto.email },
+                { nationalDocument: createUserDto.nationalDocument },
+                { phoneNumber: createUserDto.phoneNumber },
+            ]
+        });
+
+        if (existingUser) {
+            throw new ConflictException('User with this email, document, or phone already exists');
+        }
+
+        console.log(req)
+        if (!req || !req.userID) {
+            throw new NotFoundException('User not found. Please logout, then login again.')
+        }
+
+        const reqUser = await this.userRepository.findOne({
+            where: { userID: req.userID }
+        });
+
+        if (!reqUser) {
+            throw new NotFoundException('User not found. Please logout, then login again. 2000X')
+        }
+
+        if (!reqUser.userCompany) {
+            throw new ConflictException(`You do not belong to any company, so you can't create another user right now. Please, create a company or request to your manager to insert you into your current company.`)
+        }
+
+        const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
+        const searchableName = createUserDto.username
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+
+        const user = this.userRepository.create({
+            ...createUserDto,
+            password: hashedPassword,
+            isDevUser: false,
+            enabled: true,
+            searchableName,
+        });
+
+        await this.userRepository.save(user);
+
+        await this.insertOnTheTeam(reqUser, user)
+
+        return user
     }
 
     async findAll(): Promise<User[]> {
@@ -162,7 +212,8 @@ export class UsersService {
         }
 
         Object.assign(user, updateUserDto);
-        return await this.userRepository.save(user);
+        await this.userRepository.save(user);
+        return user
     }
 
     async remove(id: number): Promise<void> {
@@ -184,25 +235,71 @@ export class UsersService {
         return user;
     }
 
-    /* ----- CREATING -----
-    async findAllManagers(user: User): Promise<User[]> {
-        return await this.userRepository.find({
-            where: { managers: [] },
-            order: { createdAt: 'DESC' }
+    async insertOnTheTeam(manager: User, employee: User): Promise<User> {
+        if (!manager || !employee) {
+            throw new NotFoundException('Manager or employee not found.');
+        }
+
+        if (manager.userID === employee.userID) {
+            throw new ConflictException('A user cannot manage themselves.');
+        }
+
+        const fullManager = await this.userRepository.findOne({
+            where: { userID: manager.userID },
+            relations: ['underManagement']
         });
-    }
-    */
 
-    /* ----- CREATING -----
-    async findAllUnderManagement(user: User): Promise<User[]> {
-        return await this.userRepository.find({
-            where: { managers: [] },
-            order: { createdAt: 'DESC' }
+        const fullEmployee = await this.userRepository.findOne({
+            where: { userID: employee.userID },
+            relations: ['managers']
         });
+
+        if (!fullManager || !fullEmployee) {
+            throw new NotFoundException('Manager or employee not found.');
+        }
+
+        const employeeAlreadyHas = fullEmployee.managers.some(m => m.userID === fullManager.userID);
+        if (employeeAlreadyHas) {
+            return fullEmployee;
+        }
+
+        fullEmployee.managers = [...fullEmployee.managers, fullManager];
+
+        fullManager.underManagement = [...fullManager.underManagement, fullEmployee];
+
+        await this.userRepository.save(fullManager);
+        return await this.userRepository.save(fullEmployee);
     }
-    */
 
+    async removeFromTheTeam(manager: User, employee: User): Promise<User> {
+        if (!manager || !employee) {
+            throw new NotFoundException('Manager or employee not found.');
+        }
 
+        const fullManager = await this.userRepository.findOne({
+            where: { userID: manager.userID },
+            relations: ['underManagement']
+        });
 
-    
+        const fullEmployee = await this.userRepository.findOne({
+            where: { userID: employee.userID },
+            relations: ['managers']
+        });
+
+        if (!fullManager || !fullEmployee) {
+            throw new NotFoundException('Manager or employee not found.');
+        }
+
+        fullEmployee.managers = fullEmployee.managers.filter(
+            (m) => m.userID !== fullManager.userID
+        );
+
+        fullManager.underManagement = fullManager.underManagement.filter(
+            (e) => e.userID !== fullEmployee.userID
+        );
+
+        await this.userRepository.save(fullManager);
+        return await this.userRepository.save(fullEmployee);
+    }
+
 }

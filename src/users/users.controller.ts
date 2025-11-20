@@ -1,5 +1,6 @@
 import {
   Controller,
+  Request,
   Get,
   Post,
   Body,
@@ -22,6 +23,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ResponseUserDto } from './dto/response-user.dto';
 import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { User } from './entities/user.entity';
 
 @Controller('users')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -35,15 +37,17 @@ export class UsersController {
         return new ResponseUserDto(user);
     }
 
-    //TODO:
-    /*TODO:
+    @UseGuards(JwtAuthGuard)
     @Post('create-by-manager')
     @HttpCode(HttpStatus.CREATED)
-    async createByManager(@Body() createUserDto: CreateUserDto): Promise<ResponseUserDto> {
-        const user = await this.usersService.createByManager(createUserDto);
+    async createByManager(
+        @Body() createUserDto: CreateUserDto,
+        @Request() req
+    ): Promise<ResponseUserDto> {
+        const reqUser = req.user
+        const user = await this.usersService.createByManager(createUserDto, reqUser);
         return new ResponseUserDto(user);
     }
-    */
 
     @UseGuards(JwtAuthGuard)
     @Post('create/development')
@@ -76,7 +80,7 @@ export class UsersController {
         @Param('id', ParseIntPipe) id: number,
         @Body() updateUserDto: UpdateUserDto, 
     ): Promise<ResponseUserDto> {
-        const user = await this.update(id, updateUserDto);
+        const user = await this.usersService.update(id, updateUserDto);
         return new ResponseUserDto(user);
     }
 

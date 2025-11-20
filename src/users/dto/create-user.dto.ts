@@ -32,19 +32,7 @@ export class CreateUserDto {
     @MaxLength(255)
     password: string;
 
-    @IsString()
-    @IsOptional()
-    profilePhoto?: string;
-
     @IsNumber()
     @IsOptional()
     userClassification: number;
-
-    @IsArray()
-    @IsOptional()
-    managers?: number[];
-
-    @IsArray()
-    @IsOptional()
-    underManagement?: number[];
 }

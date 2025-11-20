@@ -27,10 +27,6 @@ export class CreateCompanyDto {
 
     @IsString()
     @IsNotEmpty()
-    owner: User;
-
-    @IsString()
-    @IsNotEmpty()
     @MinLength(3)
     @MaxLength(20)
     zipCode: string

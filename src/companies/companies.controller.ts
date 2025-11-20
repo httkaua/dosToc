@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Request, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { CompaniesService } from './companies.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ResponseCompanyDto } from './dto/response-company.dto';
@@ -9,10 +9,15 @@ import { UpdateCompanyDto } from './dto/update-company.dto';
 export class CompaniesController {
     constructor(private readonly companiesService: CompaniesService) {}
 
+    @UseGuards(JwtAuthGuard)
     @Post('create')
     @HttpCode(HttpStatus.CREATED)
-    async create(@Body() createCompanyDto: CreateCompanyDto): Promise<ResponseCompanyDto> {
-        const company = await this.companiesService.create(createCompanyDto);
+    async create(
+        @Body() createCompanyDto: CreateCompanyDto,
+        @Request() req
+    ): Promise<ResponseCompanyDto> {
+        const user = req.user
+        const company = await this.companiesService.create(createCompanyDto, user);
         return new ResponseCompanyDto(company);
     }
 
