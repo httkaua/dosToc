@@ -10,7 +10,10 @@ export class User {
   @PrimaryGeneratedColumn()
   userID: number;
 
-  @ManyToOne(() => Company, (company) => company.userCompanyOf)
+  @ManyToOne(() => Company, (company) => company.userCompanyOf, {
+    nullable: true,
+    onDelete: 'SET NULL'
+  })
   @JoinColumn({ name: 'userCompany' })
   userCompany: Company;
 

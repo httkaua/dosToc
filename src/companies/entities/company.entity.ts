@@ -239,7 +239,10 @@ export class Company {
 
 
 
-  @OneToMany(() => User, (user) => user.userCompany)
+  @OneToMany(() => User, (user) => user.userCompany, {
+    nullable: true,
+    onDelete: 'SET NULL'
+  })
   userCompanyOf: User[];
 
   @OneToMany(() => RealEstate, (realEstate) => realEstate.realEstateCompany)

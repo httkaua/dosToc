@@ -206,9 +206,9 @@ export class UsersService {
         });
     }
 
-    async update(id: Record<string, any>, updateUserDto: UpdateUserDto): Promise<User> {
-        const userToUpdate = await this.findOne(id.userToUpdate);
-        const reqUser = await this.findOne(id.reqUser);
+    async update(ids: Record<string, any>, updateUserDto: UpdateUserDto): Promise<User> {
+        const userToUpdate = await this.findOne(ids.userToUpdate);
+        const reqUser = await this.findOne(ids.reqUser);
 
         if (updateUserDto.email || updateUserDto.nationalDocument || updateUserDto.phoneNumber) {
             const conflictUser = await this.userRepository.findOne({
@@ -219,7 +219,7 @@ export class UsersService {
                 ]
             });
 
-        if (conflictUser && conflictUser.userID !== id.userToUpdate) {
+        if (conflictUser && conflictUser.userID !== ids.userToUpdate) {
             throw new ConflictException('User with this email, document, or phone already exists');
             }
         }

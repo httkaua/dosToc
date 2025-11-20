@@ -16,8 +16,8 @@ export class CompaniesController {
         @Body() createCompanyDto: CreateCompanyDto,
         @Request() req
     ): Promise<ResponseCompanyDto> {
-        const user = req.user
-        const company = await this.companiesService.create(createCompanyDto, user);
+        const reqUser = req.user
+        const company = await this.companiesService.create(reqUser, createCompanyDto);
         return new ResponseCompanyDto(company);
     }
 
@@ -38,18 +38,30 @@ export class CompaniesController {
     @UseGuards(JwtAuthGuard)
     @Patch(':id')
     async update(
-        @Param('id', ParseIntPipe) id: number,
-        @Body() updateCompanyDto: UpdateCompanyDto, 
+        @Param('id', ParseIntPipe) companyID: number,
+        @Body() updateCompanyDto: UpdateCompanyDto,
+        @Request() req
     ): Promise<ResponseCompanyDto> {
-        const company = await this.update(id, updateCompanyDto);
+        const ids = {
+            companyID: companyID,
+            userID: req.user.userID
+        }
+        const company = await this.companiesService.update(ids, updateCompanyDto);
         return new ResponseCompanyDto(company);
     }
 
     @UseGuards(JwtAuthGuard)
     @Delete(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
-    async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-        await this.companiesService.remove(id)
+    async remove(
+        @Param('id', ParseIntPipe) companyID: number,
+        @Request() req
+    ): Promise<void> {
+        const ids = {
+            companyID: companyID,
+            userID: req.user.userID
+        }
+        await this.companiesService.remove(ids)
     }
 
     @UseGuards(JwtAuthGuard)

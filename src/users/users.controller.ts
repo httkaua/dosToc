@@ -81,11 +81,11 @@ export class UsersController {
         @Body() updateUserDto: UpdateUserDto, 
         @Request() req
     ): Promise<ResponseUserDto> {
-        const updateUsers = {
+        const ids = {
             reqUser: req.user.userID,
             userToUpdate: id
         }
-        const user = await this.usersService.update(updateUsers, updateUserDto);
+        const user = await this.usersService.update(ids, updateUserDto);
         return new ResponseUserDto(user);
     }
 

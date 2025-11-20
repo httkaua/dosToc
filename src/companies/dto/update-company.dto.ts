@@ -13,19 +13,19 @@ export class UpdateCompanyDto extends PartialType(CreateCompanyDto) {
 
     @IsArray()
     @IsOptional()
-    supervisors?: User[]
+    supervisors?: number[]
 
     @IsArray()
     @IsOptional()
-    agents?: User[]
+    agents?: number[]
 
     @IsArray()
     @IsOptional()
-    assistants?: User[]
+    assistants?: number[]
 
     @IsArray()
     @IsOptional()
-    realEstatesEntity?: RealEstate[]
+    realEstatesEntity?: number[]
 
     @IsString()
     @IsOptional()
