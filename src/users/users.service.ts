@@ -8,326 +8,197 @@ import * as bcrypt from 'bcrypt';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ResponseUserDto } from './dto/response-user.dto';
 import { Company } from 'src/companies/entities/company.entity';
+import { UserRepositoryService } from './services/user-repository.service';
+import { UserValidatorService } from './services/user-validator.service';
+import { UserTransformerService } from './services/user-transformer.service';
+import { TeamManagementService } from './services/team-management.service';
 
 @Injectable()
 export class UsersService {
-    constructor(
-        @InjectRepository(User)
-        private readonly userRepository: Repository<User>,
+  constructor(
+    private readonly userRepositoryService: UserRepositoryService,
+    private readonly validator: UserValidatorService,
+    private readonly transformer: UserTransformerService,
+    private readonly teamManagement: TeamManagementService,
+  ) {}
 
-        @InjectRepository(Company)
-        private readonly companyRepository: Repository<Company>,
-    ) {}
-
-    async create(createUserDto: CreateUserDto): Promise<User> {
-        
-        const existingUser = await this.userRepository.findOne({
-            where: [
-                { email: createUserDto.email },
-                { nationalDocument: createUserDto.nationalDocument },
-                { phoneNumber: createUserDto.phoneNumber },
-            ]
-        });
-
-        if (existingUser) {
-            throw new ConflictException('User with this email, document, or phone already exists');
-        }
-
-        if (createUserDto.userCompany) {
-            throw new ConflictException('This routes allows to create only tottaly new users. To create an user that belongs to a company, use another route.')
-        }
-
-        const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-
-        const searchableName = createUserDto.username
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '');
-
-        const user = this.userRepository.create({
-            ...createUserDto,
-            password: hashedPassword,
-            isDevUser: false,
-            enabled: true,
-            searchableName
-        });
-
-        return await this.userRepository.save(user);
-    }
-
-    async createDevUser(createUserDto: CreateUserDto, query: Record<string, any>): Promise<User> {
-
-        if (!query.devKey || !process.env.DEV_USER_ENV_KEY) {
-            throw new InternalServerErrorException('Missing keys');
-        }
-
-        if (query.devKey !== process.env.DEV_USER_ENV_KEY) {
-            throw new ForbiddenException('Forbidden');
-        }
-        
-        const existingUser = await this.userRepository.findOne({
-            where: [
-                { email: createUserDto.email },
-                { nationalDocument: createUserDto.nationalDocument },
-                { phoneNumber: createUserDto.phoneNumber },
-            ]
-        });
-
-        if (existingUser) {
-            throw new ConflictException('User with this email, document, or phone already exists');
-        }
-
-        const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-
-        const searchableName = createUserDto.username
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '');
-
-        const user = this.userRepository.create({
-            ...createUserDto,
-            password: hashedPassword,
-            isDevUser: true,
-            userClassification: 2,
-            enabled: true,
-            searchableName,
-        });
-
-        return await this.userRepository.save(user);
-    }
-
-    async createByManager(createUserDto: CreateUserDto, req: Partial<User>): Promise<User> {
-        
-        const existingUser = await this.userRepository.findOne({
-            where: [
-                { email: createUserDto.email },
-                { nationalDocument: createUserDto.nationalDocument },
-                { phoneNumber: createUserDto.phoneNumber },
-            ]
-        });
-
-        if (existingUser) {
-            throw new ConflictException('User with this email, document, or phone already exists');
-        }
-
-        if (!req || !req.userID) {
-            throw new NotFoundException('User not found. Please logout, then login again.')
-        }
-
-        const reqUser = await this.userRepository.findOne({
-            where: [
-                { userID: req.userID },
-                { enabled: true },
-            ],
-            relations: ['userCompany'],
-        });
-
-        if (!reqUser || typeof(reqUser) == undefined || typeof(reqUser) == null) {
-            throw new NotFoundException('User not found. Please logout, then login again. 2000X')
-        }
-
-        if (!reqUser.userCompany) {
-            throw new ConflictException(`You do not belong to any company, so you can't create another user right now. Please, create a company or request to your manager to insert you into your current company.`)
-        }
-
-        const company = await this.companyRepository.findOne({
-            where: [
-                { companyID: reqUser.userCompany.companyID },
-                { enabled: true }
-            ]
-        })
-
-        if (!company) {
-            throw new ConflictException(`Company not found, please ensure you belong to a company and contact your manager or support.`)
-        }
-
-        const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-
-        const searchableName = createUserDto.username
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '');
-
-        const user = this.userRepository.create({
-            ...createUserDto,
-            password: hashedPassword,
-            isDevUser: false,
-            enabled: true,
-            searchableName,
-            userCompany: company
-        });
-
-        await this.userRepository.save(user);
-
-        await this.insertOnTheTeam(reqUser, user)
-
-        return user
-    }
-
-    async findAll(): Promise<User[]> {
-        return await this.userRepository.find({
-            relations: ['userCompany'],
-            order: { createdAt: 'DESC' }
-        });
-    }
-
-    async findOne(id: number): Promise<User> {
-        const user = await this.userRepository.findOne({
-            where: { userID: id },
-            relations: ['userCompany'],
-        });
-
-        if (!user) {
-            throw new ConflictException(`User with ID ${id} not found`);
-        }
-
-        return user
-    }
-
-    async findOneByUsername(username: string): Promise<User | null> {
-        const user = await this.userRepository.findOne({
-            where: { username }
-        })
-        return user
+  //* ----- TEAM SERVICES ----- *//
+  async findAllTeamMembers(id: number): Promise<ResponseUserDto[]> {
+    return this.teamManagement.findAllTeamMembers(id);
   }
 
-    async findUserWithPassword(username: string): Promise<User | null> {
-        const user = await this.userRepository.findOne({
-            where: { username },
-            select: ['userID', 'username', 'password']
-        })
-        return user
+  async addEmployeeToTeam(managerId: number, employeeId: number): Promise<User> {
+    const manager = await this.findOne(managerId);
+    const employee = await this.findOne(employeeId);
+    return this.teamManagement.addEmployeeToManager(manager, employee);
   }
 
-    async findByEmail(email: string): Promise<User | null> {
-        return await this.userRepository.findOne({
-            where: { email },
-            select: ['userID', 'email', 'password', 'enabled'],
-        });
+  async removeEmployeeFromTeam(managerId: number, employeeId: number): Promise<User> {
+    const manager = await this.findOne(managerId);
+    const employee = await this.findOne(employeeId);
+    return this.teamManagement.removeEmployeeFromManager(manager, employee);
+  }
+
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    await this.validator.validateUniqueUser(createUserDto);
+
+    if (createUserDto.userCompany) {
+      throw new ConflictException(
+        'This route allows creating only totally new users. To create a user that belongs to a company, use another route.'
+      );
     }
 
-    async update(ids: Record<string, any>, updateUserDto: UpdateUserDto): Promise<User> {
-        const userToUpdate = await this.findOne(ids.userToUpdate);
-        const reqUser = await this.findOne(ids.reqUser);
+    const userData = await this.transformer.prepareUserData(createUserDto);
 
-        if (updateUserDto.email || updateUserDto.nationalDocument || updateUserDto.phoneNumber) {
-            const conflictUser = await this.userRepository.findOne({
-                where: [
-                    updateUserDto.email ? { email: updateUserDto.email } : {},
-                    updateUserDto.nationalDocument ? { nationalDocument: updateUserDto.nationalDocument } : {},
-                    updateUserDto.phoneNumber ? { phoneNumber: updateUserDto.phoneNumber } : {},
-                ]
-            });
+    return this.userRepositoryService.create({
+      ...userData,
+      isDevUser: false,
+    });
+  }
 
-        if (conflictUser && conflictUser.userID !== ids.userToUpdate) {
-            throw new ConflictException('User with this email, document, or phone already exists');
-            }
-        }
+  async createByManager(createUserDto: CreateUserDto, req: Partial<User>): Promise<User> {
+    await this.validator.validateUniqueUser(createUserDto);
 
-        if (!reqUser.userCompany || !userToUpdate.userCompany) {
-            throw new ConflictException(`The user don't belong to any company`);
-        }
-
-        if (reqUser.userCompany !== userToUpdate.userCompany) {
-            throw new ConflictException(`You are not of the same company as the user to update.`);
-        }
-
-        if (updateUserDto.username) {
-            updateUserDto['searchableName'] = updateUserDto.username
-                .toLowerCase()
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '');
-        }
-
-        Object.assign(userToUpdate, updateUserDto);
-        await this.userRepository.save(userToUpdate);
-        return userToUpdate
+    if (!req?.userID) {
+      throw new NotFoundException('User not found. Please logout, then login again.');
     }
 
-    async remove(id: number): Promise<void> {
-        const user = await this.findOne(id);
-        await this.userRepository.remove(user);
+    const reqUser = await this.userRepositoryService.findById(req.userID, ['userCompany']);
+    
+    if (!reqUser) {
+      throw new NotFoundException('User not found. Please logout, then login again.');
     }
 
-    async softDelete(id: number): Promise<User> {
-        const user = await this.findOne(id);
-        user.enabled = false;
-        await this.userRepository.save(user);
-        return user;
+    if (createUserDto.userClassification <= reqUser.userClassification) {
+      throw new ConflictException('You can only create users with a lower classification than yours.');
     }
 
-    async restore(id: number): Promise<User> {
-        const user = await this.findOne(id);
-        user.enabled = true;
-        await this.userRepository.save(user);
-        return user;
+    const company = await this.validator.validateCompanyMembership(reqUser);
+
+    const userData = await this.transformer.prepareUserData(createUserDto);
+
+    const targetUser = await this.userRepositoryService.create({
+      ...userData,
+      isDevUser: false,
+      enabled: true,
+      userCompany: company
+    })
+
+    await this.teamManagement.addEmployeeToManager(reqUser, targetUser);
+
+    return targetUser;
+  }
+
+  async createDevUser(createUserDto: CreateUserDto, req: Partial<User>, query: Record<string, any>): Promise<User> {
+    if (!query.devKey || !process.env.DEV_USER_ENV_KEY) {
+      throw new InternalServerErrorException('Missing keys');
     }
 
-    async insertOnTheTeam(manager: User, employee: User): Promise<User> {
-        if (!manager || !employee) {
-            throw new NotFoundException('Manager or employee not found.');
-        }
-
-        if (manager.userID === employee.userID) {
-            throw new ConflictException('A user cannot manage themselves.');
-        }
-
-        const fullManager = await this.userRepository.findOne({
-            where: { userID: manager.userID },
-            relations: ['underManagement']
-        });
-
-        const fullEmployee = await this.userRepository.findOne({
-            where: { userID: employee.userID },
-            relations: ['managers']
-        });
-
-        if (!fullManager || !fullEmployee) {
-            throw new NotFoundException('Manager or employee not found.');
-        }
-
-        const employeeAlreadyHas = fullEmployee.managers.some(m => m.userID === fullManager.userID);
-        if (employeeAlreadyHas) {
-            return fullEmployee;
-        }
-
-        fullEmployee.managers = [...fullEmployee.managers, fullManager];
-
-        fullManager.underManagement = [...fullManager.underManagement, fullEmployee];
-
-        await this.userRepository.save(fullManager);
-        return await this.userRepository.save(fullEmployee);
+    if (query.devKey !== process.env.DEV_USER_ENV_KEY) {
+      throw new ForbiddenException('Forbidden');
     }
 
-    async removeFromTheTeam(manager: User, employee: User): Promise<User> {
-        if (!manager || !employee) {
-            throw new NotFoundException('Manager or employee not found.');
-        }
-
-        const fullManager = await this.userRepository.findOne({
-            where: { userID: manager.userID },
-            relations: ['underManagement']
-        });
-
-        const fullEmployee = await this.userRepository.findOne({
-            where: { userID: employee.userID },
-            relations: ['managers']
-        });
-
-        if (!fullManager || !fullEmployee) {
-            throw new NotFoundException('Manager or employee not found.');
-        }
-
-        fullEmployee.managers = fullEmployee.managers.filter(
-            (m) => m.userID !== fullManager.userID
-        );
-
-        fullManager.underManagement = fullManager.underManagement.filter(
-            (e) => e.userID !== fullEmployee.userID
-        );
-
-        await this.userRepository.save(fullManager);
-        return await this.userRepository.save(fullEmployee);
+    if (!req?.userID) {
+      throw new NotFoundException('User not found. Please logout, then login again.');
     }
+
+    const reqUser = await this.userRepositoryService.findById(req.userID, ['userCompany']);
+
+    await this.validator.validateUniqueUser(createUserDto);
+
+    const company = await this.validator.validateCompanyMembership(reqUser);
+
+    const userData = await this.transformer.prepareUserData(createUserDto);
+
+    const targetUser = await this.userRepositoryService.create({
+      ...userData,
+      userCompany: company,
+      isDevUser: true,
+      userClassification: 2
+    });
+
+    return targetUser
+  }
+
+  async findAll(): Promise<User[]> {
+    return this.userRepositoryService.findAll(['userCompany']);
+  }
+
+  async findOne(id: number): Promise<User> {
+
+    const user = await this.userRepositoryService.findById(id, ['userCompany']);
+    
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    return user;
+  }
+
+  async findOneByUsername(username: string): Promise<User | null> {
+    return this.userRepositoryService.findByUsername(username);
+  }
+
+  async findUserWithPassword(username: string): Promise<User | null> {
+    return this.userRepositoryService.findWithPassword(username);
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepositoryService.findByEmail(email);
+  }
+
+  async remove(id: number): Promise<void> {
+    const user = await this.findOne(id);
+    user.userClassification = 7;
+    await this.userRepositoryService.remove(user);
+  }
+
+  async restore(id: number): Promise<User> {
+    const user = await this.findOne(id);
+    user.enabled = true;
+    user.userClassification = 6;
+    return this.userRepositoryService.save(user);
+  }
+
+  async update(ids: Record<string, any>, updateUserDto: UpdateUserDto): Promise<User> {
+    const userToUpdate = await this.userRepositoryService.findById(ids.userToUpdate, ['userCompany']);
+    const reqUser = await this.userRepositoryService.findById(ids.reqUser, ['userCompany']);
+
+    if (!userToUpdate || !reqUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.validator.validateUniqueUser(updateUserDto, ids.userToUpdate);
+    this.validator.validateSameCompany(reqUser, userToUpdate);
+
+    if (updateUserDto.username) {
+      updateUserDto['searchableName'] = this.transformer.generateSearchableName(
+        updateUserDto.username
+      );
+    }
+
+    Object.assign(userToUpdate, updateUserDto);
+    return this.userRepositoryService.save(userToUpdate);
+  }
+
+  async softDelete(id: number): Promise<User> {
+    const user = await this.userRepositoryService.findById(id);
+    
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    user.enabled = false;
+    user.userClassification = 7;
+    return this.userRepositoryService.save(user);
+  }
+
+  async findAllCompanyMembers(id: number): Promise<ResponseUserDto[]> {
+    const user = await this.findOne(id);
+    this.validator.validateCompanyMembership(user);
+
+    const companyMembers = await this.userRepositoryService.findAllCompanyMembers(id);
+    return companyMembers;
+  }
 
 }

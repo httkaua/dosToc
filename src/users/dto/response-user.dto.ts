@@ -12,7 +12,7 @@ export class ResponseUserDto {
   profilePhoto?: string;
   userClassification?: number;
   isDevUser?: boolean;
-  managers?: number[];
+  manager?: number;
   underManagement?: number[];
   createdAt?: Date;
   updatedAt?: Date;
