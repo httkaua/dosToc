@@ -14,14 +14,12 @@ import { ResponseCompanyDto } from './dto/response-company.dto';
 @Injectable()
 export class CompaniesService {
     constructor(
-        @InjectRepository(Company)
         private readonly validator: CompanyValidatorService,
         private readonly companyRepositoryService: CompanyRepositoryService,
 
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
     ) {}
-
 
     async create(reqUser: Partial<User>, createCompanyDto: CreateCompanyDto): Promise<Company> {
 
@@ -44,10 +42,7 @@ export class CompaniesService {
             throw new ConflictException('You already have a company or subordinates. If you are sure creating this, at first redistribute your employees.')
         }
 
-        const newCompany = this.companyRepositoryService.create({
-            ...createCompanyDto,
-            owner: user
-        })
+        const newCompany = this.companyRepositoryService.create(createCompanyDto, user)
 
         const savedCompany = await this.companyRepositoryService.save(await newCompany);
 
@@ -85,15 +80,99 @@ export class CompaniesService {
         return await this.companyRepositoryService.save(company);
     }
 
-    async signPlan(id: number, updateCompanyDto: UpdateCompanyDto): Promise<Company> {
+    async signPlan(id: number, newPlan: string): Promise<Company> {
         const company = await this.findOne(id)
 
-        if (!updateCompanyDto.signPlan) {
+        if (newPlan !== 'FREE' && newPlan !== 'SINGLE' && newPlan !== 'BUSINESS') {
             throw new ForbiddenException('Update plan must have one of the options.')
         }
 
-        company.signPlan = updateCompanyDto.signPlan
+        company.signPlan = newPlan
         return this.companyRepositoryService.save(company)
+    }
+
+    async assignMemberToPosition(ids: Record<string, any>, targetUserClassification: number): Promise<void> {
+        if (!ids.reqUser || !ids.targetUser || !ids.companyID) {
+            throw new ForbiddenException('User forbidden. Please logout, then login again.')
+        }
+
+        const company = await this.companyRepositoryService.findById(ids.companyID, ['supervisors', 'agents', 'assistants']);
+
+        if (targetUserClassification < 4 || targetUserClassification > 6) {
+            throw new ForbiddenException('Only supervisors, assistants and agents can be assigned to position.')
+        }
+
+        const userToAssign = await this.userRepository.findOne({
+            where: { userID: ids.targetUser }
+        });
+
+        if (!userToAssign) {
+            throw new NotFoundException('Target user not found.')
+        }
+
+        switch (targetUserClassification) {
+            case 4:
+                if (company.supervisors.some(s => s.userID === ids.targetUser)) {
+                    return;
+                }
+                company.supervisors = [...company.supervisors, userToAssign];
+                await this.companyRepositoryService.save(company);
+                break;
+
+            case 5:
+                if (company.agents.some(s => s.userID === ids.targetUser)) {
+                    return;
+                }
+                company.agents = [...company.agents, userToAssign];
+                await this.companyRepositoryService.save(company);
+                break;
+
+            case 6:
+                if (company.assistants.some(s => s.userID === ids.targetUser)) {
+                    return;
+                }
+                company.assistants = [...company.assistants, userToAssign];
+                await this.companyRepositoryService.save(company);
+                break;
+        }
+    }
+
+    async unassignMemberToPosition(ids: Record<string, any>, targetUserClassification: number): Promise<void> {
+        if (!ids.reqUser || !ids.targetUser || !ids.companyID) {
+            throw new ForbiddenException('User forbidden. Please logout, then login again.')
+        }
+
+        const company = await this.companyRepositoryService.findById(ids.companyID, ['supervisors', 'agents', 'assistants']);
+
+        if (targetUserClassification < 5 || targetUserClassification > 6) {
+            throw new ForbiddenException('Only assistants and agents can be unassigned to position.')
+        }
+
+        const userToUnassign = await this.userRepository.findOne({
+            where: { userID: ids.targetUser }
+        });
+
+        if (!userToUnassign) {
+            throw new NotFoundException('Target user not found.')
+        }
+
+        switch (targetUserClassification) {
+            case 5:
+                if (!company.agents.some(s => s.userID === ids.targetUser)) {
+                    return;
+                }
+                company.agents = company.agents.filter(f => f.userID !== ids.targetUser);
+                await this.companyRepositoryService.save(company);
+                break;
+
+            case 6:
+                if (!company.assistants.some(s => s.userID === ids.targetUser)) {
+                    return;
+                }
+                company.assistants = company.assistants.filter(f => f.userID !== ids.targetUser);
+                await this.companyRepositoryService.save(company);
+                break;
+        }
     }
 
 }

@@ -96,7 +96,10 @@ export class User {
   })
   isDevUser: boolean;
 
-  @ManyToOne(() => User, (user) => user.underManagement, { nullable: true })
+  @ManyToOne(() => User, (user) => user.underManagement, {
+    onDelete: 'SET NULL',
+    nullable: true,
+  })
   @JoinColumn({ name: "managerID" })
   manager: User | null;
 

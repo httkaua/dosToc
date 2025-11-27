@@ -16,12 +16,16 @@ import {
 import { UsersService } from './users.service';
 import { ResponseUserDto } from './dto/response-user.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { CompaniesService } from 'src/companies/companies.service';
 
 @Controller('users/team')
 @UseGuards(JwtAuthGuard)
 @UseInterceptors(ClassSerializerInterceptor)
 export class TeamsController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly companiesService: CompaniesService
+  ) {}
 
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -66,5 +70,41 @@ export class TeamsController {
       body.employeeId,
     );
     return new ResponseUserDto(employee);
+  }
+
+  @Patch('promote-member/:id')
+  @HttpCode(HttpStatus.OK)
+  async promoteMember(
+    @Query('newClassification') newClassification: number,
+    @Request() req,
+  ): Promise<void> {
+    const ids = {
+      companyID: req.user.userCompany.companyID,
+      reqUser: req.user.userID,
+      targetUser: req.params.id
+    }
+
+    await this.usersService.removeEmployeeFromTeam(req.user.userID, req.params.id);
+    await this.companiesService.assignMemberToPosition(ids, newClassification);
+
+  }
+
+  @Patch('demote-member/:id')
+  @HttpCode(HttpStatus.OK)
+  async demoteMember(
+    @Query('newClassification') newClassification: number,
+    @Request() req,
+  ): Promise<void> {
+    const ids = {
+      companyID: req.user.userCompany.companyID,
+      reqUser: req.user.userID,
+      targetUser: req.params.id
+    }
+
+    const user = await this.usersService.findOne(req.user.userID);
+    this.usersService.userValidator.validateDemote(user, newClassification);
+
+    await this.companiesService.assignMemberToPosition(ids, newClassification);
+
   }
 }

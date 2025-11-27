@@ -12,14 +12,17 @@ import { UserRepositoryService } from './services/user-repository.service';
 import { UserValidatorService } from './services/user-validator.service';
 import { UserTransformerService } from './services/user-transformer.service';
 import { TeamManagementService } from './services/team-management.service';
+import { CompaniesService } from 'src/companies/companies.service';
 
 @Injectable()
 export class UsersService {
+  userValidator: any;
   constructor(
     private readonly userRepositoryService: UserRepositoryService,
     private readonly validator: UserValidatorService,
     private readonly transformer: UserTransformerService,
     private readonly teamManagement: TeamManagementService,
+    private readonly companiesService: CompaniesService,
   ) {}
 
   //* ----- TEAM SERVICES ----- *//
@@ -38,8 +41,10 @@ export class UsersService {
   async removeEmployeeFromTeam(managerId: number, employeeId: number): Promise<User> {
     const manager = await this.findOne(managerId);
     const employee = await this.findOne(employeeId);
+
     this.validator.validateSameCompany(manager, employee);
     this.validator.validateGreaterHierarchy(manager, employee);
+    
     return this.teamManagement.removeEmployeeFromManager(manager, employee);
   }
 
@@ -77,7 +82,8 @@ export class UsersService {
       throw new ConflictException('You can only create users with a lower classification than yours.');
     }
 
-    const company = await this.validator.validateCompanyMembership(reqUser);
+    const company = await this.companiesService.findOne(reqUser.userCompany.companyID);
+    this.validator.validateCompanyMembership(reqUser, company)
 
     const userData = await this.transformer.prepareUserData(createUserDto);
 
@@ -89,6 +95,13 @@ export class UsersService {
     })
 
     await this.teamManagement.addEmployeeToManager(reqUser, targetUser);
+    await this.companiesService.assignMemberToPosition(
+      {
+        companyID: company.companyID,
+        reqUser: reqUser.userID,
+        targetUser: targetUser.userID,
+      }, targetUser.userClassification
+    );
 
     return targetUser;
   }
@@ -110,7 +123,8 @@ export class UsersService {
 
     await this.validator.validateUniqueUser(createUserDto);
 
-    const company = await this.validator.validateCompanyMembership(reqUser);
+    const company = await this.companiesService.findOne(reqUser.userCompany.companyID);
+    this.validator.validateCompanyMembership(reqUser, company)
 
     const userData = await this.transformer.prepareUserData(createUserDto);
 
@@ -232,7 +246,8 @@ export class UsersService {
 
   async findAllCompanyMembers(userID: number, companyID: number): Promise<ResponseUserDto[]> {
     const user = await this.findOne(userID);
-    this.validator.validateCompanyMembership(user);
+    const company = await this.companiesService.findOne(user.userCompany.companyID);
+    this.validator.validateCompanyMembership(user, company)
 
     const companyMembers = await this.userRepositoryService.findAllCompanyMembers(companyID);
     return companyMembers;

@@ -9,6 +9,9 @@ import { UserValidatorService } from './services/user-validator.service';
 import { UserTransformerService } from './services/user-transformer.service';
 import { TeamManagementService } from './services/team-management.service';
 import { TeamsController } from './users-team.controller';
+import { CompaniesService } from 'src/companies/companies.service';
+import { CompanyRepositoryService } from 'src/companies/services/company-repository.service';
+import { CompanyValidatorService } from 'src/companies/services/company-validator.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, Company])],
@@ -22,9 +25,13 @@ import { TeamsController } from './users-team.controller';
     UserValidatorService,
     UserTransformerService,
     TeamManagementService,
+    CompaniesService,
+    CompanyRepositoryService,
+    CompanyValidatorService
   ],
   exports: [
-    UsersService
+    UsersService,
+    UserValidatorService
   ],
 })
 export class UsersModule {}

@@ -4,11 +4,19 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ResponseCompanyDto } from './dto/response-company.dto';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
+import { UsersService } from 'src/users/users.service';
+import { CompanyValidatorService } from './services/company-validator.service';
+import { UserValidatorService } from 'src/users/services/user-validator.service';
 
 @Controller('companies')
 @UseGuards(JwtAuthGuard)
 export class CompaniesController {
-    constructor(private readonly companiesService: CompaniesService) {}
+    constructor(
+        private readonly companiesService: CompaniesService,
+        private readonly usersService: UsersService,
+        private readonly validator: CompanyValidatorService,
+        private readonly usersValidator: UserValidatorService,
+    ) {}
 
     @Post('create')
     @HttpCode(HttpStatus.CREATED)
@@ -28,8 +36,14 @@ export class CompaniesController {
     }
 
     @Get(':id')
-    async findOne(@Param('id', ParseIntPipe) id: number): Promise<ResponseCompanyDto> {
+    async findOne(
+        @Param('id', ParseIntPipe) id: number,
+        @Request() req
+    ): Promise<ResponseCompanyDto> {
+        const user = await this.usersService.findOne(req.user.userID)
         const company = await this.companiesService.findOne(id);
+
+        this.usersValidator.validateCompanyMembership(user, company);
         return new ResponseCompanyDto(company);
     }
 
@@ -43,8 +57,14 @@ export class CompaniesController {
             companyID: companyID,
             userID: req.user.userID
         }
-        const company = await this.companiesService.update(ids, updateCompanyDto);
-        return new ResponseCompanyDto(company);
+
+        const user = await this.usersService.findOne(req.user.userID)
+        const company = await this.companiesService.findOne(companyID);
+        
+        this.usersValidator.validateCompanyMembership(user, company);
+
+        const companyUpdate = await this.companiesService.update(ids, updateCompanyDto);
+        return new ResponseCompanyDto(companyUpdate);
     }
 
     @Get('plans-options')
@@ -52,12 +72,19 @@ export class CompaniesController {
         return `FREE, SINGLE, BUSINESS`
     }
 
-    @Post('sign-plan')
+    @Post('sign-plan/:id')
     async signPlan(
         @Param('id', ParseIntPipe) id: number,
-        @Body() updateCompanyDto: UpdateCompanyDto
+        @Query('new-plan') newPlan: string,
+        @Request() req
     ): Promise<ResponseCompanyDto> {
-        const company = await this.companiesService.signPlan(id, updateCompanyDto)
-        return new ResponseCompanyDto(company)
+
+        const user = await this.usersService.findOne(req.user.userID)
+        const company = await this.companiesService.findOne(id);
+        
+        this.usersValidator.validateCompanyMembership(user, company);
+
+        const companyWithUpdatedPlan = await this.companiesService.signPlan(id, newPlan)
+        return new ResponseCompanyDto(companyWithUpdatedPlan)
     }
 }

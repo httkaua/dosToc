@@ -6,8 +6,7 @@ import { CreateUserDto } from "../dto/create-user.dto";
 import { Company } from "src/companies/entities/company.entity";
 import { UpdateUserDto } from "../dto/update-user.dto";
 
-//* ----- BUSINESS ROLES VALIDATIONS SERVICE -----
-//* ----- SEPARATED FOR BETTER ORGANIZATION -----
+//* ----- BUSINESS ROLES VALIDATIONS SERVICE ----- *//
 @Injectable()
 export class UserValidatorService {
   constructor(
@@ -29,13 +28,18 @@ export class UserValidatorService {
     }
   }
 
-  async validateCompanyMembership(user: User): Promise<Company> {
+  validateCompanyMembership(user: User, company: Company): void {
     if (!user.userCompany) {
       throw new ConflictException(
         `You do not belong to any company, so you can't create another user right now.`
       );
     }
-    return user.userCompany;
+
+    if (user.userCompany.companyID !== company.companyID) {
+      throw new ConflictException(
+        `You cannot alter or read anything for a company you do not belong to.`
+      );
+    }
   }
 
   validateSameCompany(reqUser: User, targetUser: Partial<User>): void {
@@ -76,6 +80,12 @@ export class UserValidatorService {
   generalManagerValidator(reqUser: User, targetUser: User): void {
     this.validateSameCompany(reqUser, targetUser);
     this.validateGreaterHierarchy(reqUser, targetUser);
+  }
+
+  validateDemote(reqUser: User, newClassification: number): void {
+    if (reqUser.userClassification >= newClassification) {
+      throw new ConflictException(`You can't demote to a classification equal or higher than the current.`);
+    }
   }
   
 }
