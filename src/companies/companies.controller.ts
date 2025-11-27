@@ -6,10 +6,10 @@ import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 
 @Controller('companies')
+@UseGuards(JwtAuthGuard)
 export class CompaniesController {
     constructor(private readonly companiesService: CompaniesService) {}
 
-    @UseGuards(JwtAuthGuard)
     @Post('create')
     @HttpCode(HttpStatus.CREATED)
     async create(
@@ -21,21 +21,18 @@ export class CompaniesController {
         return new ResponseCompanyDto(company);
     }
 
-    @UseGuards(JwtAuthGuard)
     @Get()
     async findAll(): Promise<ResponseCompanyDto[]> {
         const companies = await this.companiesService.findAll();
         return companies.map(company => new ResponseCompanyDto(company));
     }
 
-    @UseGuards(JwtAuthGuard)
     @Get(':id')
     async findOne(@Param('id', ParseIntPipe) id: number): Promise<ResponseCompanyDto> {
         const company = await this.companiesService.findOne(id);
         return new ResponseCompanyDto(company);
     }
 
-    @UseGuards(JwtAuthGuard)
     @Patch(':id')
     async update(
         @Param('id', ParseIntPipe) companyID: number,
@@ -50,41 +47,11 @@ export class CompaniesController {
         return new ResponseCompanyDto(company);
     }
 
-    @UseGuards(JwtAuthGuard)
-    @Delete(':id')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    async remove(
-        @Param('id', ParseIntPipe) companyID: number,
-        @Request() req
-    ): Promise<void> {
-        const ids = {
-            companyID: companyID,
-            userID: req.user.userID
-        }
-        await this.companiesService.remove(ids)
-    }
-
-    @UseGuards(JwtAuthGuard)
-    @Patch(':id/disable')
-    async disable(@Param('id', ParseIntPipe) id: number): Promise<ResponseCompanyDto> {
-        const company = await this.companiesService.softDelete(id)
-        return new ResponseCompanyDto(company)
-    }
-
-    @UseGuards(JwtAuthGuard)
-    @Patch(':id/enable')
-    async enable(@Param('id', ParseIntPipe) id: number): Promise<ResponseCompanyDto> {
-        const company = await this.companiesService.restore(id)
-        return new ResponseCompanyDto(company)
-    }
-
-    @UseGuards(JwtAuthGuard)
     @Get('plans-options')
     async viewPlans(): Promise<string> {
         return `FREE, SINGLE, BUSINESS`
     }
 
-    @UseGuards(JwtAuthGuard)
     @Post('sign-plan')
     async signPlan(
         @Param('id', ParseIntPipe) id: number,

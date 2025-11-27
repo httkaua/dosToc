@@ -7,12 +7,16 @@ import { Company } from './entities/company.entity';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { User } from 'src/users/entities/user.entity';
+import { CompanyValidatorService } from './services/company-validator.service';
+import { CompanyRepositoryService } from './services/company-repository.service';
+import { ResponseCompanyDto } from './dto/response-company.dto';
 
 @Injectable()
 export class CompaniesService {
     constructor(
         @InjectRepository(Company)
-        private readonly companyRepository: Repository<Company>,
+        private readonly validator: CompanyValidatorService,
+        private readonly companyRepositoryService: CompanyRepositoryService,
 
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
@@ -20,41 +24,32 @@ export class CompaniesService {
 
 
     async create(reqUser: Partial<User>, createCompanyDto: CreateCompanyDto): Promise<Company> {
-        const existingCompany = await this.companyRepository.findOne({
-            where: [
-                { name: createCompanyDto.name },
-                { nationalDocument: createCompanyDto.nationalDocument },
-                { phoneNumber: createCompanyDto.phoneNumber },
-                { email: createCompanyDto.email }
-            ]
-        })
-
-        if (existingCompany) {
-            throw new ConflictException('Company with this name, document, phoneNumber or email already exists')
-        }
 
         if (!reqUser || !reqUser.userID) {
-            throw new NotFoundException('User not found. Please logout, then login again.')
+            throw new ForbiddenException('User forbidden. Please logout, then login again.')
         }
 
+        await this.validator.validateUniqueCompany(createCompanyDto);
+
         const user = await this.userRepository.findOne({
-            where: { userID: reqUser.userID }
+            where: { userID: reqUser.userID },
+            relations: ['userCompany', 'underManagement']
         });
 
         if (!user) {
-            throw new NotFoundException('User not found. Please logout, then login again. 2000X')
+            throw new NotFoundException('User not found. Please logout, then login again.')
         }
 
-        if (user.userCompany) {
-            throw new ConflictException('You already have a company. If you are sure creating this, delete the current company so.')
+        if (user.userCompany || user.underManagement.length > 0) {
+            throw new ConflictException('You already have a company or subordinates. If you are sure creating this, at first redistribute your employees.')
         }
 
-        const newCompany = this.companyRepository.create({
+        const newCompany = this.companyRepositoryService.create({
             ...createCompanyDto,
             owner: user
         })
 
-        const savedCompany = await this.companyRepository.save(newCompany);
+        const savedCompany = await this.companyRepositoryService.save(await newCompany);
 
         user.userCompany = savedCompany;
         await this.userRepository.save(user);
@@ -62,77 +57,32 @@ export class CompaniesService {
         return savedCompany
     }
 
-    async findAll(): Promise<Company[]> {
-        return await this.companyRepository.find({
-            order: { createdAt: 'DESC' },
-            relations: ['owner', 'assistants', 'agents']
-        })
+    async findAll(): Promise<ResponseCompanyDto[]> {
+        return await this.companyRepositoryService.findAll(['supervisors', 'assistants', 'agents'])
     }
 
     async findOne(id: number): Promise<Company> {
-        const company = await this.companyRepository.findOne({
-            where: { companyID: id },
-            relations: ['owner', 'assistants', 'agents']
-        })
+        const company = await this.companyRepositoryService.findById(id, ['supervisors', 'agents', 'assistants']);
 
         if (!company) {
-            throw new ConflictException(`Company with id ${id} not found`)
+            throw new NotFoundException(`Company with ID ${id} not found.`)
         }
 
         return company
     }
 
     async update(ids: Record<string, any>, updateCompanyDto: UpdateCompanyDto): Promise<Company> {
-        const company = await this.findOne(ids.companyID);
+        const company = await this.companyRepositoryService.findById(ids.companyID, ['supervisors', 'agents', 'assistants']);
 
         if (updateCompanyDto.name || updateCompanyDto.email || updateCompanyDto.nationalDocument || updateCompanyDto.phoneNumber) {
-            const conflictCompany = await this.companyRepository.findOne({
-                where: [
-                    updateCompanyDto.name ? { name: updateCompanyDto.name } : {},
-                    updateCompanyDto.email ? { email: updateCompanyDto.email } : {},
-                    updateCompanyDto.nationalDocument ? { nationalDocument: updateCompanyDto.nationalDocument } : {},
-                    updateCompanyDto.phoneNumber ? { phoneNumber: updateCompanyDto.phoneNumber } : {},
-                ]
-            });
-
-        if (conflictCompany && conflictCompany.companyID !== ids.companyID) {
-            throw new ConflictException('User with this name, email, document, or phone already exists');
-            }
+            await this.validator.validateUniqueCompany({...updateCompanyDto} as CreateCompanyDto);
         }
 
-        if (updateCompanyDto.signPlan && company.signPlan !== updateCompanyDto.signPlan) {
-            throw new ConflictException(`You can't update your plan here. Please go to 'companies/sign-plan'.`)
-        }
+        this.validator.validateSignPlanNotChanged(updateCompanyDto);
+        this.validator.validateMembersNotChanged(updateCompanyDto);
 
         Object.assign(company, updateCompanyDto);
-        return await this.companyRepository.save(company);
-    }
-
-    async remove(ids: Record<string, any>): Promise<void> {
-        console.log(ids)
-        const user = await this.userRepository.findOne({
-            where: { userID: 1 }
-        })
-        
-        if (!user) {
-            throw new NotFoundException(`User not found.`)
-        }
-
-        const company = await this.findOne(ids.companyID)
-        await this.companyRepository.remove(company)
-
-    }
-
-    async softDelete(id: number): Promise<Company> {
-        const company = await this.findOne(id)
-        company.enabled = false
-        return await this.companyRepository.save(company)
-    }
-
-    async restore(id: number): Promise<Company> {
-        const company = await this.findOne(id)
-        company.enabled = true
-        return await this.companyRepository.save(company)
+        return await this.companyRepositoryService.save(company);
     }
 
     async signPlan(id: number, updateCompanyDto: UpdateCompanyDto): Promise<Company> {
@@ -143,7 +93,7 @@ export class CompaniesService {
         }
 
         company.signPlan = updateCompanyDto.signPlan
-        return this.companyRepository.save(company)
+        return this.companyRepositoryService.save(company)
     }
 
 }
