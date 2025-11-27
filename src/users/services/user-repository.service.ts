@@ -11,7 +11,7 @@ export class UserRepositoryService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async findById(id: number, relations: string[] = []): Promise<User> {
+  async findById(id: number, relations: string[]): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { userID: id },
       relations,

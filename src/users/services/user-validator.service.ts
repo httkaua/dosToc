@@ -74,7 +74,6 @@ export class UserValidatorService {
   }
 
   generalManagerValidator(reqUser: User, targetUser: User): void {
-    console.log(reqUser, targetUser)
     this.validateSameCompany(reqUser, targetUser);
     this.validateGreaterHierarchy(reqUser, targetUser);
   }

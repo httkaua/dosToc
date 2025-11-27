@@ -14,7 +14,6 @@ import {
   ParseIntPipe,
   Query,
   UseGuards,
-  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -28,57 +27,10 @@ import { UserValidatorService } from './services/user-validator.service';
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
-    private readonly userValidatorService: UserValidatorService
+    private readonly userValidatorService: UserValidatorService,
   ) {}
 
-  //* ----- TEAM ENDPOINTS ----- *//
-  @UseGuards(JwtAuthGuard)
-  @Get('team')
-  @HttpCode(HttpStatus.OK)
-  async getMyTeam(@Request() req): Promise<ResponseUserDto[]> {    
-      const managerID = Number(req.user.userID);
-      
-      const teamMembers = await this.usersService.findAllTeamMembers(managerID);
-      return teamMembers
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('team/all-company-members')
-  async findAllCompanyMembers(
-    @Request() req
-  ): Promise<ResponseUserDto[]> {
-    console.log(req.user.userID)
-    const user = await this.usersService.findOne(req.user.userID);
-    const users = await this.usersService.findAllCompanyMembers(user.userCompany.companyID);
-    return users
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('team/add-to-team')
-  @HttpCode(HttpStatus.OK)
-  async addToTeam(
-    @Query('managerId', ParseIntPipe) managerId: number,
-    @Query('employeeId', ParseIntPipe) employeeId: number,
-    @Request() req,
-  ): Promise<ResponseUserDto> {
-
-    const employee = await this.usersService.addEmployeeToTeam(managerId, employeeId);
-    return new ResponseUserDto(employee);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Patch('team/remove-from-the-team')
-  @HttpCode(HttpStatus.OK)
-  async removeFromTeam(
-    @Query('managerId', ParseIntPipe) managerId: number,
-    @Query('employeeId', ParseIntPipe) employeeId: number,
-    @Request() req
-  ): Promise<ResponseUserDto> {
-    const employee = await this.usersService.removeEmployeeFromTeam(managerId, employeeId);
-    return new ResponseUserDto(employee);
-  }
-
-  //* ----- USER ENDPOINTS ----- *//
+  //* ----- USER CREATION ENDPOINTS ----- *//
   @Post('create')
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createUserDto: CreateUserDto): Promise<ResponseUserDto> {
@@ -91,10 +43,12 @@ export class UsersController {
   @HttpCode(HttpStatus.CREATED)
   async createByManager(
     @Body() createUserDto: CreateUserDto,
-    @Request() req
+    @Request() req,
   ): Promise<ResponseUserDto> {
-    const reqUser = req.user;
-    const user = await this.usersService.createByManager(createUserDto, reqUser);
+    const user = await this.usersService.createByManager(
+      createUserDto,
+      req.user,
+    );
     return new ResponseUserDto(user);
   }
 
@@ -104,21 +58,28 @@ export class UsersController {
   async createDevUser(
     @Body() createUserDto: CreateUserDto,
     @Request() req,
-    @Query() query: Record<string, any>
+    @Query() query: Record<string, any>,
   ): Promise<ResponseUserDto> {
-    const user = await this.usersService.createDevUser(createUserDto, req.user, query);
+    const user = await this.usersService.createDevUser(
+      createUserDto,
+      req.user,
+      query,
+    );
     return new ResponseUserDto(user);
   }
 
+  //* ----- USER QUERY ENDPOINTS ----- *//
   @UseGuards(JwtAuthGuard)
   @Get()
+  @HttpCode(HttpStatus.OK)
   async findAll(): Promise<ResponseUserDto[]> {
     const users = await this.usersService.findAll();
-    return users.map(user => new ResponseUserDto(user));
+    return users;
   }
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
+  @HttpCode(HttpStatus.OK)
   async findOne(
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
@@ -126,39 +87,76 @@ export class UsersController {
     const reqUser = await this.usersService.findOne(req.user.userID);
     const targetUser = await this.usersService.findOne(id);
 
-    if (reqUser.userID == targetUser.userID) {
-      return new ResponseUserDto(targetUser)
+    if (reqUser.userID === targetUser.userID) {
+      return new ResponseUserDto(targetUser);
     }
 
-    this.userValidatorService.generalManagerValidator(reqUser, targetUser)
+    this.userValidatorService.generalManagerValidator(reqUser, targetUser);
     return new ResponseUserDto(targetUser);
   }
 
+  //* ----- USER UPDATE ENDPOINTS ----- *//
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
+  @HttpCode(HttpStatus.OK)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
-    @Request() req
+    @Request() req,
   ): Promise<ResponseUserDto> {
     const reqUser = await this.usersService.findOne(req.user.userID);
     const targetUser = await this.usersService.findOne(id);
-    const ids = {
-      reqUser: req.user.userID,
-      userToUpdate: id
-    };
 
-    if (reqUser.userID == targetUser.userID) {
-      const user = await this.usersService.update(ids, updateUserDto);
-      return new ResponseUserDto(user);
+    if (reqUser.userID !== targetUser.userID) {
+      this.userValidatorService.generalManagerValidator(reqUser, targetUser);
     }
 
-    this.userValidatorService.generalManagerValidator(reqUser, targetUser)
+    const ids = {
+      reqUser: req.user.userID,
+      userToUpdate: id,
+    };
 
     const user = await this.usersService.update(ids, updateUserDto);
     return new ResponseUserDto(user);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/disable')
+  @HttpCode(HttpStatus.OK)
+  async disable(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req,
+  ): Promise<ResponseUserDto> {
+    const reqUser = await this.usersService.findOne(req.user.userID);
+    const targetUser = await this.usersService.findOne(id);
+
+    if (reqUser.userID !== targetUser.userID) {
+      this.userValidatorService.generalManagerValidator(reqUser, targetUser);
+    }
+
+    const user = await this.usersService.softDelete(id);
+    return new ResponseUserDto(user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/enable')
+  @HttpCode(HttpStatus.OK)
+  async enable(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req,
+  ): Promise<ResponseUserDto> {
+    const reqUser = await this.usersService.findOne(req.user.userID);
+    const targetUser = await this.usersService.findOne(id);
+
+    if (reqUser.userID !== targetUser.userID) {
+      this.userValidatorService.generalManagerValidator(reqUser, targetUser);
+    }
+
+    const user = await this.usersService.restore(id);
+    return new ResponseUserDto(user);
+  }
+
+  //* ----- USER DELETION ENDPOINT ----- *//
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -169,55 +167,10 @@ export class UsersController {
     const reqUser = await this.usersService.findOne(req.user.userID);
     const targetUser = await this.usersService.findOne(id);
 
-    if (reqUser.userID == targetUser.userID) {
-      const user = await this.usersService.findOne(id);
-      await this.usersService.remove(user.userID);
+    if (reqUser.userID !== targetUser.userID) {
+      this.userValidatorService.generalManagerValidator(reqUser, targetUser);
     }
 
-    this.userValidatorService.generalManagerValidator(reqUser, targetUser)
-
-    const user = await this.usersService.findOne(id);
-    await this.usersService.remove(user.userID);
+    await this.usersService.remove(targetUser.userID);
   }
-
-  @UseGuards(JwtAuthGuard)
-  @Patch(':id/disable')
-  async disable(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req,
-  ): Promise<ResponseUserDto> {
-    const reqUser = await this.usersService.findOne(req.user.userID);
-    const targetUser = await this.usersService.findOne(id);
-
-    if (reqUser.userID == targetUser.userID) {
-      const user = await this.usersService.softDelete(id);
-      return new ResponseUserDto(user);
-    }
-
-    this.userValidatorService.generalManagerValidator(reqUser, targetUser)
-
-    const user = await this.usersService.softDelete(id);
-    return new ResponseUserDto(user);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Patch(':id/enable')
-  async enable(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req,
-  ): Promise<ResponseUserDto> {
-    const reqUser = await this.usersService.findOne(req.user.userID);
-    const targetUser = await this.usersService.findOne(id);
-
-    if (reqUser.userID == targetUser.userID) {
-      const user = await this.usersService.restore(id);
-      return new ResponseUserDto(user);
-    }
-
-    this.userValidatorService.generalManagerValidator(reqUser, targetUser)
-
-    const user = await this.usersService.restore(id);
-    return new ResponseUserDto(user);
-  }
-
 }

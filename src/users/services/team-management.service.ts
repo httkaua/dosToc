@@ -3,12 +3,13 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "../entities/user.entity";
 import { Repository } from "typeorm";
 import { ResponseUserDto } from "../dto/response-user.dto";
+import { UserValidatorService } from "./user-validator.service";
 
 @Injectable()
 export class TeamManagementService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly userRepository: Repository<User>
   ) {}
 
   async findAllTeamMembers(managerId: number): Promise<ResponseUserDto[]> {
@@ -51,10 +52,13 @@ export class TeamManagementService {
     if (!fullManager || !fullEmployee) {
       throw new NotFoundException('Manager or employee not found.');
     }
-
     
     if (fullEmployee.userID == fullManager.userID) {
       return fullEmployee;
+    }
+
+    if (fullEmployee.manager && fullEmployee.manager.userID === fullManager.userID) {
+      throw new ConflictException('This employee is already managed by the specified manager.');
     }
 
     fullEmployee.manager = fullManager;
@@ -91,5 +95,39 @@ export class TeamManagementService {
 
     await this.userRepository.save(fullManager);
     return await this.userRepository.save(fullEmployee);
+  }
+
+  async redistributeEmployees(fromManager: User, toManager: User): Promise<void> {
+    if (!fromManager || !toManager) {
+      throw new NotFoundException('One or both managers not found.');
+    }
+
+    const fullFromManager = await this.userRepository.findOne({
+      where: { userID: fromManager.userID },
+      relations: ['underManagement']
+    });
+
+    const fullToManager = await this.userRepository.findOne({
+      where: { userID: toManager.userID },
+      relations: ['underManagement']
+    });
+
+    if (!fullFromManager || !fullToManager) {
+      throw new NotFoundException('One or both managers not found.');
+    }
+
+    for (const employee of fullFromManager.underManagement) {
+      employee.manager = fullToManager;
+      await this.userRepository.save(employee);
+    }
+
+    fullToManager.underManagement = [
+      ...fullToManager.underManagement,
+      ...fullFromManager.underManagement
+    ];
+    fullFromManager.underManagement = [];
+
+    await this.userRepository.save(fullToManager);
+    await this.userRepository.save(fullFromManager);
   }
 }

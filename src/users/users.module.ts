@@ -8,10 +8,14 @@ import { UserRepositoryService } from './services/user-repository.service';
 import { UserValidatorService } from './services/user-validator.service';
 import { UserTransformerService } from './services/user-transformer.service';
 import { TeamManagementService } from './services/team-management.service';
+import { TeamsController } from './users-team.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, Company])],
-  controllers: [UsersController],
+  controllers: [
+    TeamsController,
+    UsersController,
+  ],
   providers: [
     UsersService,
     UserRepositoryService,

@@ -30,12 +30,16 @@ export class UsersService {
   async addEmployeeToTeam(managerId: number, employeeId: number): Promise<User> {
     const manager = await this.findOne(managerId);
     const employee = await this.findOne(employeeId);
+    this.validator.validateSameCompany(manager, employee);
+    this.validator.validateGreaterHierarchy(manager, employee);
     return this.teamManagement.addEmployeeToManager(manager, employee);
   }
 
   async removeEmployeeFromTeam(managerId: number, employeeId: number): Promise<User> {
     const manager = await this.findOne(managerId);
     const employee = await this.findOne(employeeId);
+    this.validator.validateSameCompany(manager, employee);
+    this.validator.validateGreaterHierarchy(manager, employee);
     return this.teamManagement.removeEmployeeFromManager(manager, employee);
   }
 
@@ -120,8 +124,18 @@ export class UsersService {
     return targetUser
   }
 
-  async findAll(): Promise<User[]> {
-    return this.userRepositoryService.findAll(['userCompany']);
+  async findAll(): Promise<ResponseUserDto[]> {
+    const users = await this.userRepositoryService.findAll([
+      'userCompany',
+      'manager',
+      'underManagement'
+    ]);
+
+    if (!users || users.length === 0) {
+      throw new NotFoundException('No users found');
+    }
+
+    return users.map(user => new ResponseUserDto(user));
   }
 
   async findOne(id: number): Promise<User> {
@@ -148,13 +162,27 @@ export class UsersService {
   }
 
   async remove(id: number): Promise<void> {
-    const user = await this.findOne(id);
+    const user = await this.userRepositoryService.findById(id, ['manager']);
+
+    if (!user.manager) {
+      throw new ConflictException('Cannot delete a user without a manager.');
+    }
+
+    if (user.underManagement && user.underManagement.length > 0) {
+      await this.teamManagement.redistributeEmployees(user, user.manager);
+    }
+
     user.userClassification = 7;
     await this.userRepositoryService.remove(user);
   }
 
   async restore(id: number): Promise<User> {
     const user = await this.findOne(id);
+
+    if (user.enabled == true && user.userClassification <= 6) {
+      throw new ConflictException('User is already enabled.');
+    }
+
     user.enabled = true;
     user.userClassification = 6;
     return this.userRepositoryService.save(user);
@@ -170,6 +198,7 @@ export class UsersService {
 
     await this.validator.validateUniqueUser(updateUserDto, ids.userToUpdate);
     this.validator.validateSameCompany(reqUser, userToUpdate);
+    this.validator.validateGreaterOrSameHierarchy(reqUser, userToUpdate);
 
     if (updateUserDto.username) {
       updateUserDto['searchableName'] = this.transformer.generateSearchableName(
@@ -182,10 +211,18 @@ export class UsersService {
   }
 
   async softDelete(id: number): Promise<User> {
-    const user = await this.userRepositoryService.findById(id);
-    
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+    const user = await this.userRepositoryService.findById(id, ['manager']);
+
+    if (!user.manager) {
+      throw new ConflictException('Cannot delete a user without a manager.');
+    }
+
+    if (user.underManagement && user.underManagement.length > 0) {
+      await this.teamManagement.redistributeEmployees(user, user.manager);
+    }
+
+    if (user.enabled == false && user.userClassification == 7) {
+      throw new ConflictException('User is already disabled.');
     }
 
     user.enabled = false;
@@ -193,11 +230,11 @@ export class UsersService {
     return this.userRepositoryService.save(user);
   }
 
-  async findAllCompanyMembers(id: number): Promise<ResponseUserDto[]> {
-    const user = await this.findOne(id);
+  async findAllCompanyMembers(userID: number, companyID: number): Promise<ResponseUserDto[]> {
+    const user = await this.findOne(userID);
     this.validator.validateCompanyMembership(user);
 
-    const companyMembers = await this.userRepositoryService.findAllCompanyMembers(id);
+    const companyMembers = await this.userRepositoryService.findAllCompanyMembers(companyID);
     return companyMembers;
   }
 
