@@ -16,7 +16,6 @@ import { CompaniesService } from 'src/companies/companies.service';
 
 @Injectable()
 export class UsersService {
-  userValidator: any;
   constructor(
     private readonly userRepositoryService: UserRepositoryService,
     private readonly validator: UserValidatorService,
@@ -251,6 +250,14 @@ export class UsersService {
 
     const companyMembers = await this.userRepositoryService.findAllCompanyMembers(companyID);
     return companyMembers;
+  }
+
+  async findAllManagersOfUser(reqUser: User): Promise<User[]> {
+    return this.userRepositoryService.findAllManagersOfUser(reqUser);
+  }
+
+  async validateDemote(user: User, newClassification: number): Promise<void> {
+    this.validator.validateDemote(user, newClassification);
   }
 
 }

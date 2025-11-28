@@ -50,4 +50,7 @@ export class CompanyValidatorService {
         }
     }
 
+    async validateCompanyPermissions() {
+        
+    }
 }

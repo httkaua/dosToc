@@ -63,21 +63,34 @@ export class UserRepositoryService {
     await this.userRepository.remove(user);
   }
 
-async findAllCompanyMembers(id: number): Promise<ResponseUserDto[]> {
-  const users = await this.userRepository.find({
-    where: { userCompany: { companyID: id } },
-    relations: ['manager', 'underManagement'],
-    order: { createdAt: 'DESC' }
-  });
+  async findAllCompanyMembers(id: number): Promise<ResponseUserDto[]> {
+    const users = await this.userRepository.find({
+      where: { userCompany: { companyID: id } },
+      relations: ['manager', 'underManagement'],
+      order: { createdAt: 'DESC' }
+    });
 
-  if (!users || users.length === 0) {
-    throw new NotFoundException(`No users found for company with ID ${id}.`);
+    if (!users || users.length === 0) {
+      throw new NotFoundException(`No users found for company with ID ${id}.`);
+    }
+
+    return users.map(user => ({
+      ...user,
+      manager: user.manager?.userID,
+      underManagement: user.underManagement?.map(member => member.userID) || [],
+    }));
   }
 
-  return users.map(user => ({
-    ...user,
-    manager: user.manager?.userID,
-    underManagement: user.underManagement?.map(member => member.userID) || [],
-  }));
-}
+  async findAllManagersOfUser(reqUser: User): Promise<User[]> {
+    const managers = await this.userRepository
+      .createQueryBuilder('user')
+      .innerJoin('user.underManagement', 'underManagement', 'underManagement.userID = :userID', { userID: reqUser.userID })
+      .getMany();
+
+    if (!managers || managers.length === 0) {
+      throw new NotFoundException(`No managers found for user with ID ${reqUser.userID}.`);
+    }
+
+    return managers;
+  }
 }

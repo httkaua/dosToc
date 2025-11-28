@@ -9,41 +9,35 @@ export class Lead {
   leadID: number;
 
   @Column({
-    length: 500,
-    unique: true,
-    nullable: false,
-    update: false,
+    length: 120,
+    nullable: false
   })
   name: string;
 
   @Column({
-    length: 500,
-    unique: true,
-    nullable: false,
-    update: false,
+    length: 120,
+    nullable: false
   })
   searchableName: string;
 
   @Column({
-    length: 500,
+    length: 50,
     unique: true,
-    nullable: false,
+    nullable: true,
   })
   nationalDocument: string;
 
   @Column({
     length: 18,
-    unique: true,
     nullable: false,
   })
   phoneNumber: string;
 
   @Column({
     length: 80,
-    unique: true,
     nullable: false,
   })
-  email: string; 
+  email: string;
 
   @Column("text", {
     array: true,
@@ -116,7 +110,7 @@ export class Lead {
     scale: 2,
     nullable: true,
   })
-  realEstateMaxMonthlyFee: number; 
+  realEstateMaxMonthlyFee: number;
 
   @Column({
     type: 'enum',
@@ -146,7 +140,8 @@ export class Lead {
       'SCHEDULED VISIT',
       'FINANCIAL CONSTRAINT',
       'FUTURE CONTACT',
-      'DISCARDED'
+      'DISCARDED',
+      'IS A REAL ESTATE AGENT'
     ],
     nullable: false,
     default: 'NEW',
@@ -189,6 +184,12 @@ export class Lead {
   @ManyToOne(() => Company, (company) => company.leadCompanyOf, { nullable: true })
   @JoinColumn({ name: 'companyID' })
   leadCompany: Company;
+
+  @Column({
+    nullable: false,
+    default: false
+  })
+  doNotContact: boolean;
 
   @CreateDateColumn({ name: "createdAt" })
   createdAt: Date;

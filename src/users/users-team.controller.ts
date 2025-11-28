@@ -102,7 +102,7 @@ export class TeamsController {
     }
 
     const user = await this.usersService.findOne(req.user.userID);
-    this.usersService.userValidator.validateDemote(user, newClassification);
+    this.usersService.validateDemote(user, newClassification);
 
     await this.companiesService.assignMemberToPosition(ids, newClassification);
 

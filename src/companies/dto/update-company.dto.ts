@@ -1,4 +1,4 @@
-import { IsEmail, IsString, IsNotEmpty, MinLength, MaxLength, IsOptional, IsNumber, IsArray, IsBoolean, IsPositive, IsInt } from 'class-validator';
+import { IsEmail, IsString, IsNotEmpty, MinLength, MaxLength, IsOptional, IsNumber, IsArray, IsBoolean, IsPositive, IsInt, IsIn } from 'class-validator';
 import { PartialType, OmitType } from '@nestjs/mapped-types';
 import { CreateCompanyDto } from './create-company.dto';
 import { User } from 'src/users/entities/user.entity';
@@ -29,6 +29,11 @@ export class UpdateCompanyDto extends PartialType(CreateCompanyDto) {
 
     @IsString()
     @IsOptional()
+    @IsIn([
+    'FREE',
+    'SINGLE',
+    'BUSINESS'
+    ])
     signPlan?: string
 
     @IsString()
