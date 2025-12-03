@@ -1,5 +1,49 @@
-import { IsEmail, IsString, IsNotEmpty, MinLength, MaxLength, IsOptional, IsNumber, IsArray } from 'class-validator';
-import { User } from 'src/users/entities/user.entity';
+import { Type } from 'class-transformer';
+import { IsEmail, IsString, IsNotEmpty, MinLength, MaxLength, IsOptional, IsNumber, IsArray, IsObject, ValidateNested, IsBoolean } from 'class-validator';
+
+class SupervisorPermissionsDto {
+    @IsBoolean()
+    deleteUser: boolean;
+
+    @IsBoolean()
+    changeQueueOrder: boolean;
+}
+
+class AgentPermissionsDto {
+    @IsBoolean()
+    createRealEstate: boolean;
+
+    @IsBoolean()
+    deleteRealEstate: boolean;
+}
+
+class AssistantPermissionsDto {
+    @IsBoolean()
+    createRealEstate: boolean;
+
+    @IsBoolean()
+    deleteRealEstate: boolean;
+}
+
+class NotificationSettingsDto {
+    @IsBoolean()
+    UserInactivity5days: boolean;
+
+    @IsBoolean()
+    NoRespondLeads: boolean;
+
+    @IsBoolean()
+    DailySummary: boolean;
+
+    @IsBoolean()
+    UserTasksDue: boolean;
+
+    @IsBoolean()
+    LeadsCriticalUpdates: boolean;
+
+    @IsBoolean()
+    RealEtateValueUpdates: boolean;
+}
 
 export class CreateCompanyDto {
 
@@ -70,5 +114,25 @@ export class CreateCompanyDto {
     @MinLength(3)
     @MaxLength(100)
     country: string
+
+    @IsObject()
+    @Type(() => SupervisorPermissionsDto)
+    @ValidateNested()
+    supervisorPermissions?: SupervisorPermissionsDto;
+
+    @IsObject()
+    @Type(() => AgentPermissionsDto)
+    @ValidateNested()
+    agentPermissions?: AgentPermissionsDto;
+
+    @IsObject()
+    @Type(() => AssistantPermissionsDto)
+    @ValidateNested()
+    assistantPermissions?: AssistantPermissionsDto;
+
+    @IsObject()
+    @Type(() => NotificationSettingsDto)
+    @ValidateNested()
+    notificationSettings?: NotificationSettingsDto;
 
 }

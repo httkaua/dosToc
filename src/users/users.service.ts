@@ -174,12 +174,14 @@ export class UsersService {
     return this.userRepositoryService.findByEmail(email);
   }
 
-  async remove(id: number): Promise<void> {
-    const user = await this.userRepositoryService.findById(id, ['manager']);
+  async remove(reqUser: number, targetUser: number): Promise<void> {
+    const user = await this.userRepositoryService.findById(targetUser, ['manager', 'userCompany']);
 
     if (!user.manager) {
       throw new ConflictException('Cannot delete a user without a manager.');
     }
+
+    await this.companiesService.validateSupervisorToDeleteUser(user, user.userCompany)
 
     if (user.underManagement && user.underManagement.length > 0) {
       await this.teamManagement.redistributeEmployees(user, user.manager);

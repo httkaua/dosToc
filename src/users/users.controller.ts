@@ -171,6 +171,6 @@ export class UsersController {
       this.userValidatorService.generalManagerValidator(reqUser, targetUser);
     }
 
-    await this.usersService.remove(targetUser.userID);
+    await this.usersService.remove(req.user.userID, targetUser.userID);
   }
 }

@@ -10,12 +10,14 @@ import { User } from 'src/users/entities/user.entity';
 import { CompanyValidatorService } from './services/company-validator.service';
 import { CompanyRepositoryService } from './services/company-repository.service';
 import { ResponseCompanyDto } from './dto/response-company.dto';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class CompaniesService {
     constructor(
         private readonly validator: CompanyValidatorService,
         private readonly companyRepositoryService: CompanyRepositoryService,
+        private readonly usersService: UsersService,
 
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
@@ -173,6 +175,30 @@ export class CompaniesService {
                 await this.companyRepositoryService.save(company);
                 break;
         }
+    }
+
+    async validateSupervisorToDeleteUser(user: User, company: Company): Promise<void> {
+        this.validator.validateSupervisorToDeleteUser(user, company)
+    }
+
+    async validateSupervisorToChangeQueueOrder(user: User, company: Company): Promise<void> {
+        this.validator.validateSupervisorToChangeQueueOrder(user, company)
+    }
+
+    async validateAgentToCreateRealEstate(user: User, company: Company): Promise<void> {
+        this.validator.validateAgentToCreateRealEstate(user, company)
+    }
+
+    async validateAgentToDeleteRealEstate(user: User, company: Company): Promise<void> {
+        this.validator.validateAgentToDeleteRealEstate(user, company)
+    }
+
+    async validateAssistantToCreateRealEstate(user: User, company: Company): Promise<void> {
+        this.validator.validateAssistantToCreateRealEstate(user, company)
+    }
+
+    async validateAssistantToDeleteRealEstate(user: User, company: Company): Promise<void> {
+        this.validator.validateAssistantToDeleteRealEstate(user, company)
     }
 
 }

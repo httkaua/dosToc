@@ -1,9 +1,11 @@
-import { ConflictException, Injectable } from "@nestjs/common";
+import { ConflictException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { CreateCompanyDto } from "../dto/create-company.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Company } from "../entities/company.entity";
 import { Repository } from "typeorm";
 import { UpdateCompanyDto } from "../dto/update-company.dto";
+import { User } from "src/users/entities/user.entity";
+import { NotFoundError } from "rxjs";
 
 
 @Injectable()
@@ -50,7 +52,63 @@ export class CompanyValidatorService {
         }
     }
 
-    async validateCompanyPermissions() {
-        
+    validateSupervisorToDeleteUser(user: User, company: Company): void {
+        if (user.userClassification !== 4) {
+            return
+        }
+
+        if (!company.supervisorPermissions.deleteUser) {
+            throw new UnauthorizedException(`Supervisors can't delete users. Please contact your manager.`)
+        }
+    }
+
+    validateSupervisorToChangeQueueOrder(user: User, company: Company): void {
+        if (user.userClassification !== 4) {
+            return
+        }
+
+        if (!company.supervisorPermissions.deleteUser) {
+            throw new UnauthorizedException(`Supervisors can't change the queue order. Please contact your manager.`)
+        }
+    }
+
+    validateAgentToCreateRealEstate(user: User, company: Company): void {
+        if (user.userClassification !== 5) {
+            return
+        }
+
+        if (!company.agentPermissions.createRealEstate) {
+            throw new UnauthorizedException(`Agents can't register real estates. Please contact your manager.`)
+        }
+    }
+
+    validateAgentToDeleteRealEstate(user: User, company: Company): void {
+        if (user.userClassification !== 5) {
+            return
+        }
+
+        if (!company.agentPermissions.deleteRealEstate) {
+            throw new UnauthorizedException(`Agents can't delete real estates. Please contact your manager.`)
+        }
+    }
+
+    validateAssistantToCreateRealEstate(user: User, company: Company): void {
+        if (user.userClassification !== 6) {
+            return
+        }
+
+        if (!company.agentPermissions.createRealEstate) {
+            throw new UnauthorizedException(`Assistants can't register real estates. Please contact your manager.`)
+        }
+    }
+
+    validateAssistantToDeleteRealEstate(user: User, company: Company): void {
+        if (user.userClassification !== 6) {
+            return
+        }
+
+        if (!company.agentPermissions.deleteRealEstate) {
+            throw new UnauthorizedException(`Assistants can't delete real estates. Please contact your manager.`)
+        }
     }
 }
