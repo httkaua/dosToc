@@ -88,6 +88,15 @@ export class LeadsController {
     return await this.leadsService.doNotCallTrue(id, req.user);
   }
 
+  @Patch(':id/do-not-call-anymore-false')
+  @HttpCode(HttpStatus.OK)
+  async doNotCallFalse(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req,
+  ): Promise<ResponseLeadDto> {
+    return await this.leadsService.doNotCallFalse(id, req.user);
+  }
+
   //* ----- LEAD DELETION ENDPOINT ----- *//
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)

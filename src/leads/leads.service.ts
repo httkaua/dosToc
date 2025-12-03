@@ -93,7 +93,7 @@ export class LeadsService {
     }
 
     async disable(id: number, reqUser: User): Promise<Lead> {
-        const lead = await this.leadRepositoryService.findById(id, ['leadCompany']);
+        const lead = await this.leadRepositoryService.findById(id, ['leadCompany', 'attendingUser']);
 
         if (!lead) {
             throw new NotFoundException(`Lead ${id} not found`)
@@ -113,7 +113,7 @@ export class LeadsService {
     }
 
     async enable(id: number, reqUser: User): Promise<Lead> {
-        const lead = await this.leadRepositoryService.findById(id, ['leadCompany']);
+        const lead = await this.leadRepositoryService.findById(id, ['leadCompany', 'attendingUser']);
 
         if (!lead) {
             throw new NotFoundException(`Lead ${id} not found`)
@@ -133,7 +133,7 @@ export class LeadsService {
     }
 
     async doNotCallTrue(id: number, reqUser: User): Promise<Lead> {
-        const lead = await this.leadRepositoryService.findById(id, ['leadCompany']);
+        const lead = await this.leadRepositoryService.findById(id, ['leadCompany', 'attendingUser']);
 
         if (!lead) {
             throw new NotFoundException(`Lead ${id} not found`)
@@ -152,8 +152,28 @@ export class LeadsService {
         return this.leadRepositoryService.save(lead);
     }
 
+    async doNotCallFalse(id: number, reqUser: User): Promise<Lead> {
+        const lead = await this.leadRepositoryService.findById(id, ['leadCompany', 'attendingUser']);
+
+        if (!lead) {
+            throw new NotFoundException(`Lead ${id} not found`)
+        }
+
+        if (lead.doNotContact == false) {
+            return lead;
+        }
+
+        const managers = await this.usersService.findAllManagersOfUser(lead.attendingUser);
+        const allowedUsers = [...managers, lead.attendingUser];
+
+        await this.validator.validateLeadsAccess(allowedUsers, reqUser);
+
+        lead.doNotContact = false;
+        return this.leadRepositoryService.save(lead);
+    }
+
     async remove(id: number, reqUser: User): Promise<void> {
-        const lead = await this.leadRepositoryService.findById(id, ['leadCompany']);
+        const lead = await this.leadRepositoryService.findById(id, ['leadCompany', 'attendingUser']);
 
         if (!lead) {
             throw new NotFoundException(`Lead ${id} not found`)

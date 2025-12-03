@@ -17,7 +17,6 @@ export class CompaniesService {
     constructor(
         private readonly validator: CompanyValidatorService,
         private readonly companyRepositoryService: CompanyRepositoryService,
-        private readonly usersService: UsersService,
 
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
