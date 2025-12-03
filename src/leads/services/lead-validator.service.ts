@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Lead } from '../entities/lead.entity';
 import { LeadRepositoryService } from './lead-repository.service';
 import { Repository } from 'typeorm';
@@ -24,13 +24,13 @@ export class LeadValidatorService {
         });
 
         if (existingLead.length > 0) {
-            throw new Error('Lead with this phone number already exists in the company');
+            throw new ConflictException('Lead with this phone number already exists in the company');
         }
     }
 
     async validateLeadsAccess(allowedUsers: User[] , reqUser: User): Promise<void> {
         if (!allowedUsers.some(user => user.userID === reqUser.userID)) {
-            throw new Error('Access denied to this lead');
+            throw new UnauthorizedException('Access denied to this lead');
         }
     }
 }

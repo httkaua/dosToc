@@ -82,14 +82,29 @@ export class UserRepositoryService {
   }
 
   async findAllManagersOfUser(reqUser: User): Promise<User[]> {
-    const managers = await this.userRepository
-      .createQueryBuilder('user')
-      .innerJoin('user.underManagement', 'underManagement', 'underManagement.userID = :userID', { userID: reqUser.userID })
-      .getMany();
-
-    if (!managers || managers.length === 0) {
-      throw new NotFoundException(`No managers found for user with ID ${reqUser.userID}.`);
-    }
+    const managers = await this.userRepository.query(
+      `
+      WITH RECURSIVE manager_hierarchy AS (
+        -- Base case: get direct manager
+        SELECT u.*
+        FROM "user" u
+        WHERE u."userID" = (
+          SELECT "managerID" 
+          FROM "user" 
+          WHERE "userID" = $1
+        )
+        
+        UNION ALL
+        
+        -- Recursive case: get manager's manager
+        SELECT u.*
+        FROM "user" u
+        INNER JOIN manager_hierarchy mh ON u."userID" = mh."managerID"
+      )
+      SELECT * FROM manager_hierarchy;
+      `,
+      [reqUser.userID]
+    );
 
     return managers;
   }

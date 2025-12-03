@@ -35,18 +35,29 @@ export class LeadsService {
         });
     }
 
-    async findAll(): Promise<Lead[]> {
-        return await this.leadRepositoryService.findAll();
+    async findAll(relations: string[]): Promise<Lead[]> {
+        return await this.leadRepositoryService.findAll(relations);
     }
 
-    async findAllOfMyCompany(companyID: number): Promise<Lead[]> {
-        return await this.leadRepositoryService.findAllCompanyLeads(companyID);
+    async findAllOfMyCompany(userID: number, relations: string[]): Promise<Lead[]> {
+        const user = await this.usersService.findOne(userID)
+        const companyID = user.userCompany.companyID
+
+        if (!companyID) {
+            throw new NotFoundException('Company not found.')
+        }
+
+        return await this.leadRepositoryService.findAllCompanyLeads(companyID, relations);
     }
 
     async findOne(id: number, reqUser: User): Promise<Lead> {
         const lead = await this.leadRepositoryService.findById(id, ['attendingUser']);
+
+        if (!lead) {
+            throw new NotFoundException(`Lead ${id} not found`)
+        }
+
         const managers = await this.usersService.findAllManagersOfUser(lead.attendingUser);
-        console.log(managers);
         const allowedUsers = [...managers, lead.attendingUser];
 
         await this.validator.validateLeadsAccess(allowedUsers, reqUser);
@@ -55,12 +66,21 @@ export class LeadsService {
     }
 
     async update(ids: Record<string, any>, updateLeadDto: any): Promise<Lead> {
-        const userToUpdate = await this.leadRepositoryService.findById(ids.userToUpdate, ['userCompany']);
-        const reqUser = await this.leadRepositoryService.findById(ids.reqUser, ['userCompany']);
+        const leadToUpdate = await this.leadRepositoryService.findById(ids.leadID, ['leadCompany', 'attendingUser']);
+        const reqUser = await this.usersService.findOne(ids.reqUser);
 
-        if (!userToUpdate || !reqUser) {
+        if (!reqUser) {
             throw new NotFoundException('User not found');
         }
+
+        if (!leadToUpdate) {
+            throw new NotFoundException(`Lead ${ids.leadID} not found`);
+        }
+
+        const managers = await this.usersService.findAllManagersOfUser(leadToUpdate.attendingUser);
+        const allowedUsers = [...managers, leadToUpdate.attendingUser];
+
+        await this.validator.validateLeadsAccess(allowedUsers, reqUser);
 
         if (updateLeadDto.name) {
             updateLeadDto['searchableName'] = this
@@ -68,16 +88,25 @@ export class LeadsService {
             .generateSearchableName(updateLeadDto.name);
         }
 
-        Object.assign(userToUpdate, updateLeadDto);
-        return this.leadRepositoryService.save(userToUpdate);
+        Object.assign(leadToUpdate, updateLeadDto);
+        return this.leadRepositoryService.save(leadToUpdate);
     }
 
     async disable(id: number, reqUser: User): Promise<Lead> {
         const lead = await this.leadRepositoryService.findById(id, ['leadCompany']);
 
+        if (!lead) {
+            throw new NotFoundException(`Lead ${id} not found`)
+        }
+
         if (lead.enabled == false) {
             return lead;
         }
+
+        const managers = await this.usersService.findAllManagersOfUser(lead.attendingUser);
+        const allowedUsers = [...managers, lead.attendingUser];
+
+        await this.validator.validateLeadsAccess(allowedUsers, reqUser);
 
         lead.enabled = false;
         return this.leadRepositoryService.save(lead);
@@ -86,9 +115,18 @@ export class LeadsService {
     async enable(id: number, reqUser: User): Promise<Lead> {
         const lead = await this.leadRepositoryService.findById(id, ['leadCompany']);
 
+        if (!lead) {
+            throw new NotFoundException(`Lead ${id} not found`)
+        }
+
         if (lead.enabled == true) {
             return lead;
         }
+
+        const managers = await this.usersService.findAllManagersOfUser(lead.attendingUser);
+        const allowedUsers = [...managers, lead.attendingUser];
+
+        await this.validator.validateLeadsAccess(allowedUsers, reqUser);
 
         lead.enabled = true;
         return this.leadRepositoryService.save(lead);
@@ -97,9 +135,18 @@ export class LeadsService {
     async doNotCallTrue(id: number, reqUser: User): Promise<Lead> {
         const lead = await this.leadRepositoryService.findById(id, ['leadCompany']);
 
+        if (!lead) {
+            throw new NotFoundException(`Lead ${id} not found`)
+        }
+
         if (lead.doNotContact == true) {
             return lead;
         }
+
+        const managers = await this.usersService.findAllManagersOfUser(lead.attendingUser);
+        const allowedUsers = [...managers, lead.attendingUser];
+
+        await this.validator.validateLeadsAccess(allowedUsers, reqUser);
 
         lead.doNotContact = true;
         return this.leadRepositoryService.save(lead);
@@ -107,6 +154,15 @@ export class LeadsService {
 
     async remove(id: number, reqUser: User): Promise<void> {
         const lead = await this.leadRepositoryService.findById(id, ['leadCompany']);
+
+        if (!lead) {
+            throw new NotFoundException(`Lead ${id} not found`)
+        }
+
+        const managers = await this.usersService.findAllManagersOfUser(lead.attendingUser);
+        const allowedUsers = [...managers, lead.attendingUser];
+
+        await this.validator.validateLeadsAccess(allowedUsers, reqUser);
         
         await this.leadRepositoryService.remove(lead);
     }

@@ -182,7 +182,7 @@ export class Lead {
   attendingUser: User;
 
   @ManyToOne(() => Company, (company) => company.leadCompanyOf, { nullable: true })
-  @JoinColumn({ name: 'companyID' })
+  @JoinColumn({ name: 'leadCompany' })
   leadCompany: Company;
 
   @Column({

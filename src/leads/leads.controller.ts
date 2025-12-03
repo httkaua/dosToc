@@ -26,7 +26,7 @@ export class LeadsController {
   @Get()
   @HttpCode(HttpStatus.OK)
   async findAll(): Promise<ResponseLeadDto[]> {
-    return await this.leadsService.findAll();
+    return await this.leadsService.findAll(['attendingUser', 'leadCompany', 'realEstatesInterested']);
   }
 
   @Get('in-my-company')
@@ -34,7 +34,7 @@ export class LeadsController {
   async findAllOfMyCompany(
     @Request() req
   ): Promise<ResponseLeadDto[]> {
-    return await this.leadsService.findAllOfMyCompany(req.user.userCompany.companyID);
+    return await this.leadsService.findAllOfMyCompany(req.user.userID, ['attendingUser', 'leadCompany', 'realEstatesInterested']);
   }
 
   @Get(':id')

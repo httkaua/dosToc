@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Lead } from '../entities/lead.entity';
 import { Repository } from 'typeorm';
 import { ResponseLeadDto } from '../dto/response-lead.dto';
@@ -12,15 +12,12 @@ export class LeadRepositoryService {
         private readonly leadRepository: Repository<Lead>,
     ) {}
 
-    async findById(id: number, relations: string[]): Promise<Lead> {
+    async findById(id: number, relations: string[]): Promise<Lead | null> { // <-- Note the return type change!
         const lead = await this.leadRepository.findOne({
-        where: { leadID: id },
-        relations,
+            where: { leadID: id },
+            relations,
         });
-
-        if (!lead) {
-        throw new NotFoundException(`Lead with ID ${id} not found.`);
-        }
+        
         return lead;
     }
 
@@ -36,11 +33,16 @@ export class LeadRepositoryService {
         });
     }
 
-    async findAll(relations: string[] = []): Promise<Lead[]> {
-        return this.leadRepository.find({
+    async findAll(relations: string[]): Promise<Lead[]> {
+        if (!relations) {
+            throw new ForbiddenException('Leads relations forbidden.')
+        }
+        const leads = await this.leadRepository.find({
         relations,
         order: { createdAt: 'DESC' }
         });
+
+        return leads
     }
 
     async save(lead: Lead): Promise<Lead> {
@@ -56,10 +58,10 @@ export class LeadRepositoryService {
         await this.leadRepository.remove(lead);
     }
 
-    async findAllCompanyLeads(id: number): Promise<Lead[]> {
+    async findAllCompanyLeads(id: number, relations: string[]): Promise<Lead[]> {
     const leads = await this.leadRepository.find({
         where: { leadCompany: { companyID: id } },
-        relations: ['attendingUser'],
+        relations,
         order: { createdAt: 'DESC' }
     });
 
