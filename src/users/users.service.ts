@@ -166,8 +166,8 @@ export class UsersService {
     return this.userRepositoryService.findByUsername(username);
   }
 
-  async findUserWithPassword(username: string): Promise<User | null> {
-    return this.userRepositoryService.findWithPassword(username);
+  async findUserWithPasswordByEmail(email: string): Promise<User | null> {
+    return this.userRepositoryService.findUserWithPasswordByEmail(email);
   }
 
   async findByEmail(email: string): Promise<User | null> {
