@@ -6,6 +6,8 @@ import { Lead } from './entities/lead.entity';
 import { UserValidatorService } from 'src/users/services/user-validator.service';
 import { LeadTransformerService } from './services/lead-transformer.service';
 import { UsersService } from 'src/users/users.service';
+import { UpdateLeadDto } from './dto/update-lead.dto';
+import { CreateLeadDto } from './dto/create-lead.dto';
 
 @Injectable()
 export class LeadsService {
@@ -16,7 +18,7 @@ export class LeadsService {
         private readonly transformer: LeadTransformerService,
     ) {}
 
-    async create(createLeadDto: any, reqUser: User): Promise<Lead> {
+    async create(createLeadDto: CreateLeadDto, reqUser: User): Promise<Lead> {
         const user = await this.usersService.findOne(reqUser.userID)
 
         if (!user.userCompany) {
@@ -65,7 +67,7 @@ export class LeadsService {
         return lead;
     }
 
-    async update(ids: Record<string, any>, updateLeadDto: any): Promise<Lead> {
+    async update(ids: Record<string, any>, updateLeadDto: UpdateLeadDto): Promise<Lead> {
         const leadToUpdate = await this.leadRepositoryService.findById(ids.leadID, ['leadCompany', 'attendingUser']);
         const reqUser = await this.usersService.findOne(ids.reqUser);
 

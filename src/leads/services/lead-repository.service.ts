@@ -12,7 +12,7 @@ export class LeadRepositoryService {
         private readonly leadRepository: Repository<Lead>,
     ) {}
 
-    async findById(id: number, relations: string[]): Promise<Lead | null> { // <-- Note the return type change!
+    async findById(id: number, relations: string[]): Promise<Lead | null> {
         const lead = await this.leadRepository.findOne({
             where: { leadID: id },
             relations,
