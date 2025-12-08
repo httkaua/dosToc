@@ -9,6 +9,7 @@ import { RealestateValidatorService } from './services/realestate-validator.serv
 import { RealestateRepositoryService } from './services/realestate-repository.service';
 import { Company } from 'src/companies/entities/company.entity';
 import { CompaniesModule } from 'src/companies/companies.module';
+import { RealestateIdentifierService } from './services/realestate.identifier.service';
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { CompaniesModule } from 'src/companies/companies.module';
   providers: [
     RealestatesService,
     RealestateRepositoryService,
-    RealestateValidatorService
+    RealestateValidatorService,
+    RealestateIdentifierService
   ],
 })
 export class RealestatesModule {}

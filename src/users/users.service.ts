@@ -262,4 +262,8 @@ export class UsersService {
     this.validator.validateDemote(user, newClassification);
   }
 
+  async validateCompanyMembership(user: User, company: Company) {
+    this.validator.validateCompanyMembership(user, company)
+  }
+
 }

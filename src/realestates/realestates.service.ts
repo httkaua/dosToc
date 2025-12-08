@@ -8,12 +8,14 @@ import { CreateRealestateDto } from './dto/create-realestate.dto';
 import { Company } from 'src/companies/entities/company.entity';
 import { UpdateRealestateDto } from './dto/update-realestate.dto';
 import { CompaniesService } from 'src/companies/companies.service';
+import { RealestateIdentifierService } from './services/realestate.identifier.service';
 
 @Injectable()
 export class RealestatesService {
     constructor(
         private readonly realEstateRepositoryService: RealestateRepositoryService,
         private readonly validator: RealestateValidatorService,
+        private readonly identifier: RealestateIdentifierService,
         private readonly usersService: UsersService,
         private readonly companiesService: CompaniesService
     ) {}
@@ -57,10 +59,13 @@ export class RealestatesService {
 
     async findOne(id: number, reqUser: User): Promise<RealEstate> {
         const realestate = await this.realEstateRepositoryService.findById(id, ['creatorUser', 'realEstateCompany']);
+        const user = await this.usersService.findOne(reqUser.userID)
 
         if (!realestate) {
             throw new NotFoundException(`Real estate ${id} not found`)
         }
+
+        await this.usersService.validateCompanyMembership(user, realestate.realEstateCompany)
 
         return realestate;
     }
@@ -77,16 +82,25 @@ export class RealestatesService {
             throw new NotFoundException(`Real estate ${ids.realestateID} not found`);
         }
 
+        await this.usersService.validateCompanyMembership(reqUser, realestateToUpdate.realEstateCompany)
+        await this.companiesService.validateAgentToCreateRealEstate(reqUser, realestateToUpdate.realEstateCompany)
+        await this.companiesService.validateAssistantToCreateRealEstate(reqUser, realestateToUpdate.realEstateCompany)
+
         Object.assign(realestateToUpdate, updateRealestateDto);
         return this.realEstateRepositoryService.save(realestateToUpdate);
     }
 
     async disable(id: number, reqUser: User): Promise<RealEstate> {
         const realestate = await this.realEstateRepositoryService.findById(id, ['creatorUser', 'realEstateCompany']);
+        const user = await this.usersService.findOne(reqUser.userID)
 
         if (!realestate) {
             throw new NotFoundException(`Real estate ${id} not found`)
         }
+
+        await this.usersService.validateCompanyMembership(user, realestate.realEstateCompany)
+        await this.companiesService.validateAgentToDeleteRealEstate(user, realestate.realEstateCompany)
+        await this.companiesService.validateAssistantToDeleteRealEstate(user, realestate.realEstateCompany)
 
         if (realestate.enabled == false) {
             return realestate;
@@ -98,10 +112,15 @@ export class RealestatesService {
 
     async enable(id: number, reqUser: User): Promise<RealEstate> {
         const realestate = await this.realEstateRepositoryService.findById(id, ['creatorUser', 'realEstateCompany']);
+        const user = await this.usersService.findOne(reqUser.userID)
 
         if (!realestate) {
             throw new NotFoundException(`Real estate ${id} not found`)
         }
+
+        await this.usersService.validateCompanyMembership(user, realestate.realEstateCompany)
+        await this.companiesService.validateAgentToDeleteRealEstate(user, realestate.realEstateCompany)
+        await this.companiesService.validateAssistantToDeleteRealEstate(user, realestate.realEstateCompany)
 
         if (realestate.enabled == true) {
             return realestate;
@@ -112,38 +131,21 @@ export class RealestatesService {
     }
 
     async remove(id: number, reqUser: User): Promise<void> {
-        const realestate = await this.realEstateRepositoryService.findById(id, []);
+        const realestate = await this.realEstateRepositoryService.findById(id, ['creatorUser', 'realEstateCompany']);
+        const user = await this.usersService.findOne(reqUser.userID)
 
         if (!realestate) {
             throw new NotFoundException(`Real estate ${id} not found`)
         }
+
+        await this.usersService.validateCompanyMembership(user, realestate.realEstateCompany)
+        await this.companiesService.validateAgentToDeleteRealEstate(user, realestate.realEstateCompany)
+        await this.companiesService.validateAssistantToDeleteRealEstate(user, realestate.realEstateCompany)
         
         await this.realEstateRepositoryService.remove(realestate);
     }
 
     async easyIDgenerator(createRealestateDto: CreateRealestateDto, company: Company): Promise<string> {
-        const easyIdPrefixes = {
-            "HOUSE": "CASA",
-            "LAND": "TER",
-            "APARTMENT": "APE",
-            "TOWNHOUSE": "SOBR",
-            "SITE": "SIT",
-            "WAREHOUSE": "GAL",
-            "STUDIO/ COMMERCIAL ROOM": "COM"
-        }
-
-        const prefix = easyIdPrefixes[createRealestateDto.propertyType];
-        
-        if (!prefix) {
-            throw new InternalServerErrorException(`Invalid property type: ${createRealestateDto.propertyType}`);
-        }
-
-        const lastRealEstateNumber = await this
-            .realEstateRepositoryService
-            .findLastRealEstateWithSameTypeEasyID(createRealestateDto.propertyType, company);
-
-        const newEasyID = `${prefix}${lastRealEstateNumber + 1}`;
-
-        return newEasyID;
+        return await this.identifier.easyIDgenerator(createRealestateDto, company)
     }
 }

@@ -58,7 +58,7 @@ export class CompanyValidatorService {
         }
 
         if (!company.supervisorPermissions.deleteUser) {
-            throw new UnauthorizedException(`Supervisors can't delete users. Please contact your manager.`)
+            throw new UnauthorizedException(`Supervisors can't disable, enable or delete users. Please contact your manager.`)
         }
     }
 
@@ -88,7 +88,7 @@ export class CompanyValidatorService {
         }
 
         if (!company.agentPermissions.deleteRealEstate) {
-            throw new UnauthorizedException(`Agents can't delete real estates. Please contact your manager.`)
+            throw new UnauthorizedException(`Agents can't disable, enable or delete real estates. Please contact your manager.`)
         }
     }
 
@@ -108,7 +108,7 @@ export class CompanyValidatorService {
         }
 
         if (!company.agentPermissions.deleteRealEstate) {
-            throw new UnauthorizedException(`Assistants can't delete real estates. Please contact your manager.`)
+            throw new UnauthorizedException(`Assistants can't disable, enable or delete real estates. Please contact your manager.`)
         }
     }
 }

@@ -16,10 +16,10 @@ export class RealestatesController {
   @Post('create')
   @HttpCode(HttpStatus.CREATED)
   async create(
-    @Body() createLeadDto: CreateRealestateDto,
+    @Body() createRealestateDto: CreateRealestateDto,
     @Request() req,
   ): Promise<ResponseRealestateDto> {
-    return await this.realestatesService.create(createLeadDto, req.user);
+    return await this.realestatesService.create(createRealestateDto, req.user);
   }
 
   //* ----- REAL ESTATE QUERY ENDPOINTS ----- *//
@@ -51,14 +51,14 @@ export class RealestatesController {
   @HttpCode(HttpStatus.OK)
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateLeadDto: UpdateRealestateDto,
+    @Body() updateRealestateDto: UpdateRealestateDto,
     @Request() req,
   ): Promise<ResponseRealestateDto> {
     const ids = {
       reqUser: req.user.userID,
-      leadID: id,
+      realestateID: id,
     }
-    return await this.realestatesService.update(ids, updateLeadDto);
+    return await this.realestatesService.update(ids, updateRealestateDto);
   }
 
   @Patch(':id/disable')

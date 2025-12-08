@@ -27,7 +27,7 @@ export class RealestateValidatorService {
         });
 
         if (existingRealestate.length > 0) {
-            throw new ConflictException(`Real estate with this address already exists in the company: easyID: ${existingRealestate[0].easyID}`);
+            throw new ConflictException(`Real estate with this address already exists in the company. easyID: ${existingRealestate[0].easyID}`);
         }
     }
 }
