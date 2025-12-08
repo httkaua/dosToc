@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { RealestateRepositoryService } from './services/realestate-repository.service';
 import { RealestateValidatorService } from './services/realestate-validator.service';
@@ -9,6 +9,7 @@ import { Company } from 'src/companies/entities/company.entity';
 import { UpdateRealestateDto } from './dto/update-realestate.dto';
 import { CompaniesService } from 'src/companies/companies.service';
 import { RealestateIdentifierService } from './services/realestate.identifier.service';
+import { PropertyownersService } from 'src/propertyowners/propertyowners.service';
 
 @Injectable()
 export class RealestatesService {
@@ -17,15 +18,22 @@ export class RealestatesService {
         private readonly validator: RealestateValidatorService,
         private readonly identifier: RealestateIdentifierService,
         private readonly usersService: UsersService,
-        private readonly companiesService: CompaniesService
+        private readonly companiesService: CompaniesService,
+        private readonly propertyownersService: PropertyownersService
     ) {}
 
     async create(createRealestateDto: CreateRealestateDto, reqUser: User): Promise<RealEstate> {
+        if (!createRealestateDto.propertyOwner) {
+            throw new BadRequestException(`Property owner must be assigned.`)
+        }
+
         const user = await this.usersService.findOne(reqUser.userID)
+        const propertyOwner = await this.propertyownersService.findOne(createRealestateDto.propertyOwner, user)
 
         if (!user.userCompany) {
             throw new ConflictException('User must belong to a company to create real estates.');
         }
+
 
         await this.validator.validateUniqueAddressInCompany(createRealestateDto, reqUser.userCompany);
         await this.companiesService.validateAgentToCreateRealEstate(user, user.userCompany)
@@ -38,7 +46,8 @@ export class RealestatesService {
             ...createRealestateDto,
             creatorUser: user,
             easyID,
-            realEstateCompany: user.userCompany
+            realEstateCompany: user.userCompany,
+            realEstatesOwningOf: propertyOwner
         });
     }
 

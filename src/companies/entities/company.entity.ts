@@ -251,7 +251,7 @@ export class Company {
   @OneToMany(() => Lead, (lead) => lead.leadCompany)
   leadCompanyOf: Lead[]
 
-  @OneToMany(() => PropertyOwner, (propertyOwner) => propertyOwner.company)
+  @OneToMany(() => PropertyOwner, (propertyOwner) => propertyOwner.propertyOwnerCompany)
   propertyOwnerCompanyOf: PropertyOwner[]
 
   @OneToMany(() => Record, (record) => record.recordCompany)

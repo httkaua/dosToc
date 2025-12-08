@@ -9,12 +9,12 @@ import { LeadsModule } from './leads/leads.module';
 import { RealestatesModule } from './realestates/realestates.module';
 import { TasksModule } from './tasks/tasks.module';
 import { RecordsModule } from './records/records.module';
-import { PropertyownersModule } from './propertyowners/propertyowners.module';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthService } from './auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from './users/users.service';
+import { PropertyownersModule } from './propertyowners/propertyowners.module';
 
 @Module({
   imports: [

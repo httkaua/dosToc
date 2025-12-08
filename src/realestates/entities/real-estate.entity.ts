@@ -381,7 +381,9 @@ export class RealEstate {
 
 
 
-  @ManyToOne(() => PropertyOwner, (propertyOwner) => propertyOwner.realEstatesOwning)
+  @ManyToOne(() => PropertyOwner, (propertyOwner) => propertyOwner.realEstatesOwning, {
+    nullable: false
+  })
   realEstatesOwningOf: PropertyOwner
 
   @ManyToMany(() => Lead, (lead) => lead.realEstatesInterested)

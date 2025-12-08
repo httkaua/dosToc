@@ -10,12 +10,14 @@ import { RealestateRepositoryService } from './services/realestate-repository.se
 import { Company } from 'src/companies/entities/company.entity';
 import { CompaniesModule } from 'src/companies/companies.module';
 import { RealestateIdentifierService } from './services/realestate.identifier.service';
+import { PropertyownersModule } from 'src/propertyowners/propertyowners.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([RealEstate, User, Company]),
     UsersModule,
-    CompaniesModule
+    CompaniesModule,
+    PropertyownersModule  
   ],
   controllers: [RealestatesController],
   providers: [
@@ -24,5 +26,6 @@ import { RealestateIdentifierService } from './services/realestate.identifier.se
     RealestateValidatorService,
     RealestateIdentifierService
   ],
+  exports: [RealestatesService]
 })
 export class RealestatesModule {}

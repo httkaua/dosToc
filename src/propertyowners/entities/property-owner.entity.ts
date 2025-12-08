@@ -28,7 +28,7 @@ export class PropertyOwner {
 
   @Column({
     length: 80,
-    nullable: false,
+    nullable: true,
   })
   email: string;
 
@@ -70,8 +70,8 @@ export class PropertyOwner {
   @ManyToOne(() => Company, (company) => company.propertyOwnerCompanyOf, {
     nullable: false,
   })
-  @JoinColumn({ name: 'company' })
-  company: Company;
+  @JoinColumn({ name: 'propertyOwnerCompany' })
+  propertyOwnerCompany: Company;
 
   @OneToMany(() => RealEstate, (realEstate) => realEstate.realEstatesOwningOf)
   @JoinColumn({ name: 'realEstatesOwning' })

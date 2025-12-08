@@ -1,5 +1,6 @@
 import { Transform, Type } from 'class-transformer';
 import { IsEmail, IsString, IsNotEmpty, MinLength, MaxLength, IsOptional, IsNumber, IsArray, IsObject, ValidateNested, IsBoolean, IsIn, IsPositive, Max, ArrayMaxSize, ArrayUnique } from 'class-validator';
+import { CreatePropertyOwnerDto } from 'src/propertyowners/dto/create-property-owner.dto';
 
 export class CreateRealestateDto {
 
@@ -321,5 +322,17 @@ export class CreateRealestateDto {
     @IsBoolean()
     @IsOptional()
     published: boolean;
+
+    @IsNumber({ maxDecimalPlaces: 0 })
+    @IsNotEmpty()
+    @Max(100)
+    @IsPositive()
+    @Transform(({ value }) => {
+        if (typeof value === 'string') {
+        return parseFloat(value);
+        }
+        return value;
+    })
+    propertyOwner: number;
 
 }
