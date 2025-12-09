@@ -22,7 +22,6 @@ export class PropertyownersService {
     ) {}
 
     async create(dto: CreatePropertyOwnerDto, reqUser: User): Promise<PropertyOwner> {
-        console.log(reqUser)
     const user = await this.usersService.findOne(reqUser.userID);
 
     if (!user.userCompany) {
@@ -33,7 +32,8 @@ export class PropertyownersService {
 
     return this.repository.create({
         ...dto,
-        searchableName: this.transformer.generateSearchableName(dto.name)
+        searchableName: this.transformer.generateSearchableName(dto.name),
+        propertyOwnerCompany: user.userCompany
     });
     }
 
@@ -53,7 +53,7 @@ export class PropertyownersService {
     }
 
     async findOne(id: number, reqUser: User): Promise<PropertyOwner> {
-        const propertyowner = await this.repository.findById(id, ['company', 'realEstatesOwning']);
+        const propertyowner = await this.repository.findById(id, ['propertyOwnerCompany', 'realEstatesOwning']);
         const user = await this.usersService.findOne(reqUser.userID)
 
         if (!propertyowner) {
@@ -86,14 +86,14 @@ export class PropertyownersService {
     }
 
     async remove(id: number, reqUser: User): Promise<void> {
-        const propertyOwner = await this.repository.findById(id, ['creatorUser', 'realEstateCompany']);
+        const propertyOwner = await this.repository.findById(id, ['propertyOwnerCompany', 'realEstatesOwning']);
         const user = await this.usersService.findOne(reqUser.userID)
 
         if (!propertyOwner) {
             throw new NotFoundException(`Real estate ${id} not found`)
         }
 
-        if (propertyOwner.realEstatesOwning) {
+        if (propertyOwner.realEstatesOwning.length > 0) {
             throw new ConflictException(
                 `This property owner have at least one real estate associated. Please check the informations to ensure that's right.`
             )

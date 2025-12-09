@@ -1,10 +1,13 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Request } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Request, UseGuards, UseInterceptors } from '@nestjs/common';
 import { PropertyownersService } from './propertyowners.service';
 import { ResponsePropertyOwnerDto } from './dto/response-property-owner.dto';
 import { CreatePropertyOwnerDto } from './dto/create-property-owner.dto';
 import { UpdatePropertyOwnerDto } from './dto/update-property-owner.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('property-owners')
+@UseGuards(JwtAuthGuard)
+@UseInterceptors(ClassSerializerInterceptor)
 export class PropertyownersController {
     constructor(
         private readonly propertyownersService: PropertyownersService,
@@ -17,7 +20,6 @@ export class PropertyownersController {
     @Body() createPropertyOwnerDto: CreatePropertyOwnerDto,
     @Request() req,
     ): Promise<ResponsePropertyOwnerDto> {
-        console.log(req.user)
     return await this.propertyownersService.create(createPropertyOwnerDto, req.user);
     }
 
