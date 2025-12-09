@@ -27,10 +27,4 @@ export class LeadValidatorService {
             throw new ConflictException('Lead with this phone number already exists in the company');
         }
     }
-
-    async validateLeadsAccess(allowedUsers: User[] , reqUser: User): Promise<void> {
-        if (!allowedUsers.some(user => user.userID === reqUser.userID)) {
-            throw new UnauthorizedException('Access denied to this lead');
-        }
-    }
 }

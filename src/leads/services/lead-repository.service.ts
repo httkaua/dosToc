@@ -71,4 +71,18 @@ export class LeadRepositoryService {
 
     return leads
     }
+
+    async findAllUserLeads(id: number, relations: string[]): Promise<Lead[]> {
+    const leads = await this.leadRepository.find({
+        where: { attendingUser: { userID: id } },
+        relations,
+        order: { createdAt: 'DESC' }
+    });
+
+    if (!leads || leads.length === 0) {
+        throw new NotFoundException(`No leads found for user with ID ${id}.`);
+    }
+
+    return leads
+    }
 }

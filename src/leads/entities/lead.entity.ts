@@ -1,5 +1,6 @@
 import { Company } from 'src/companies/entities/company.entity';
 import { RealEstate } from 'src/realestates/entities/real-estate.entity';
+import { Task } from 'src/tasks/entities/task.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, VersionColumn, ForeignKey, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable, ManyToOne } from 'typeorm';
  
@@ -202,5 +203,10 @@ export class Lead {
     default: true,
   })
   enabled: boolean;
+
+  
+
+  @OneToMany(() => Task, (task) => task.targetLead)
+  taskTargetLeadOf: Task[]
   
 }

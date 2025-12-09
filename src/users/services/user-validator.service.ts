@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { User } from "../entities/user.entity";
@@ -85,6 +85,12 @@ export class UserValidatorService {
   validateDemote(reqUser: User, newClassification: number): void {
     if (reqUser.userClassification >= newClassification) {
       throw new ConflictException(`You can't demote to a classification equal or higher than the current.`);
+    }
+  }
+
+  validateAccessToAllowedUsers(allowedUsers: User[] , reqUser: User): void {
+    if (!allowedUsers.some(user => user.userID === reqUser.userID)) {
+      throw new UnauthorizedException('Access denied, you are not part of the team.');
     }
   }
   

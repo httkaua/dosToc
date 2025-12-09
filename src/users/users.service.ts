@@ -266,4 +266,12 @@ export class UsersService {
     this.validator.validateCompanyMembership(user, company)
   }
 
+  //* Allowed users generally:
+  //* The user who creates the object being affected,
+  //* Your managers, managers of managers until the company owner.
+  //* That is, the whole team
+  async validateAccessToAllowedUsers(allowedUsers: User[] , reqUser: User): Promise<void> {
+    this.validator.validateAccessToAllowedUsers(allowedUsers, reqUser)
+  }
+
 }

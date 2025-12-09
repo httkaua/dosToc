@@ -1,4 +1,5 @@
 import { Company } from 'src/companies/entities/company.entity';
+import { Lead } from 'src/leads/entities/lead.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, VersionColumn, ForeignKey, OneToOne, JoinColumn, OneToMany, ManyToOne } from 'typeorm';
  
@@ -19,11 +20,17 @@ export class Task {
   @JoinColumn({ name: 'responsibleUser' })
   responsibleUser: User;
 
+  @ManyToOne(() => Lead, (lead) => lead.taskTargetLeadOf, {
+    nullable: true,
+  })
+  @JoinColumn({ name: 'targetLead' })
+  targetLead: Lead;
+
   @ManyToOne(() => Company, (company) => company.taskCompanyOf, {
     nullable: false,
   })
   @JoinColumn({ name: 'companyID' })
-  company: Company;
+  taskCompany: Company;
   
   @Column({
     type: 'enum',

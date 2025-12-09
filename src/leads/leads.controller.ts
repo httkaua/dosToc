@@ -37,6 +37,14 @@ export class LeadsController {
     return await this.leadsService.findAllOfMyCompany(req.user.userID, ['attendingUser', 'leadCompany', 'realEstatesInterested']);
   }
 
+  @Get('my-leads')
+  @HttpCode(HttpStatus.OK)
+  async findAllOfUser(
+    @Request() req
+  ): Promise<ResponseLeadDto[]> {
+    return await this.leadsService.findAllOfUser(req.user.userID, ['attendingUser', 'leadCompany', 'realEstatesInterested']);
+  }
+
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   async findOne(

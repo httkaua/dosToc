@@ -20,6 +20,7 @@ import { LeadTransformerService } from './services/lead-transformer.service';
     LeadRepositoryService,
     LeadValidatorService,
     LeadTransformerService
-  ]
+  ],
+  exports: [LeadsService]
 })
 export class LeadsModule {}

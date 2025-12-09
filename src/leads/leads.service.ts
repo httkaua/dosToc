@@ -52,6 +52,17 @@ export class LeadsService {
         return await this.leadRepositoryService.findAllCompanyLeads(companyID, relations);
     }
 
+    async findAllOfUser(userID: number, relations: string[]): Promise<Lead[]> {
+        const user = await this.usersService.findOne(userID)
+        const companyID = user.userCompany.companyID
+
+        if (!companyID) {
+            throw new NotFoundException('Company not found.')
+        }
+
+        return await this.leadRepositoryService.findAllUserLeads(companyID, relations);
+    }
+
     async findOne(id: number, reqUser: User): Promise<Lead> {
         const lead = await this.leadRepositoryService.findById(id, ['attendingUser']);
 
@@ -62,7 +73,7 @@ export class LeadsService {
         const managers = await this.usersService.findAllManagersOfUser(lead.attendingUser);
         const allowedUsers = [...managers, lead.attendingUser];
 
-        await this.validator.validateLeadsAccess(allowedUsers, reqUser);
+        await this.usersService.validateAccessToAllowedUsers(allowedUsers, reqUser);
 
         return lead;
     }
@@ -82,7 +93,7 @@ export class LeadsService {
         const managers = await this.usersService.findAllManagersOfUser(leadToUpdate.attendingUser);
         const allowedUsers = [...managers, leadToUpdate.attendingUser];
 
-        await this.validator.validateLeadsAccess(allowedUsers, reqUser);
+        await this.usersService.validateAccessToAllowedUsers(allowedUsers, reqUser);
 
         if (updateLeadDto.name) {
             updateLeadDto['searchableName'] = this
@@ -108,7 +119,7 @@ export class LeadsService {
         const managers = await this.usersService.findAllManagersOfUser(lead.attendingUser);
         const allowedUsers = [...managers, lead.attendingUser];
 
-        await this.validator.validateLeadsAccess(allowedUsers, reqUser);
+        await this.usersService.validateAccessToAllowedUsers(allowedUsers, reqUser);
 
         lead.enabled = false;
         return this.leadRepositoryService.save(lead);
@@ -128,7 +139,7 @@ export class LeadsService {
         const managers = await this.usersService.findAllManagersOfUser(lead.attendingUser);
         const allowedUsers = [...managers, lead.attendingUser];
 
-        await this.validator.validateLeadsAccess(allowedUsers, reqUser);
+        await this.usersService.validateAccessToAllowedUsers(allowedUsers, reqUser);
 
         lead.enabled = true;
         return this.leadRepositoryService.save(lead);
@@ -148,7 +159,7 @@ export class LeadsService {
         const managers = await this.usersService.findAllManagersOfUser(lead.attendingUser);
         const allowedUsers = [...managers, lead.attendingUser];
 
-        await this.validator.validateLeadsAccess(allowedUsers, reqUser);
+        await this.usersService.validateAccessToAllowedUsers(allowedUsers, reqUser);
 
         lead.doNotContact = true;
         return this.leadRepositoryService.save(lead);
@@ -168,7 +179,7 @@ export class LeadsService {
         const managers = await this.usersService.findAllManagersOfUser(lead.attendingUser);
         const allowedUsers = [...managers, lead.attendingUser];
 
-        await this.validator.validateLeadsAccess(allowedUsers, reqUser);
+        await this.usersService.validateAccessToAllowedUsers(allowedUsers, reqUser);
 
         lead.doNotContact = false;
         return this.leadRepositoryService.save(lead);
@@ -184,7 +195,7 @@ export class LeadsService {
         const managers = await this.usersService.findAllManagersOfUser(lead.attendingUser);
         const allowedUsers = [...managers, lead.attendingUser];
 
-        await this.validator.validateLeadsAccess(allowedUsers, reqUser);
+        await this.usersService.validateAccessToAllowedUsers(allowedUsers, reqUser);
         
         await this.leadRepositoryService.remove(lead);
     }

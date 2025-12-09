@@ -257,7 +257,7 @@ export class Company {
   @OneToMany(() => Record, (record) => record.recordCompany)
   recordCompanyOf: Record[]
 
-  @OneToMany(() => Task, (task) => task.company)
+  @OneToMany(() => Task, (task) => task.taskCompany)
   taskCompanyOf: Task[]
 
   
