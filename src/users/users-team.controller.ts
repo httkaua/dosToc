@@ -17,9 +17,12 @@ import { UsersService } from './users.service';
 import { ResponseUserDto } from './dto/response-user.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CompaniesService } from 'src/companies/companies.service';
+import { RolesGuard } from 'src/rbac/rbac.guard';
+import { Roles } from 'src/rbac/role.decorator';
+import { Role } from 'src/rbac/role.enum';
 
 @Controller('users/team')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @UseInterceptors(ClassSerializerInterceptor)
 export class TeamsController {
   constructor(
@@ -28,6 +31,12 @@ export class TeamsController {
   ) {}
 
   @Get()
+  @Roles(
+    Role.ADM_DEV,
+    Role.DEV,
+    Role.COMPANY_OWNER,
+    Role.SUPERVISOR
+  )
   @HttpCode(HttpStatus.OK)
   async getMyTeam(@Request() req): Promise<ResponseUserDto[]> {
     const managerID = Number(req.user.userID);
@@ -36,6 +45,12 @@ export class TeamsController {
   }
 
   @Post('add-member')
+  @Roles(
+    Role.ADM_DEV,
+    Role.DEV,
+    Role.COMPANY_OWNER,
+    Role.SUPERVISOR
+  )
   @HttpCode(HttpStatus.OK)
   async addToTeam(
     @Body() body: { managerId: number; employeeId: number },
@@ -49,6 +64,12 @@ export class TeamsController {
   }
 
   @Patch('remove-member')
+  @Roles(
+    Role.ADM_DEV,
+    Role.DEV,
+    Role.COMPANY_OWNER,
+    Role.SUPERVISOR
+  )
   @HttpCode(HttpStatus.OK)
   async removeFromTeam(
     @Body() body: { managerId: number; employeeId: number },
@@ -62,6 +83,12 @@ export class TeamsController {
   }
 
   @Patch('promote-member/:id')
+  @Roles(
+    Role.ADM_DEV,
+    Role.DEV,
+    Role.COMPANY_OWNER,
+    Role.SUPERVISOR
+  )
   @HttpCode(HttpStatus.OK)
   async promoteMember(
     @Query('newClassification') newClassification: number,
@@ -79,6 +106,12 @@ export class TeamsController {
   }
 
   @Patch('demote-member/:id')
+  @Roles(
+    Role.ADM_DEV,
+    Role.DEV,
+    Role.COMPANY_OWNER,
+    Role.SUPERVISOR
+  )
   @HttpCode(HttpStatus.OK)
   async demoteMember(
     @Query('newClassification') newClassification: number,

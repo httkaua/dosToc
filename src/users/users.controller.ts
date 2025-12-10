@@ -21,9 +21,9 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ResponseUserDto } from './dto/response-user.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UserValidatorService } from './services/user-validator.service';
-import { Roles } from 'src/role/role.decorator';
-import { Role } from 'src/role/role.enum';
-import { RolesGuard } from 'src/role/role.guard';
+import { Roles } from 'src/rbac/role.decorator';
+import { Role } from 'src/rbac/role.enum';
+import { RolesGuard } from 'src/rbac/rbac.guard';
 
 @Controller('users')
 @UseInterceptors(ClassSerializerInterceptor)

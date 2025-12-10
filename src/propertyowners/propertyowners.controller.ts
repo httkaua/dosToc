@@ -4,9 +4,12 @@ import { ResponsePropertyOwnerDto } from './dto/response-property-owner.dto';
 import { CreatePropertyOwnerDto } from './dto/create-property-owner.dto';
 import { UpdatePropertyOwnerDto } from './dto/update-property-owner.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { RolesGuard } from 'src/rbac/rbac.guard';
+import { Roles } from 'src/rbac/role.decorator';
+import { Role } from 'src/rbac/role.enum';
 
 @Controller('property-owners')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @UseInterceptors(ClassSerializerInterceptor)
 export class PropertyownersController {
     constructor(
@@ -15,6 +18,14 @@ export class PropertyownersController {
 
     //* ----- PROPERTY OWNER CREATION ENDPOINTS ----- *//
     @Post('create')
+    @Roles(
+        Role.ADM_DEV,
+        Role.DEV,
+        Role.COMPANY_OWNER,
+        Role.SUPERVISOR,
+        Role.AGENT,
+        Role.ASSISTANT
+    )
     @HttpCode(HttpStatus.CREATED)
     async create(
     @Body() createPropertyOwnerDto: CreatePropertyOwnerDto,
@@ -25,12 +36,24 @@ export class PropertyownersController {
 
     //* ----- PROPERTY OWNER QUERY ENDPOINTS ----- *//
     @Get()
+    @Roles(
+        Role.ADM_DEV,
+        Role.DEV
+    )
     @HttpCode(HttpStatus.OK)
     async findAll(): Promise<ResponsePropertyOwnerDto[]> {
     return await this.propertyownersService.findAll(['propertyOwnerCompany', 'realEstatesOwning']);
     }
 
     @Get('in-my-company')
+    @Roles(
+        Role.ADM_DEV,
+        Role.DEV,
+        Role.COMPANY_OWNER,
+        Role.SUPERVISOR,
+        Role.AGENT,
+        Role.ASSISTANT
+    )
     @HttpCode(HttpStatus.OK)
     async findAllOfMyCompany(
     @Request() req
@@ -39,6 +62,14 @@ export class PropertyownersController {
     }
 
     @Get(':id')
+    @Roles(
+        Role.ADM_DEV,
+        Role.DEV,
+        Role.COMPANY_OWNER,
+        Role.SUPERVISOR,
+        Role.AGENT,
+        Role.ASSISTANT
+    )
     @HttpCode(HttpStatus.OK)
     async findOne(
     @Param('id', ParseIntPipe) id: number,
@@ -49,6 +80,14 @@ export class PropertyownersController {
 
     //* ----- PROPERTY OWNER UPDATE ENDPOINTS ----- *//
     @Patch(':id')
+    @Roles(
+        Role.ADM_DEV,
+        Role.DEV,
+        Role.COMPANY_OWNER,
+        Role.SUPERVISOR,
+        Role.AGENT,
+        Role.ASSISTANT
+    )
     @HttpCode(HttpStatus.OK)
     async update(
     @Param('id', ParseIntPipe) id: number,
@@ -64,6 +103,10 @@ export class PropertyownersController {
 
     //* ----- PROPERTY OWNER DELETION ENDPOINT ----- *//
     @Delete(':id')
+    @Roles(
+        Role.ADM_DEV,
+        Role.DEV
+    )
     @HttpCode(HttpStatus.NO_CONTENT)
     async remove(
     @Param('id', ParseIntPipe) id: number,

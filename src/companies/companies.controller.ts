@@ -7,9 +7,12 @@ import { UpdateCompanyDto } from './dto/update-company.dto';
 import { UsersService } from 'src/users/users.service';
 import { CompanyValidatorService } from './services/company-validator.service';
 import { UserValidatorService } from 'src/users/services/user-validator.service';
+import { RolesGuard } from 'src/rbac/rbac.guard';
+import { Roles } from 'src/rbac/role.decorator';
+import { Role } from 'src/rbac/role.enum';
 
 @Controller('companies')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class CompaniesController {
     constructor(
         private readonly companiesService: CompaniesService,
@@ -19,6 +22,11 @@ export class CompaniesController {
     ) {}
 
     @Post('create')
+    @Roles(
+        Role.ADM_DEV,
+        Role.DEV,
+        Role.COMPANY_OWNER
+    )
     @HttpCode(HttpStatus.CREATED)
     async create(
         @Body() createCompanyDto: CreateCompanyDto,
@@ -30,12 +38,21 @@ export class CompaniesController {
     }
 
     @Get()
+    @Roles(
+        Role.ADM_DEV,
+        Role.DEV
+    )
     async findAll(): Promise<ResponseCompanyDto[]> {
         const companies = await this.companiesService.findAll();
         return companies.map(company => new ResponseCompanyDto(company));
     }
 
     @Get(':id')
+    @Roles(
+        Role.ADM_DEV,
+        Role.DEV,
+        Role.COMPANY_OWNER
+    )
     async findOne(
         @Param('id', ParseIntPipe) id: number,
         @Request() req
@@ -48,6 +65,11 @@ export class CompaniesController {
     }
 
     @Patch(':id')
+    @Roles(
+        Role.ADM_DEV,
+        Role.DEV,
+        Role.COMPANY_OWNER
+    )
     async update(
         @Param('id', ParseIntPipe) companyID: number,
         @Body() updateCompanyDto: UpdateCompanyDto,
@@ -68,11 +90,21 @@ export class CompaniesController {
     }
 
     @Get('plans-options')
+    @Roles(
+        Role.ADM_DEV,
+        Role.DEV,
+        Role.COMPANY_OWNER
+    )
     async viewPlans(): Promise<string> {
         return `FREE, SINGLE, BUSINESS`
     }
 
     @Post('sign-plan/:id')
+    @Roles(
+        Role.ADM_DEV,
+        Role.DEV,
+        Role.COMPANY_OWNER
+    )
     async signPlan(
         @Param('id', ParseIntPipe) id: number,
         @Query('new-plan') newPlan: string,

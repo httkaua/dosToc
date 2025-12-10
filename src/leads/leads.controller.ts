@@ -4,9 +4,12 @@ import { ResponseLeadDto } from './dto/response-lead.dto';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
 import { LeadsService } from './leads.service';
+import { RolesGuard } from 'src/rbac/rbac.guard';
+import { Roles } from 'src/rbac/role.decorator';
+import { Role } from 'src/rbac/role.enum';
 
 @Controller('leads')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class LeadsController {
     constructor(
       private readonly leadsService: LeadsService,
@@ -14,6 +17,13 @@ export class LeadsController {
 
   //* ----- LEAD CREATION ENDPOINTS ----- *//
   @Post('create')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV,
+      Role.COMPANY_OWNER,
+      Role.SUPERVISOR,
+      Role.AGENT
+  )
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createLeadDto: CreateLeadDto,
@@ -24,12 +34,21 @@ export class LeadsController {
 
   //* ----- LEAD QUERY ENDPOINTS ----- *//
   @Get()
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV
+  )
   @HttpCode(HttpStatus.OK)
   async findAll(): Promise<ResponseLeadDto[]> {
     return await this.leadsService.findAll(['attendingUser', 'leadCompany', 'realEstatesInterested']);
   }
 
   @Get('in-my-company')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV,
+      Role.COMPANY_OWNER
+  )
   @HttpCode(HttpStatus.OK)
   async findAllOfMyCompany(
     @Request() req
@@ -38,6 +57,13 @@ export class LeadsController {
   }
 
   @Get('my-leads')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV,
+      Role.COMPANY_OWNER,
+      Role.SUPERVISOR,
+      Role.AGENT
+  )
   @HttpCode(HttpStatus.OK)
   async findAllOfUser(
     @Request() req
@@ -46,6 +72,13 @@ export class LeadsController {
   }
 
   @Get(':id')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV,
+      Role.COMPANY_OWNER,
+      Role.SUPERVISOR,
+      Role.AGENT
+  )
   @HttpCode(HttpStatus.OK)
   async findOne(
     @Param('id', ParseIntPipe) id: number,
@@ -56,6 +89,14 @@ export class LeadsController {
 
   //* ----- LEAD UPDATE ENDPOINTS ----- *//
   @Patch(':id')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV,
+      Role.COMPANY_OWNER,
+      Role.SUPERVISOR,
+      Role.AGENT,
+      Role.ASSISTANT
+  )
   @HttpCode(HttpStatus.OK)
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -70,6 +111,12 @@ export class LeadsController {
   }
 
   @Patch(':id/disable')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV,
+      Role.COMPANY_OWNER,
+      Role.SUPERVISOR
+  )
   @HttpCode(HttpStatus.OK)
   async disable(
     @Param('id', ParseIntPipe) id: number,
@@ -79,6 +126,12 @@ export class LeadsController {
   }
 
   @Patch(':id/enable')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV,
+      Role.COMPANY_OWNER,
+      Role.SUPERVISOR
+  )
   @HttpCode(HttpStatus.OK)
   async enable(
     @Param('id', ParseIntPipe) id: number,
@@ -88,6 +141,12 @@ export class LeadsController {
   }
 
   @Patch(':id/do-not-call-anymore')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV,
+      Role.COMPANY_OWNER,
+      Role.SUPERVISOR
+  )
   @HttpCode(HttpStatus.OK)
   async doNotCallTrue(
     @Param('id', ParseIntPipe) id: number,
@@ -97,6 +156,11 @@ export class LeadsController {
   }
 
   @Patch(':id/do-not-call-anymore-false')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV,
+      Role.COMPANY_OWNER
+  )
   @HttpCode(HttpStatus.OK)
   async doNotCallFalse(
     @Param('id', ParseIntPipe) id: number,
@@ -107,6 +171,10 @@ export class LeadsController {
 
   //* ----- LEAD DELETION ENDPOINT ----- *//
   @Delete(':id')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV
+  )
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Param('id', ParseIntPipe) id: number,

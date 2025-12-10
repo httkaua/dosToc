@@ -15,10 +15,10 @@ import { AuthService } from './auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from './users/users.service';
 import { PropertyownersModule } from './propertyowners/propertyowners.module';
-import { RoleModule } from './role/role.module';
 import { APP_GUARD } from '@nestjs/core';
-import { RolesGuard } from './role/role.guard';
+import { RolesGuard } from './rbac/rbac.guard';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { RBACModule } from './rbac/rbac.module';
 
 @Module({
   imports: [
@@ -35,7 +35,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
     RecordsModule,
     PropertyownersModule,
     AuthModule,
-    RoleModule,
+    RBACModule,
   ],
   controllers: [AppController],
   providers: [

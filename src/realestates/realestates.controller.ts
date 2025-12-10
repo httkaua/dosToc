@@ -4,9 +4,12 @@ import { RealestatesService } from './realestates.service';
 import { CreateRealestateDto } from './dto/create-realestate.dto';
 import { ResponseRealestateDto } from './dto/response-realestate.dto';
 import { UpdateRealestateDto } from './dto/update-realestate.dto';
+import { RolesGuard } from 'src/rbac/rbac.guard';
+import { Roles } from 'src/rbac/role.decorator';
+import { Role } from 'src/rbac/role.enum';
 
 @Controller('real-estates')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class RealestatesController {
     constructor(
       private readonly realestatesService: RealestatesService,
@@ -14,6 +17,14 @@ export class RealestatesController {
 
   //* ----- REAL ESTATE CREATION ENDPOINTS ----- *//
   @Post('create')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV,
+      Role.COMPANY_OWNER,
+      Role.SUPERVISOR,
+      Role.AGENT,
+      Role.ASSISTANT
+  )
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createRealestateDto: CreateRealestateDto,
@@ -24,12 +35,24 @@ export class RealestatesController {
 
   //* ----- REAL ESTATE QUERY ENDPOINTS ----- *//
   @Get()
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV
+  )
   @HttpCode(HttpStatus.OK)
   async findAll(): Promise<ResponseRealestateDto[]> {
     return await this.realestatesService.findAll(['creatorUser', 'realEstateCompany']);
   }
 
   @Get('in-my-company')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV,
+      Role.COMPANY_OWNER,
+      Role.SUPERVISOR,
+      Role.AGENT,
+      Role.ASSISTANT
+  )
   @HttpCode(HttpStatus.OK)
   async findAllOfMyCompany(
     @Request() req
@@ -38,6 +61,14 @@ export class RealestatesController {
   }
 
   @Get(':id')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV,
+      Role.COMPANY_OWNER,
+      Role.SUPERVISOR,
+      Role.AGENT,
+      Role.ASSISTANT
+  )
   @HttpCode(HttpStatus.OK)
   async findOne(
     @Param('id', ParseIntPipe) id: number,
@@ -48,6 +79,14 @@ export class RealestatesController {
 
   //* ----- REAL ESTATE UPDATE ENDPOINTS ----- *//
   @Patch(':id')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV,
+      Role.COMPANY_OWNER,
+      Role.SUPERVISOR,
+      Role.AGENT,
+      Role.ASSISTANT
+  )
   @HttpCode(HttpStatus.OK)
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -62,6 +101,13 @@ export class RealestatesController {
   }
 
   @Patch(':id/disable')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV,
+      Role.COMPANY_OWNER,
+      Role.SUPERVISOR,
+      Role.ASSISTANT
+  )
   @HttpCode(HttpStatus.OK)
   async disable(
     @Param('id', ParseIntPipe) id: number,
@@ -71,6 +117,13 @@ export class RealestatesController {
   }
 
   @Patch(':id/enable')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV,
+      Role.COMPANY_OWNER,
+      Role.SUPERVISOR,
+      Role.ASSISTANT
+  )
   @HttpCode(HttpStatus.OK)
   async enable(
     @Param('id', ParseIntPipe) id: number,
@@ -81,6 +134,10 @@ export class RealestatesController {
 
   //* ----- REAL ESTATE DELETION ENDPOINT ----- *//
   @Delete(':id')
+  @Roles(
+      Role.ADM_DEV,
+      Role.DEV
+  )
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Param('id', ParseIntPipe) id: number,
