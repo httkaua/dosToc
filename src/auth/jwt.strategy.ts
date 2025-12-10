@@ -31,7 +31,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
     const validatedUser = {
       userID: user.userID,
+      username: user.searchableName,
       email: user.email,
+      company: user.userCompany,
       role: user.userClassification
     }
 

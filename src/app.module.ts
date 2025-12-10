@@ -19,12 +19,23 @@ import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './rbac/rbac.guard';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RBACModule } from './rbac/rbac.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { CsrfModule } from './csrf/csrf.module';
+import { CsrfController } from './csrf/csrf.controller';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+    }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60000,
+          limit: 10,
+        },
+      ],
     }),
     DatabaseModule,
     UsersModule,
@@ -36,10 +47,18 @@ import { RBACModule } from './rbac/rbac.module';
     PropertyownersModule,
     AuthModule,
     RBACModule,
+    CsrfModule,
   ],
-  controllers: [AppController],
+  controllers: [
+    AppController,
+    CsrfController
+  ],
   providers: [
-  AppService,
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}
