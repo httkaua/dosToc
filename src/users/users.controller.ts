@@ -21,6 +21,9 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ResponseUserDto } from './dto/response-user.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UserValidatorService } from './services/user-validator.service';
+import { Roles } from 'src/role/role.decorator';
+import { Role } from 'src/role/role.enum';
+import { RolesGuard } from 'src/role/role.guard';
 
 @Controller('users')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -38,8 +41,14 @@ export class UsersController {
     return new ResponseUserDto(user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('create-by-manager')
+  @Roles(
+    Role.ADM_DEV,
+    Role.DEV,
+    Role.COMPANY_OWNER,
+    Role.SUPERVISOR
+  )
   @HttpCode(HttpStatus.CREATED)
   async createByManager(
     @Body() createUserDto: CreateUserDto,
@@ -52,8 +61,12 @@ export class UsersController {
     return new ResponseUserDto(user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('create/development')
+  @Roles(
+    Role.ADM_DEV,
+    Role.DEV
+  )
   @HttpCode(HttpStatus.CREATED)
   async createDevUser(
     @Body() createUserDto: CreateUserDto,
@@ -69,16 +82,45 @@ export class UsersController {
   }
 
   //* ----- USER QUERY ENDPOINTS ----- *//
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
+  @Roles(
+    Role.ADM_DEV,
+    Role.DEV
+  )
   @HttpCode(HttpStatus.OK)
   async findAll(): Promise<ResponseUserDto[]> {
     const users = await this.usersService.findAll();
     return users;
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('in-my-company')
+  @Roles(
+    Role.ADM_DEV,
+    Role.DEV,
+    Role.COMPANY_OWNER,
+  )
+  @HttpCode(HttpStatus.OK)
+  async findInMyCompany(
+    @Request() req
+  ): Promise<ResponseUserDto[]> {
+    const user = await this.usersService.findOne(req.user.userID)
+
+    const users = await this.usersService.findAllCompanyMembers(req.user.userID, user.userCompany.companyID);
+    return users;
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':id')
+  @Roles(
+    Role.ADM_DEV,
+    Role.DEV,
+    Role.COMPANY_OWNER,
+    Role.SUPERVISOR,
+    Role.AGENT,
+    Role.ASSISTANT
+  )
   @HttpCode(HttpStatus.OK)
   async findOne(
     @Param('id', ParseIntPipe) id: number,
@@ -96,8 +138,16 @@ export class UsersController {
   }
 
   //* ----- USER UPDATE ENDPOINTS ----- *//
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id')
+  @Roles(
+    Role.ADM_DEV,
+    Role.DEV,
+    Role.COMPANY_OWNER,
+    Role.SUPERVISOR,
+    Role.AGENT,
+    Role.ASSISTANT
+  )
   @HttpCode(HttpStatus.OK)
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -120,8 +170,14 @@ export class UsersController {
     return new ResponseUserDto(user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id/disable')
+  @Roles(
+    Role.ADM_DEV,
+    Role.DEV,
+    Role.COMPANY_OWNER,
+    Role.SUPERVISOR
+  )
   @HttpCode(HttpStatus.OK)
   async disable(
     @Param('id', ParseIntPipe) id: number,
@@ -138,8 +194,14 @@ export class UsersController {
     return new ResponseUserDto(user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch(':id/enable')
+  @Roles(
+    Role.ADM_DEV,
+    Role.DEV,
+    Role.COMPANY_OWNER,
+    Role.SUPERVISOR
+  )
   @HttpCode(HttpStatus.OK)
   async enable(
     @Param('id', ParseIntPipe) id: number,
@@ -157,8 +219,12 @@ export class UsersController {
   }
 
   //* ----- USER DELETION ENDPOINT ----- *//
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Delete(':id')
+  @Roles(
+    Role.ADM_DEV,
+    Role.DEV
+  )
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Param('id', ParseIntPipe) id: number,

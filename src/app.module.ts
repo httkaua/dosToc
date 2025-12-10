@@ -15,6 +15,10 @@ import { AuthService } from './auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from './users/users.service';
 import { PropertyownersModule } from './propertyowners/propertyowners.module';
+import { RoleModule } from './role/role.module';
+import { APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from './role/role.guard';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -31,10 +35,11 @@ import { PropertyownersModule } from './propertyowners/propertyowners.module';
     RecordsModule,
     PropertyownersModule,
     AuthModule,
+    RoleModule,
   ],
   controllers: [AppController],
   providers: [
-    AppService
+  AppService,
   ],
 })
 export class AppModule {}

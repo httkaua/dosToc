@@ -35,17 +35,6 @@ export class TeamsController {
     return teamMembers;
   }
 
-  @Get('all-company-members')
-  @HttpCode(HttpStatus.OK)
-  async findAllCompanyMembers(@Request() req): Promise<ResponseUserDto[]> {
-    const user = await this.usersService.findOne(req.user.userID);
-    const users = await this.usersService.findAllCompanyMembers(
-      user.userID,
-      user.userCompany.companyID,
-    );
-    return users;
-  }
-
   @Post('add-member')
   @HttpCode(HttpStatus.OK)
   async addToTeam(
