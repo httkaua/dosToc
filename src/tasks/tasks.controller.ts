@@ -76,7 +76,7 @@ export class TasksController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
     ): Promise<ResponseTaskDto> {
-        return await this.tasksService.finishTask(id, req.user);
+        return await this.tasksService.finishTask(id, req.user.userID);
     }
 
     @Patch(':id/cancel')
@@ -85,7 +85,7 @@ export class TasksController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
     ): Promise<ResponseTaskDto> {
-        return await this.tasksService.cancelTask(id, req.user);
+        return await this.tasksService.cancelTask(id, req.user.userID);
     }
 
     //* ----- TASK DELETION ENDPOINT ----- *//
@@ -95,7 +95,7 @@ export class TasksController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
     ): Promise<void> {
-        return await this.tasksService.remove(id, req.user);
+        return await this.tasksService.remove(id, req.user.userID);
     }
     
 }

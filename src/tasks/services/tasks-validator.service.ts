@@ -11,20 +11,4 @@ export class TaskValidatorService {
         private readonly taskRepository: Repository<Task>
     ) {}
 
-    async validateUniqueTaskInCompany(updateTaskDto: Record<string, any>, company: Company): Promise<void> {
-        const existingTask = await this.taskRepository.findOne({
-            where: {
-                taskCompany: company,
-                responsibleUser: updateTaskDto.responsibleUser,
-                targetLead: updateTaskDto.targetLead,
-                taskType: updateTaskDto.taskType
-            }
-        });
-
-        if (existingTask) {
-            throw new ConflictException(
-                `This task already exists in the company. ID ${existingTask.taskID}`
-            );
-        }
-    }
 }

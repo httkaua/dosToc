@@ -60,7 +60,7 @@ export class LeadsService {
             throw new NotFoundException('Company not found.')
         }
 
-        return await this.leadRepositoryService.findAllUserLeads(companyID, relations);
+        return await this.leadRepositoryService.findAllUserLeads(user.userID, relations);
     }
 
     async findOne(id: number, reqUser: User): Promise<Lead> {

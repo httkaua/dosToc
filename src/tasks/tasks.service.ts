@@ -22,7 +22,7 @@ export class TasksService {
     async create(dto: CreateTaskDto, reqUser: User): Promise<Task> {
         const user = await this.usersService.findOne(reqUser.userID);
         const deadline = this.deadlineCalculator(dto.deadlineInDays)
-        const responsibleUser = await this.usersService.findOne(reqUser.userID)
+        const responsibleUser = await this.usersService.findOne(dto.responsibleUser)
         const managers = await this.usersService.findAllManagersOfUser(responsibleUser);
         const allowedUsers = [...managers, responsibleUser];
         let targetLead: Lead | undefined = undefined
@@ -31,11 +31,13 @@ export class TasksService {
             throw new ConflictException('User must belong to a company to create tasks.');
         }
 
-        await this.validator.validateUniqueTaskInCompany(dto, reqUser.userCompany);    
         await this.usersService.validateAccessToAllowedUsers(allowedUsers, user);
 
         if (dto.targetLead) {
             targetLead = await this.leadsService.findOne(dto.targetLead, user)
+            if (targetLead.attendingUser.userID !== responsibleUser.userID) {
+                throw new ConflictException(`The lead must being attended for the user ${responsibleUser.searchableName}`)
+            }
         }
 
         return this.repository.create({
@@ -104,9 +106,14 @@ export class TasksService {
             throw new NotFoundException(`Task with ID ${ids.taskID} not found`);
         }
 
-        if (dto.deadlineInDays) {
+        if (
+            dto.deadlineInDays &&
+            (taskToUpdate.creatorUser === taskToUpdate.responsibleUser || taskToUpdate.creatorUser === reqUser)
+        ) {
             deadline = this.deadlineCalculator(dto.deadlineInDays)
         }
+
+        const dtoWithDeadline = { ...dto, deadline }
 
         const managers = await this.usersService.findAllManagersOfUser(taskToUpdate.responsibleUser);
         const allowedUsers = [...managers, taskToUpdate.responsibleUser];
@@ -114,12 +121,12 @@ export class TasksService {
         await this.usersService.validateAccessToAllowedUsers(allowedUsers, reqUser);
         await this.usersService.validateCompanyMembership(reqUser, taskToUpdate.taskCompany)
 
-        Object.assign(taskToUpdate, dto);
+        Object.assign(taskToUpdate, dtoWithDeadline);
         return this.repository.save(taskToUpdate);
     }
 
     async remove(id: number, reqUser: User): Promise<void> {
-        const task = await this.repository.findById(id, ['taskCompany']);
+        const task = await this.repository.findById(id, ['taskCompany', 'responsibleUser']);
         const user = await this.usersService.findOne(reqUser.userID)
 
         if (!task) {
@@ -136,7 +143,7 @@ export class TasksService {
     }
 
     async finishTask(taskID: number, reqUser: number): Promise<Task> {
-        const task = await this.repository.findById(taskID, ['taskCompany']);
+        const task = await this.repository.findById(taskID, ['taskCompany', 'responsibleUser']);
         const user = await this.usersService.findOne(reqUser);
 
         if (!user) {
@@ -158,7 +165,7 @@ export class TasksService {
     }
 
     async cancelTask(taskID: number, reqUser: number): Promise<Task> {
-        const task = await this.repository.findById(taskID, ['taskCompany']);
+        const task = await this.repository.findById(taskID, ['taskCompany', 'responsibleUser']);
         const user = await this.usersService.findOne(reqUser);
 
         if (!user) {
