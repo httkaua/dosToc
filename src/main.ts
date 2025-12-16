@@ -22,7 +22,7 @@ async function bootstrap() {
     session({
       secret: process?.env?.SECRET,
       resave: false,
-      saveUninitialized: false,
+      saveUninitialized: true,
       cookie: { 
         maxAge: 3600000,
         httpOnly: true,
@@ -43,6 +43,9 @@ async function bootstrap() {
     size: 64,
     ignoredMethods: ['GET', 'HEAD', 'OPTIONS'],
     getSessionIdentifier: (req) => {
+      if (!req.session) {
+        throw new Error('Session not initialized');
+      }
       return req.session?.id || '';
     },
   });
