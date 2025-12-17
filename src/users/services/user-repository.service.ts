@@ -1,14 +1,20 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { User } from "../entities/user.entity";
 import { ResponseUserDto } from "../dto/response-user.dto";
+import type { LoggerService } from '@nestjs/common';
+import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 
 @Injectable()
 export class UserRepositoryService {
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    @Inject(WINSTON_MODULE_NEST_PROVIDER)
+    private readonly logger: LoggerService,
   ) {}
 
   async findById(id: number, relations: string[]): Promise<User> {
@@ -44,10 +50,22 @@ export class UserRepositoryService {
   }
 
   async findAll(relations: string[] = []): Promise<User[]> {
-    return this.userRepository.find({
+    const start = Date.now();
+
+    const users = await this.userRepository.find({
       relations,
       order: { createdAt: 'DESC' }
     });
+
+    if (this.logger.debug) {
+      this.logger.debug('UserRepository.findAll executed', {
+        relations,
+        resultCount: users.length,
+        durationMs: Date.now() - start,
+      });
+    }
+
+    return users;
   }
 
   async save(user: User): Promise<User> {

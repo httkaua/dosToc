@@ -1,7 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { CompaniesModule } from './companies/companies.module';
@@ -11,17 +10,13 @@ import { TasksModule } from './tasks/tasks.module';
 import { RecordsModule } from './records/records.module';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
-import { AuthService } from './auth/auth.service';
-import { JwtService } from '@nestjs/jwt';
-import { UsersService } from './users/users.service';
 import { PropertyownersModule } from './propertyowners/propertyowners.module';
 import { APP_GUARD } from '@nestjs/core';
-import { RolesGuard } from './rbac/rbac.guard';
-import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RBACModule } from './rbac/rbac.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { CsrfModule } from './csrf/csrf.module';
 import { CsrfController } from './csrf/csrf.controller';
+import { LoggersModule } from './loggers/loggers.module';
 
 @Module({
   imports: [
@@ -48,6 +43,7 @@ import { CsrfController } from './csrf/csrf.controller';
     AuthModule,
     RBACModule,
     CsrfModule,
+    LoggersModule
   ],
   controllers: [
     AppController,
@@ -59,6 +55,7 @@ import { CsrfController } from './csrf/csrf.controller';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    Logger
   ],
 })
 export class AppModule {}

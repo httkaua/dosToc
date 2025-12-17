@@ -38,13 +38,15 @@
     "express-session": "^1.18.2",
     "helmet": "^8.1.0",
     "mysql2": "^3.15.3",
+    "nest-winston": "^1.10.2",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "typeorm": "^0.3.27"
+    "typeorm": "^0.3.27",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

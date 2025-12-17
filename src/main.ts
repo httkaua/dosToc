@@ -1,14 +1,17 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import "reflect-metadata"; //* TYPEORM REQUIREMENT
-import { ForbiddenException, InternalServerErrorException, ValidationPipe } from '@nestjs/common';
+import { InternalServerErrorException, ValidationPipe } from '@nestjs/common';
 import session from 'express-session';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { doubleCsrf } from 'csrf-csrf';
+import { winstonLogger } from './loggers/logger.config';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: winstonLogger,
+  });
 
   app.use(helmet());
 
