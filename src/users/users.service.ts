@@ -364,9 +364,17 @@ export class UsersService {
   }
 
   async softDelete(id: number): Promise<User> {
+    if (this.logger.debug) {
+      this.logger.debug(`Soft deleting user`, {
+        userID: id,
+      });
+    }
     const user = await this.userRepositoryService.findById(id, ['manager']);
 
     if (!user.manager) {
+      this.logger.warn(`Invalid attempt to soft delete an user without a manager`, {
+        userID: id,
+      });
       throw new ConflictException('Cannot delete a user without a manager.');
     }
 
@@ -375,32 +383,61 @@ export class UsersService {
     }
 
     if (user.enabled == false && user.userClassification == 7) {
-      throw new ConflictException('User is already disabled.');
+      return user
     }
 
     user.enabled = false;
     user.userClassification = 7;
-    return this.userRepositoryService.save(user);
+    this.userRepositoryService.save(user);
+
+    this.logger.log(`User soft deleted successfully`, {
+      userID: id,
+    });
+
+    return user
   }
 
   async findAllCompanyMembers(userID: number, companyID: number): Promise<ResponseUserDto[]> {
+    if (this.logger.debug) {
+      this.logger.debug(`Function called: findAllCompanyMembers`);
+    }
+
     const user = await this.findOne(userID);
     const company = await this.companiesService.findOne(user.userCompany.companyID);
     this.validator.validateCompanyMembership(user, company)
 
     const companyMembers = await this.userRepositoryService.findAllCompanyMembers(companyID);
+
+    this.logger.log('Company members (users) found', {
+      total: companyMembers.length,
+    });
+
     return companyMembers;
   }
 
   async findAllManagersOfUser(reqUser: User): Promise<User[]> {
-    return this.userRepositoryService.findAllManagersOfUser(reqUser);
+    if (this.logger.debug) {
+      this.logger.debug(`Function called: findAllManagersOfUser`);
+    }
+    const users = await this.userRepositoryService.findAllManagersOfUser(reqUser);
+    this.logger.log(`Managers of user ${reqUser.userID} found`, {
+      total: users.length,
+    });
+
+    return users
   }
 
   async validateDemote(user: User, newClassification: number): Promise<void> {
+    if (this.logger.debug) {
+      this.logger.debug(`Function called: validateDemote`);
+    }
     this.validator.validateDemote(user, newClassification);
   }
 
   async validateCompanyMembership(user: User, company: Company) {
+    if (this.logger.debug) {
+      this.logger.debug(`Function called: validateCompanyMembership`);
+    }
     this.validator.validateCompanyMembership(user, company)
   }
 
@@ -409,6 +446,9 @@ export class UsersService {
   //* Your managers, managers of managers until the company owner.
   //* That is, the whole team
   async validateAccessToAllowedUsers(allowedUsers: User[] , reqUser: User): Promise<void> {
+    if (this.logger.debug) {
+      this.logger.debug(`Function called: validateAccessToAllowedUsers`);
+    }
     this.validator.validateAccessToAllowedUsers(allowedUsers, reqUser)
   }
 

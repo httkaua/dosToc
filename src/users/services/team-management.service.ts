@@ -1,28 +1,35 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "../entities/user.entity";
 import { Repository } from "typeorm";
 import { ResponseUserDto } from "../dto/response-user.dto";
-import { UserValidatorService } from "./user-validator.service";
+import type { LoggerService } from '@nestjs/common';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 @Injectable()
 export class TeamManagementService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>
+    private readonly userRepository: Repository<User>,
+
+    @Inject(WINSTON_MODULE_NEST_PROVIDER)
+    private readonly logger: LoggerService,
   ) {}
 
   async findAllTeamMembers(managerId: number): Promise<ResponseUserDto[]> {
-    const manager = await this.userRepository.findOne({
+    const userManager = await this.userRepository.findOne({
       where: { userID: managerId },
       relations: ['manager', 'underManagement']
     });
 
-    if (!manager) {
-      throw new NotFoundException('Manager not found.');
+    if (!userManager) {
+      this.logger.warn(`User manager not found`, {
+        userID: managerId,
+      });
+      throw new NotFoundException('User manager not found.');
     }
 
-  return manager.underManagement.map(user => ({
+  return userManager.underManagement.map(user => ({
     ...user,
     manager: user.manager?.userID,
     underManagement: user.underManagement?.map(member => member.userID) || [],
@@ -32,10 +39,18 @@ export class TeamManagementService {
 
   async addEmployeeToManager(manager: User, employee: User): Promise<User> {
     if (!manager || !employee) {
+      this.logger.warn(`Invalid attempt to add employee without set manager and employee.`, {
+        manager,
+        employee
+      });
       throw new NotFoundException('Manager or employee not found.');
     }
 
     if (manager.userID === employee.userID) {
+      this.logger.warn(`Invalid attempt to add employee to the user itself.`, {
+        manager,
+        employee
+      });
       throw new ConflictException('A user cannot manage themselves.');
     }
 
@@ -50,15 +65,16 @@ export class TeamManagementService {
     });
 
     if (!fullManager || !fullEmployee) {
+      this.logger.warn(`Invalid attempt to add employee to user because manager or employee was not found.`, {
+        manager: fullManager?.userID,
+        employee: fullEmployee?.userID
+      });
       throw new NotFoundException('Manager or employee not found.');
-    }
-    
-    if (fullEmployee.userID == fullManager.userID) {
-      return fullEmployee;
     }
 
     if (fullEmployee.manager && fullEmployee.manager.userID === fullManager.userID) {
-      throw new ConflictException('This employee is already managed by the specified manager.');
+      this.logger.log('This employee is already managed by the specified manager.')
+      return fullEmployee
     }
 
     fullEmployee.manager = fullManager;
@@ -70,6 +86,10 @@ export class TeamManagementService {
 
   async removeEmployeeFromManager(manager: User, employee: User): Promise<User> {
     if (!manager || !employee) {
+      this.logger.warn(`Invalid attempt to remove employee without set manager and employee.`, {
+        manager,
+        employee
+      });
       throw new NotFoundException('Manager or employee not found.');
     }
 
@@ -84,6 +104,10 @@ export class TeamManagementService {
     });
 
     if (!fullManager || !fullEmployee) {
+      this.logger.warn(`Invalid attempt to remove employee to user because manager or employee was not found.`, {
+        manager: fullManager?.userID,
+        employee: fullEmployee?.userID
+      });
       throw new NotFoundException('Manager or employee not found.');
     }
 
@@ -99,7 +123,11 @@ export class TeamManagementService {
 
   async redistributeEmployees(fromManager: User, toManager: User): Promise<void> {
     if (!fromManager || !toManager) {
-      throw new NotFoundException('One or both managers not found.');
+      this.logger.warn(`Invalid attempt to redistribute employees without set old manager and new manager.`, {
+        fromManager: fromManager?.userID,
+        toManager: toManager?.userID
+      });
+      throw new NotFoundException('One or both managers not set.');
     }
 
     const fullFromManager = await this.userRepository.findOne({
@@ -113,6 +141,10 @@ export class TeamManagementService {
     });
 
     if (!fullFromManager || !fullToManager) {
+      this.logger.warn(`Invalid attempt to remove employee to user because manager or employee was not found.`, {
+        fromManager: fullFromManager?.userID,
+        toManager: fullToManager?.userID
+      });
       throw new NotFoundException('One or both managers not found.');
     }
 

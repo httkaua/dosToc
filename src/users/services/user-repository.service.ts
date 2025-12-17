@@ -18,35 +18,74 @@ export class UserRepositoryService {
   ) {}
 
   async findById(id: number, relations: string[]): Promise<User> {
+    const start = Date.now()
     const user = await this.userRepository.findOne({
       where: { userID: id },
       relations,
     });
 
     if (!user) {
+      this.logger.warn(`User not found`, {
+        userID: id,
+      });
       throw new NotFoundException(`User with ID ${id} not found.`);
     }
+
+    if (this.logger.debug) {
+      this.logger.debug('UserRepository.findById executed', {
+        relations,
+        durationMs: Date.now() - start,
+      });
+    }
+
     return user;
   }
 
   async findByUsername(username: string): Promise<User | null> {
-    return this.userRepository.findOne({
+    const start = Date.now()
+    const user = this.userRepository.findOne({
       where: { username }
     });
+
+    if (this.logger.debug) {
+      this.logger.debug('UserRepository.findByUsername executed', {
+        durationMs: Date.now() - start,
+      });
+    }
+
+    return user
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({
+    const start = Date.now()
+    const user = this.userRepository.findOne({
       where: { email },
       select: ['userID', 'email', 'password', 'enabled'],
     });
+
+    if (this.logger.debug) {
+      this.logger.debug('UserRepository.findByEmail executed', {
+        durationMs: Date.now() - start,
+      });
+    }
+
+    return user
   }
 
   async findUserWithPasswordByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({
+    const start = Date.now()
+    const user = this.userRepository.findOne({
       where: { email },
       select: ['userID', 'username', 'password']
     });
+
+    if (this.logger.debug) {
+      this.logger.debug('UserRepository.findByEmail executed', {
+        durationMs: Date.now() - start,
+      });
+    }
+
+    return user
   }
 
   async findAll(relations: string[] = []): Promise<User[]> {
@@ -69,19 +108,45 @@ export class UserRepositoryService {
   }
 
   async save(user: User): Promise<User> {
-    return this.userRepository.save(user);
+    const start = Date.now();
+    const saveUser = this.userRepository.save(user);
+
+    if (this.logger.debug) {
+      this.logger.debug('UserRepository.save executed', {
+        durationMs: Date.now() - start,
+      });
+    }
+
+    return saveUser;
   }
 
   async create(userData: Partial<User>): Promise<User> {
+    const start = Date.now();
     const user = this.userRepository.create(userData);
-    return this.save(user);
+    const saveUser = this.save(user);
+
+    if (this.logger.debug) {
+      this.logger.debug('UserRepository.create executed', {
+        durationMs: Date.now() - start,
+      });
+    }
+
+    return saveUser;
   }
 
   async remove(user: User): Promise<void> {
-    await this.userRepository.remove(user);
+    const start = Date.now();
+    this.userRepository.remove(user);
+
+    if (this.logger.debug) {
+      this.logger.debug('UserRepository.create executed', {
+        durationMs: Date.now() - start,
+      });
+    }
   }
 
   async findAllCompanyMembers(id: number): Promise<ResponseUserDto[]> {
+    const start = Date.now()
     const users = await this.userRepository.find({
       where: { userCompany: { companyID: id } },
       relations: ['manager', 'underManagement'],
@@ -92,14 +157,24 @@ export class UserRepositoryService {
       throw new NotFoundException(`No users found for company with ID ${id}.`);
     }
 
-    return users.map(user => ({
+    const formattedUsers = users.map(user => ({
       ...user,
       manager: user.manager?.userID,
       underManagement: user.underManagement?.map(member => member.userID) || [],
     }));
+
+    if (this.logger.debug) {
+      this.logger.debug('UserRepository.findAllCompanyMembers executed', {
+        resultCount: users.length,
+        durationMs: Date.now() - start,
+      });
+    }
+
+    return formattedUsers;
   }
 
   async findAllManagersOfUser(reqUser: User): Promise<User[]> {
+    const start = Date.now()
     const managers = await this.userRepository.query(
       `
       WITH RECURSIVE manager_hierarchy AS (
@@ -123,6 +198,13 @@ export class UserRepositoryService {
       `,
       [reqUser.userID]
     );
+
+    if (this.logger.debug) {
+      this.logger.debug('UserRepository.findAllManagersOfUser executed', {
+        resultCount: managers.length,
+        durationMs: Date.now() - start,
+      });
+    }
 
     return managers;
   }
