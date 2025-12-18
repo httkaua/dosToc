@@ -1,13 +1,18 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { jwtConstants } from './constants';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from 'src/users/users.service';
+import type { LoggerService } from '@nestjs/common';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
+    @Inject(WINSTON_MODULE_NEST_PROVIDER)
+    private readonly logger: LoggerService,
+    
     private configService: ConfigService,
     private usersService: UsersService
   ) {
@@ -27,7 +32,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: any) {
     const user = await this.usersService.findOne(payload.sub)
     if (!user.userID || !user.email) {
-      throw new UnauthorizedException('User not found. 20004X')
+      this.logger.warn(`Invalid attempt to validate JWT, user not found: ${JSON.stringify({...user})}`, 'Jwt Strategy');
+      throw new UnauthorizedException('User not found')
     }
     const validatedUser = {
       userID: user.userID,

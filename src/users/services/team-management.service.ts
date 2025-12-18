@@ -23,11 +23,12 @@ export class TeamManagementService {
     });
 
     if (!userManager) {
-      this.logger.warn(`User manager not found`, {
-        userID: managerId,
-      });
+      this.logger.warn(`User manager not found`, 'Team Management Service');
       throw new NotFoundException('User manager not found.');
     }
+
+    this.logger.log(`TeamManagementService.findAllTeamMembers executed, total members: ${userManager.underManagement.length}`, 'Team Management Service');
+
 
   return userManager.underManagement.map(user => ({
     ...user,
@@ -39,18 +40,14 @@ export class TeamManagementService {
 
   async addEmployeeToManager(manager: User, employee: User): Promise<User> {
     if (!manager || !employee) {
-      this.logger.warn(`Invalid attempt to add employee without set manager and employee.`, {
-        manager,
-        employee
-      });
+      this.logger.warn(`Invalid attempt to add employee without set manager and employee,
+        manager: ${manager.userID},
+        employee: ${employee.userID}`, 'Team Management Service');
       throw new NotFoundException('Manager or employee not found.');
     }
 
     if (manager.userID === employee.userID) {
-      this.logger.warn(`Invalid attempt to add employee to the user itself.`, {
-        manager,
-        employee
-      });
+      this.logger.warn(`Invalid attempt to add employee to the user itself.`, 'Team Management Service');
       throw new ConflictException('A user cannot manage themselves.');
     }
 
@@ -65,15 +62,14 @@ export class TeamManagementService {
     });
 
     if (!fullManager || !fullEmployee) {
-      this.logger.warn(`Invalid attempt to add employee to user because manager or employee was not found.`, {
-        manager: fullManager?.userID,
-        employee: fullEmployee?.userID
-      });
+      this.logger.warn(`Invalid attempt to add employee to user because manager or employee was not found,
+      manager: ${fullManager?.userID},
+      employee: ${fullEmployee?.userID}`, 'Team Management Service');
       throw new NotFoundException('Manager or employee not found.');
     }
 
     if (fullEmployee.manager && fullEmployee.manager.userID === fullManager.userID) {
-      this.logger.log('This employee is already managed by the specified manager.')
+      this.logger.log('This employee is already managed by the specified manager', 'Team Management Service')
       return fullEmployee
     }
 
@@ -81,15 +77,18 @@ export class TeamManagementService {
     fullManager.underManagement = [...fullManager.underManagement, fullEmployee];
 
     await this.userRepository.save(fullManager);
-    return await this.userRepository.save(fullEmployee);
+    await this.userRepository.save(fullEmployee);
+
+    this.logger.log(`TeamManagementService.addEmployeeToManager executed successfully`, 'Team Management Service');
+
+    return fullEmployee
   }
 
   async removeEmployeeFromManager(manager: User, employee: User): Promise<User> {
     if (!manager || !employee) {
-      this.logger.warn(`Invalid attempt to remove employee without set manager and employee.`, {
-        manager,
-        employee
-      });
+      this.logger.warn(`Invalid attempt to remove employee without set manager and employee,
+      manager: ${manager.userID},
+      employee: ${employee.userID}`, 'Team Management Service');
       throw new NotFoundException('Manager or employee not found.');
     }
 
@@ -104,10 +103,9 @@ export class TeamManagementService {
     });
 
     if (!fullManager || !fullEmployee) {
-      this.logger.warn(`Invalid attempt to remove employee to user because manager or employee was not found.`, {
-        manager: fullManager?.userID,
-        employee: fullEmployee?.userID
-      });
+      this.logger.warn(`Invalid attempt to remove employee to user because manager or employee was not found,
+      manager: ${fullManager?.userID},
+      employee: ${fullEmployee?.userID}`, 'Team Management Service');
       throw new NotFoundException('Manager or employee not found.');
     }
 
@@ -118,15 +116,18 @@ export class TeamManagementService {
     );
 
     await this.userRepository.save(fullManager);
-    return await this.userRepository.save(fullEmployee);
+    await this.userRepository.save(fullEmployee);
+
+    this.logger.log(`TeamManagementService.removeEmployeeFromManager executed successfully`, 'Team Management Service');
+
+    return fullEmployee
   }
 
   async redistributeEmployees(fromManager: User, toManager: User): Promise<void> {
     if (!fromManager || !toManager) {
-      this.logger.warn(`Invalid attempt to redistribute employees without set old manager and new manager.`, {
-        fromManager: fromManager?.userID,
-        toManager: toManager?.userID
-      });
+      this.logger.warn(`Invalid attempt to redistribute employees without set old manager and new manager,
+        fromManager: ${fromManager?.userID},
+        toManager: ${toManager?.userID}`, 'Team Management Service');
       throw new NotFoundException('One or both managers not set.');
     }
 
@@ -141,10 +142,9 @@ export class TeamManagementService {
     });
 
     if (!fullFromManager || !fullToManager) {
-      this.logger.warn(`Invalid attempt to remove employee to user because manager or employee was not found.`, {
-        fromManager: fullFromManager?.userID,
-        toManager: fullToManager?.userID
-      });
+      this.logger.warn(`Invalid attempt to remove employee to user because manager or employee was not found,
+        fromManager: ${fullFromManager?.userID},
+        toManager: ${fullToManager?.userID}`, 'Team Management Service');
       throw new NotFoundException('One or both managers not found.');
     }
 
@@ -161,5 +161,7 @@ export class TeamManagementService {
 
     await this.userRepository.save(fullToManager);
     await this.userRepository.save(fullFromManager);
+
+    this.logger.log(`TeamManagementService.redistributeEmployees executed successfully`, 'Team Management Service');
   }
 }

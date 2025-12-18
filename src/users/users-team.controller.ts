@@ -12,6 +12,7 @@ import {
   UseInterceptors,
   ClassSerializerInterceptor,
   Body,
+  Inject,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { ResponseUserDto } from './dto/response-user.dto';
@@ -20,12 +21,17 @@ import { CompaniesService } from 'src/companies/companies.service';
 import { RolesGuard } from 'src/rbac/rbac.guard';
 import { Roles } from 'src/rbac/role.decorator';
 import { Role } from 'src/rbac/role.enum';
+import type { LoggerService } from '@nestjs/common';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 @Controller('users/team')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @UseInterceptors(ClassSerializerInterceptor)
 export class TeamsController {
   constructor(
+    @Inject(WINSTON_MODULE_NEST_PROVIDER)
+    private readonly logger: LoggerService,
+    
     private readonly usersService: UsersService,
     private readonly companiesService: CompaniesService
   ) {}
@@ -39,6 +45,7 @@ export class TeamsController {
   )
   @HttpCode(HttpStatus.OK)
   async getMyTeam(@Request() req): Promise<ResponseUserDto[]> {
+    this.logger.log('GET /users/team');
     const managerID = Number(req.user.userID);
     const teamMembers = await this.usersService.findAllTeamMembers(managerID);
     return teamMembers;
@@ -56,6 +63,7 @@ export class TeamsController {
     @Body() body: { managerId: number; employeeId: number },
     @Request() req,
   ): Promise<ResponseUserDto> {
+    this.logger.log('POST /users/team/add-member');
     const employee = await this.usersService.addEmployeeToTeam(
       body.managerId,
       body.employeeId,
@@ -75,6 +83,7 @@ export class TeamsController {
     @Body() body: { managerId: number; employeeId: number },
     @Request() req,
   ): Promise<ResponseUserDto> {
+    this.logger.log('PATCH /users/team/remove-member');
     const employee = await this.usersService.removeEmployeeFromTeam(
       body.managerId,
       body.employeeId,
@@ -94,6 +103,7 @@ export class TeamsController {
     @Query('newClassification') newClassification: number,
     @Request() req,
   ): Promise<void> {
+    this.logger.log('PATCH /users/team/promote-member/:id');
     const ids = {
       companyID: req.user.userCompany.companyID,
       reqUser: req.user.userID,
@@ -117,6 +127,7 @@ export class TeamsController {
     @Query('newClassification') newClassification: number,
     @Request() req,
   ): Promise<void> {
+    this.logger.log('PATCH /users/team/demote-member/:id');
     const ids = {
       companyID: req.user.userCompany.companyID,
       reqUser: req.user.userID,

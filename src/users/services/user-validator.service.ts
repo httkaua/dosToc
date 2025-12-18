@@ -29,73 +29,66 @@ export class UserValidatorService {
     });
 
     if (existingUser && existingUser.userID !== excludeUserId) {
-      this.logger.warn(`Operation closed by validation: User with this email, document, or phone already exists.`, {
-        userID: existingUser.userID,
-      });
+      this.logger.warn(`Operation closed by validation: User with this email, document, or phone already exists.`, 'User Validator');
+      if (this.logger.debug) {
+        this.logger.warn(`Operation closed by validation DEBUG: ExistingUser: ${existingUser.userID}`, 'User Validator');
+      }
       throw new ConflictException('User with this email, document, or phone already exists');
     }
   }
 
   validateCompanyMembership(user: User, company: Company): void {
     if (!user.userCompany) {
-      this.logger.warn(`Operation closed by validation: User doesn't belong to any company.`, {
-        userID: user.userID,
-      });
+      this.logger.warn(`Operation closed by validation: User doesn't belong to any company`, 'User Validator');
       throw new ConflictException(`You do not belong to any company.`);
     }
 
     if (user.userCompany.companyID !== company.companyID) {
-      this.logger.warn(`Operation closed by validation: User doesn't belong to the referring company.`, {
-        userID: user.userID,
-        userCompany: user.userCompany,
-        companyID: company.companyID
-      });
+      this.logger.warn(`Operation closed by validation: User doesn't belong to the referring company,
+        userID: ${user.userID},
+        userCompany: ${user.userCompany},
+        companyID: ${company.companyID}`, 'User Validator');
       throw new ConflictException(`You cannot alter or read anything for a company you do not belong to.`);
     }
   }
 
   validateSameCompany(reqUser: User, targetUser: Partial<User>): void {
     if (reqUser.userCompany.companyID !== targetUser.userCompany?.companyID) {
-      this.logger.warn(`Operation closed by validation: User doesn't belong to the same company as the target user.`, {
-        reqUserCompanyID: reqUser.userCompany.companyID,
-        targetUserCompanyID: targetUser.userCompany?.companyID
-      });
+      this.logger.warn(`Operation closed by validation: User doesn't belong to the same company as the target user,
+        reqUserCompanyID: ${reqUser.userCompany.companyID},
+        targetUserCompanyID: ${targetUser.userCompany?.companyID}`, 'User Validator');
       throw new ConflictException(`You are not in the same company as the target user.`);
     }
   }
 
   validateGreaterHierarchy(reqUser: User, targetUser: CreateUserDto): void {
     if (!reqUser.userClassification || !targetUser.userClassification) {
-      this.logger.warn(`Operation closed by validation: Users classification not set.`, {
-        reqUserClassification: reqUser.userClassification,
-        targetUserClassification: targetUser.userClassification
-      });
+      this.logger.warn(`Operation closed by validation: Users classification not set,
+        reqUserClassification: ${reqUser.userClassification},
+        targetUserClassification: ${targetUser.userClassification}`, 'User Validator');
       throw new BadRequestException(`One of the users are probably disabled. Please contact your manager or support.`);
     }
 
     if (reqUser.userClassification >= targetUser.userClassification) {
-      this.logger.warn(`Operation closed by validation: User classification (hierarchy) is lower or equal than the target user classification.`, {
-        reqUserClassification: reqUser.userClassification,
-        targetUserClassification: targetUser.userClassification
-      });
+      this.logger.warn(`Operation closed by validation: User classification (hierarchy) is lower or equal than the target user classification,
+        reqUserClassification: ${reqUser.userClassification},
+        targetUserClassification: ${targetUser.userClassification}`, 'User Validator');
       throw new ConflictException(`You cannot do any operation with an user with an equal or higher classification than yours.`);
     }
   }
 
   validateGreaterOrSameHierarchy(reqUser: User, targetUser: User): void {
     if (!reqUser.userClassification || !targetUser.userClassification) {
-      this.logger.warn(`Operation closed by validation: Users classification not set.`, {
-        reqUserClassification: reqUser.userClassification,
-        targetUserClassification: targetUser.userClassification
-      });
+      this.logger.warn(`Operation closed by validation: Users classification not set,
+        reqUserClassification: ${reqUser.userClassification},
+        targetUserClassification: ${targetUser.userClassification}`, 'User Validator');
       throw new BadRequestException(`One of the users are probably disabled. Please contact your manager or support.`);
     }
 
     if (reqUser.userClassification > targetUser.userClassification) {
-      this.logger.warn(`Operation closed by validation: User classification (hierarchy) is lower than the target user classification.`, {
-        reqUserClassification: reqUser.userClassification,
-        targetUserClassification: targetUser.userClassification
-      });
+      this.logger.warn(`Operation closed by validation: User classification (hierarchy) is lower than the target user classification,
+        reqUserClassification: ${reqUser.userClassification},
+        targetUserClassification: ${targetUser.userClassification}`, 'User Validator');
       throw new ConflictException(`You cannot do any operation with an user with an equal or higher classification than yours.`);
     }
   }
@@ -107,20 +100,18 @@ export class UserValidatorService {
 
   validateDemote(reqUser: User, newClassification: number): void {
     if (reqUser.userClassification >= newClassification) {
-      this.logger.warn(`Operation closed by validation: User new classification (hierarchy) is equal or higher than the current.`, {
-        oldClassification: reqUser.userClassification,
-        newClassification
-      });
+      this.logger.warn(`Operation closed by validation: User new classification (hierarchy) is equal or higher than the current,
+        oldClassification: ${reqUser.userClassification},
+        newClassification: ${newClassification}`, 'User Validator');
       throw new ConflictException(`You can't demote to a classification equal or higher than the current.`);
     }
   }
 
   validateAccessToAllowedUsers(allowedUsers: User[] , reqUser: User): void {
     if (!allowedUsers.some(user => user.userID === reqUser.userID)) {
-      this.logger.warn(`Operation closed by validation: User are not part of the same team as the target user.`, {
-        allowedUsers: allowedUsers.map(user => user.userID),
-        userID: reqUser.userID
-      });
+      this.logger.warn(`Operation closed by validation: User are not part of the same team as the target user,
+        allowedUsers: ${allowedUsers.map(user => user.userID)},
+        userID: ${reqUser.userID}`, 'User Validator');
       throw new UnauthorizedException('Access denied, you are not part of the team.');
     }
   }

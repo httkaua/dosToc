@@ -38,9 +38,7 @@ export class UserTransformerService {
     };
 
     if (this.logger.debug) {
-      this.logger.debug('UserTransformer.prepareUserData executed', {
-        durationMs: Date.now() - start,
-      });
+      this.logger.debug(`UserTransformer.prepareUserData executed, durationMs: ${Date.now() - start}`, 'User Transformer Service');
     }
 
     return transformedUser

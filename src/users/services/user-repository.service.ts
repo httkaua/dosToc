@@ -32,10 +32,7 @@ export class UserRepositoryService {
     }
 
     if (this.logger.debug) {
-      this.logger.debug('UserRepository.findById executed', {
-        relations,
-        durationMs: Date.now() - start,
-      });
+      this.logger.debug(`UserRepository.findById executed, userID: ${user?.userID}, relations: ${relations}, durationMs: ${Date.now() - start}`, 'User Repository Service');
     }
 
     return user;
@@ -43,14 +40,12 @@ export class UserRepositoryService {
 
   async findByUsername(username: string): Promise<User | null> {
     const start = Date.now()
-    const user = this.userRepository.findOne({
+    const user = await this.userRepository.findOne({
       where: { username }
     });
 
     if (this.logger.debug) {
-      this.logger.debug('UserRepository.findByUsername executed', {
-        durationMs: Date.now() - start,
-      });
+      this.logger.debug(`UserRepository.findByUsername executed, found: ${user?.username}, durationMs: ${Date.now() - start}`, 'User Repository Service');
     }
 
     return user
@@ -58,15 +53,13 @@ export class UserRepositoryService {
 
   async findByEmail(email: string): Promise<User | null> {
     const start = Date.now()
-    const user = this.userRepository.findOne({
+    const user = await this.userRepository.findOne({
       where: { email },
       select: ['userID', 'email', 'password', 'enabled'],
     });
 
     if (this.logger.debug) {
-      this.logger.debug('UserRepository.findByEmail executed', {
-        durationMs: Date.now() - start,
-      });
+      this.logger.debug(`UserRepository.findByEmail executed, found: ${user?.email}, durationMs: ${Date.now() - start}`, 'User Repository Service');
     }
 
     return user
@@ -74,15 +67,13 @@ export class UserRepositoryService {
 
   async findUserWithPasswordByEmail(email: string): Promise<User | null> {
     const start = Date.now()
-    const user = this.userRepository.findOne({
+    const user = await this.userRepository.findOne({
       where: { email },
       select: ['userID', 'username', 'password']
     });
 
     if (this.logger.debug) {
-      this.logger.debug('UserRepository.findByEmail executed', {
-        durationMs: Date.now() - start,
-      });
+      this.logger.debug(`UserRepository.findUserWithPasswordByEmail executed, userID: ${user?.userID}, durationMs: ${Date.now() - start}`, 'User Repository Service');
     }
 
     return user
@@ -97,11 +88,8 @@ export class UserRepositoryService {
     });
 
     if (this.logger.debug) {
-      this.logger.debug('UserRepository.findAll executed', {
-        relations,
-        resultCount: users.length,
-        durationMs: Date.now() - start,
-      });
+      this.logger.debug(`UserRepository.findAll executed, resultCount: ${users.length}, relations: ${relations}, durationMs: ${Date.now() - start}`,
+      'User Repository Service');
     }
 
     return users;
@@ -112,9 +100,7 @@ export class UserRepositoryService {
     const saveUser = this.userRepository.save(user);
 
     if (this.logger.debug) {
-      this.logger.debug('UserRepository.save executed', {
-        durationMs: Date.now() - start,
-      });
+      this.logger.debug(`UserRepository.save executed, durationMs: ${Date.now() - start}`, 'User Repository Service');
     }
 
     return saveUser;
@@ -126,9 +112,7 @@ export class UserRepositoryService {
     const saveUser = this.save(user);
 
     if (this.logger.debug) {
-      this.logger.debug('UserRepository.create executed', {
-        durationMs: Date.now() - start,
-      });
+      this.logger.debug(`UserRepository.create executed, durationMs: ${Date.now() - start}`, 'User Repository Service');
     }
 
     return saveUser;
@@ -139,9 +123,7 @@ export class UserRepositoryService {
     this.userRepository.remove(user);
 
     if (this.logger.debug) {
-      this.logger.debug('UserRepository.create executed', {
-        durationMs: Date.now() - start,
-      });
+      this.logger.debug(`UserRepository.remove executed, durationMs: ${Date.now() - start}`, 'User Repository Service');
     }
   }
 
@@ -164,10 +146,8 @@ export class UserRepositoryService {
     }));
 
     if (this.logger.debug) {
-      this.logger.debug('UserRepository.findAllCompanyMembers executed', {
-        resultCount: users.length,
-        durationMs: Date.now() - start,
-      });
+      this.logger.debug(`UserRepository.findAllCompanyMembers executed, resultCount: ${users.length}, durationMs: ${Date.now() - start}`,
+      'User Repository Service');
     }
 
     return formattedUsers;
@@ -200,10 +180,7 @@ export class UserRepositoryService {
     );
 
     if (this.logger.debug) {
-      this.logger.debug('UserRepository.findAllManagersOfUser executed', {
-        resultCount: managers.length,
-        durationMs: Date.now() - start,
-      });
+      this.logger.debug(`UserRepository.findAllManagersOfUser executed, resultCount: ${managers.length}, durationMs: ${Date.now() - start}`, 'User Repository Service');
     }
 
     return managers;

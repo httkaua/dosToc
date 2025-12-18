@@ -14,6 +14,7 @@ import {
   ParseIntPipe,
   Query,
   UseGuards,
+  Inject,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -24,11 +25,16 @@ import { UserValidatorService } from './services/user-validator.service';
 import { Roles } from 'src/rbac/role.decorator';
 import { Role } from 'src/rbac/role.enum';
 import { RolesGuard } from 'src/rbac/rbac.guard';
+import type { LoggerService } from '@nestjs/common';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 @Controller('users')
 @UseInterceptors(ClassSerializerInterceptor)
 export class UsersController {
   constructor(
+    @Inject(WINSTON_MODULE_NEST_PROVIDER)
+    private readonly logger: LoggerService,
+
     private readonly usersService: UsersService,
     private readonly userValidatorService: UserValidatorService,
   ) {}
@@ -37,6 +43,7 @@ export class UsersController {
   @Post('create')
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createUserDto: CreateUserDto): Promise<ResponseUserDto> {
+    this.logger.log('POST /users/create');
     const user = await this.usersService.create(createUserDto);
     return new ResponseUserDto(user);
   }
@@ -54,6 +61,7 @@ export class UsersController {
     @Body() createUserDto: CreateUserDto,
     @Request() req,
   ): Promise<ResponseUserDto> {
+    this.logger.log('POST /users/create-by-manager');
     const user = await this.usersService.createByManager(
       createUserDto,
       req.user,
@@ -73,6 +81,7 @@ export class UsersController {
     @Request() req,
     @Query() query: Record<string, any>,
   ): Promise<ResponseUserDto> {
+    this.logger.log('POST /users/create/development');
     const user = await this.usersService.createDevUser(
       createUserDto,
       req.user,
@@ -90,6 +99,7 @@ export class UsersController {
   )
   @HttpCode(HttpStatus.OK)
   async findAll(): Promise<ResponseUserDto[]> {
+    this.logger.log('GET /users');
     const users = await this.usersService.findAll();
     return users;
   }
@@ -105,8 +115,8 @@ export class UsersController {
   async findInMyCompany(
     @Request() req
   ): Promise<ResponseUserDto[]> {
+    this.logger.log('GET /users/in-my-company');
     const user = await this.usersService.findOne(req.user.userID)
-
     const users = await this.usersService.findAllCompanyMembers(req.user.userID, user.userCompany.companyID);
     return users;
   }
@@ -126,6 +136,7 @@ export class UsersController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
   ): Promise<ResponseUserDto> {
+    this.logger.log('GET /users/:id');
     const reqUser = await this.usersService.findOne(req.user.userID);
     const targetUser = await this.usersService.findOne(id);
 
@@ -154,6 +165,7 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
     @Request() req,
   ): Promise<ResponseUserDto> {
+    this.logger.log('PATCH /users/:id');
     const reqUser = await this.usersService.findOne(req.user.userID);
     const targetUser = await this.usersService.findOne(id);
 
@@ -183,6 +195,7 @@ export class UsersController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
   ): Promise<ResponseUserDto> {
+    this.logger.log('PATCH /users/:id/disable');
     const reqUser = await this.usersService.findOne(req.user.userID);
     const targetUser = await this.usersService.findOne(id);
 
@@ -207,6 +220,7 @@ export class UsersController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
   ): Promise<ResponseUserDto> {
+    this.logger.log('PATCH /users/:id/enable');
     const reqUser = await this.usersService.findOne(req.user.userID);
     const targetUser = await this.usersService.findOne(id);
 
@@ -230,6 +244,7 @@ export class UsersController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
   ): Promise<void> {
+    this.logger.log('DELETE /users/:id');
     const reqUser = await this.usersService.findOne(req.user.userID);
     const targetUser = await this.usersService.findOne(id);
 

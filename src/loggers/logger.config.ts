@@ -6,7 +6,7 @@ import * as fs from 'fs';
 const devFormat = winston.format.combine(
   winston.format.colorize(),
   winston.format.timestamp(),
-  winston.format.simple(),
+  winston.format.json(),
 );
 
 const prodFormat = winston.format.combine(
