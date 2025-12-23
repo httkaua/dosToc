@@ -28,7 +28,7 @@ export class CompaniesService {
 
     async create(reqUser: Partial<User>, createCompanyDto: CreateCompanyDto): Promise<Company> {
         if (this.logger.debug) {
-            this.logger.debug(`Creating company: ${createCompanyDto.email}`, 'Companies Service');
+            this.logger.debug(`Creating company: ${createCompanyDto.email}`, 'Companies Service')
         }
 
         if (!reqUser || !reqUser.userID) {
@@ -56,7 +56,7 @@ export class CompaniesService {
 
         user.userCompany = savedCompany;
         await this.usersService.save(user);
-        this.logger.log(`Company created successfully: compantID: ${savedCompany.companyID}`, 'Companies Service');
+        this.logger.log(`Company created successfully: compantID: ${savedCompany.companyID}`, 'Companies Service')
 
         return savedCompany
     }
@@ -69,8 +69,8 @@ export class CompaniesService {
         const companies = await this.repository.findAll(['supervisors', 'assistants', 'agents'])
 
         if (!companies || companies.length === 0) {
-            this.logger.warn('No companies found');
-            throw new NotFoundException('Companies not found', 'Companies Service');
+            this.logger.warn('No companies found', 'Companies Service')
+            throw new NotFoundException('Companies not found');
         }
 
         this.logger.log('Companies found', 'Companies Service');
@@ -79,13 +79,13 @@ export class CompaniesService {
 
     async findOne(id: number): Promise<Company> {
         if (this.logger.debug) {
-            this.logger.debug(`Function called: findOne`, 'Companies Service');
+            this.logger.debug(`Function called: findOne`, 'Companies Service')
         }
 
         const company = await this.repository.findById(id, ['supervisors', 'agents', 'assistants']);
 
         if (!company) {
-            this.logger.warn(`Company not found: ${id}`);
+            this.logger.warn(`Company not found: ${id}`, 'Companies Service');
             throw new NotFoundException(`Company with ID ${id} not found.`)
         }
 
@@ -95,19 +95,19 @@ export class CompaniesService {
 
     async update(ids: Record<string, any>, updateCompanyDto: UpdateCompanyDto): Promise<Company> {
         if (this.logger.debug) {
-            this.logger.debug(`Updating company: ${ids.companyID}`, 'Companies Service');
+            this.logger.debug(`Updating company: ${ids.companyID}`, 'Companies Service')
         }
-        const company = await this.repository.findById(ids.companyID, ['supervisors', 'agents', 'assistants']);
+        const company = await this.repository.findById(ids.companyID, ['supervisors', 'agents', 'assistants'])
 
         if (updateCompanyDto.name || updateCompanyDto.email || updateCompanyDto.nationalDocument || updateCompanyDto.phoneNumber) {
-            await this.validator.validateUniqueCompany(updateCompanyDto);
+            await this.validator.validateUniqueCompany(updateCompanyDto)
         }
 
-        this.validator.validateSignPlanNotChanged(updateCompanyDto);
-        this.validator.validateMembersNotChanged(updateCompanyDto);
+        this.validator.validateSignPlanNotChanged(updateCompanyDto)
+        this.validator.validateMembersNotChanged(updateCompanyDto)
 
-        Object.assign(company, updateCompanyDto);
-        this.logger.log(`Company updated successfully: ${company.companyID}`, 'Companies Service');
+        Object.assign(company, updateCompanyDto)
+        this.logger.log(`Company updated successfully: ${company.companyID}`, 'Companies Service')
         return await this.repository.save(company);
     }
 

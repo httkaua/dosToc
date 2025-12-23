@@ -27,7 +27,7 @@ export class CompanyRepositoryService {
     })
 
     if (!company) {
-      this.logger.warn(`User not found`, { userID: id })
+      this.logger.warn(`Company not found: ${id}`, 'Companies Repository Service')
       throw new NotFoundException(`Company with ID ${id} not found.`)
     }
 

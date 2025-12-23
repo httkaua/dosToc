@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards, Request, Get, Query, Patch, Param, ParseIntPipe, Delete } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards, Request, Get, Query, Patch, Param, ParseIntPipe, Delete, Inject } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ResponseLeadDto } from './dto/response-lead.dto';
 import { CreateLeadDto } from './dto/create-lead.dto';
@@ -7,12 +7,17 @@ import { LeadsService } from './leads.service';
 import { RolesGuard } from 'src/rbac/rbac.guard';
 import { Roles } from 'src/rbac/role.decorator';
 import { Role } from 'src/rbac/role.enum';
+import type { LoggerService } from '@nestjs/common';
+import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 
 @Controller('leads')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class LeadsController {
     constructor(
       private readonly leadsService: LeadsService,
+
+      @Inject(WINSTON_MODULE_NEST_PROVIDER)
+      private readonly logger: LoggerService,
     ) {}
 
   //* ----- LEAD CREATION ENDPOINTS ----- *//
@@ -29,6 +34,7 @@ export class LeadsController {
     @Body() createLeadDto: CreateLeadDto,
     @Request() req,
   ): Promise<ResponseLeadDto> {
+    this.logger.log('POST /leads/create')
     return await this.leadsService.create(createLeadDto, req.user);
   }
 
@@ -40,6 +46,7 @@ export class LeadsController {
   )
   @HttpCode(HttpStatus.OK)
   async findAll(): Promise<ResponseLeadDto[]> {
+    this.logger.log('GET /leads')
     return await this.leadsService.findAll(['attendingUser', 'leadCompany', 'realEstatesInterested']);
   }
 
@@ -53,6 +60,7 @@ export class LeadsController {
   async findAllOfMyCompany(
     @Request() req
   ): Promise<ResponseLeadDto[]> {
+    this.logger.log('GET /leads/in-my-company')
     return await this.leadsService.findAllOfMyCompany(req.user.userID, ['attendingUser', 'leadCompany', 'realEstatesInterested']);
   }
 
@@ -68,6 +76,7 @@ export class LeadsController {
   async findAllOfUser(
     @Request() req
   ): Promise<ResponseLeadDto[]> {
+    this.logger.log('GET /leads/my-leads')
     return await this.leadsService.findAllOfUser(req.user.userID, ['attendingUser', 'leadCompany', 'realEstatesInterested']);
   }
 
@@ -84,6 +93,7 @@ export class LeadsController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
   ): Promise<ResponseLeadDto> {
+    this.logger.log('GET /leads/:id')
     return await this.leadsService.findOne(id, req.user);
   }
 
@@ -103,6 +113,7 @@ export class LeadsController {
     @Body() updateLeadDto: UpdateLeadDto,
     @Request() req,
   ): Promise<ResponseLeadDto> {
+    this.logger.log('PATCH /leads/:id')
     const ids = {
       reqUser: req.user.userID,
       leadID: id,
@@ -122,6 +133,7 @@ export class LeadsController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
   ): Promise<ResponseLeadDto> {
+    this.logger.log('PATCH /leads/:id/disable')
     return await this.leadsService.disable(id, req.user);
   }
 
@@ -137,6 +149,7 @@ export class LeadsController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
   ): Promise<ResponseLeadDto> {
+    this.logger.log('PATCH /leads/:id/enable')
     return await this.leadsService.enable(id, req.user);
   }
 
@@ -152,6 +165,7 @@ export class LeadsController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
   ): Promise<ResponseLeadDto> {
+    this.logger.log('PATCH /leads/:id/do-not-call-anymore')
     return await this.leadsService.doNotCallTrue(id, req.user);
   }
 
@@ -166,6 +180,7 @@ export class LeadsController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
   ): Promise<ResponseLeadDto> {
+    this.logger.log('PATCH /leads/:id/do-not-call-anymore-false')
     return await this.leadsService.doNotCallFalse(id, req.user);
   }
 
@@ -180,6 +195,7 @@ export class LeadsController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
   ): Promise<void> {
+    this.logger.log('DELETE /leads/:id')
     return await this.leadsService.remove(id, req.user);
   }
 

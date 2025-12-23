@@ -5,7 +5,6 @@ import { ResponseCompanyDto } from './dto/response-company.dto';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { UsersService } from 'src/users/users.service';
-import { CompanyValidatorService } from './services/company-validator.service';
 import { UserValidatorService } from 'src/users/services/user-validator.service';
 import { RolesGuard } from 'src/rbac/rbac.guard';
 import { Roles } from 'src/rbac/role.decorator';
@@ -22,7 +21,6 @@ export class CompaniesController {
         
         private readonly companiesService: CompaniesService,
         private readonly usersService: UsersService,
-        private readonly validator: CompanyValidatorService,
         private readonly usersValidator: UserValidatorService,
     ) {}
 

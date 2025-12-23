@@ -1,18 +1,19 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { Lead } from '../entities/lead.entity';
-import { LeadRepositoryService } from './lead-repository.service';
 import { Repository } from 'typeorm';
 import { Company } from 'src/companies/entities/company.entity';
-import { User } from 'src/users/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import type { LoggerService } from '@nestjs/common';
+import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 
 @Injectable()
 export class LeadValidatorService {
     constructor(
-        private readonly leadRepositoryService: LeadRepositoryService,
-
         @InjectRepository(Lead)
-        private readonly leadRepository: Repository<Lead>
+        private readonly leadRepository: Repository<Lead>,
+
+        @Inject(WINSTON_MODULE_NEST_PROVIDER)
+        private readonly logger: LoggerService,
     ) {}
 
     async validateUniquePhoneInCompany(phoneNumber: string, company: Company): Promise<void> {
@@ -24,6 +25,7 @@ export class LeadValidatorService {
         });
 
         if (existingLead.length > 0) {
+            this.logger.warn(`Operation closed by validation: Lead with this phone number already exists in the company. leadID: ${existingLead[0]?.leadID}`, 'Lead Validator')
             throw new ConflictException('Lead with this phone number already exists in the company');
         }
     }
