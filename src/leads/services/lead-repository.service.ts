@@ -92,7 +92,6 @@ export class LeadRepositoryService {
         if (this.logger.debug) {
             this.logger.debug(`LeadsRepository.create executed, durationMs: ${Date.now() - start}`, 'Leads Repository Service');
         }
-
         return lead;
     }
 
@@ -113,7 +112,12 @@ export class LeadRepositoryService {
         })
 
         if (!leads || leads.length === 0) {
+            this.logger.warn(`No leads found. companyID: ${id}`, 'Leads Repository Service')
             throw new NotFoundException(`No leads found for company with ID ${id}.`);
+        }
+
+        if (this.logger.debug) {
+            this.logger.debug(`LeadsRepository.findAllCompanyLeads executed, resultCount: ${leads.length}, durationMs: ${Date.now() - start}`, 'Leads Repository Service');
         }
 
         return leads

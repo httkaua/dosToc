@@ -1,4 +1,4 @@
-import { Body, ClassSerializerInterceptor, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Request, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, ParseIntPipe, Patch, Post, Request, UseGuards, UseInterceptors } from '@nestjs/common';
 import { PropertyownersService } from './propertyowners.service';
 import { ResponsePropertyOwnerDto } from './dto/response-property-owner.dto';
 import { CreatePropertyOwnerDto } from './dto/create-property-owner.dto';
@@ -7,6 +7,8 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/rbac/rbac.guard';
 import { Roles } from 'src/rbac/role.decorator';
 import { Role } from 'src/rbac/role.enum';
+import type { LoggerService } from '@nestjs/common';
+import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 
 @Controller('property-owners')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -14,6 +16,9 @@ import { Role } from 'src/rbac/role.enum';
 export class PropertyownersController {
     constructor(
         private readonly propertyownersService: PropertyownersService,
+
+      @Inject(WINSTON_MODULE_NEST_PROVIDER)
+      private readonly logger: LoggerService,
     ) {}
 
     //* ----- PROPERTY OWNER CREATION ENDPOINTS ----- *//
@@ -31,7 +36,8 @@ export class PropertyownersController {
     @Body() createPropertyOwnerDto: CreatePropertyOwnerDto,
     @Request() req,
     ): Promise<ResponsePropertyOwnerDto> {
-    return await this.propertyownersService.create(createPropertyOwnerDto, req.user);
+        this.logger.log('POST /property-owners/create')
+        return await this.propertyownersService.create(createPropertyOwnerDto, req.user);
     }
 
     //* ----- PROPERTY OWNER QUERY ENDPOINTS ----- *//
@@ -42,7 +48,8 @@ export class PropertyownersController {
     )
     @HttpCode(HttpStatus.OK)
     async findAll(): Promise<ResponsePropertyOwnerDto[]> {
-    return await this.propertyownersService.findAll(['propertyOwnerCompany', 'realEstatesOwning']);
+        this.logger.log('GET /property-owners')
+        return await this.propertyownersService.findAll(['propertyOwnerCompany', 'realEstatesOwning']);
     }
 
     @Get('in-my-company')
@@ -58,7 +65,8 @@ export class PropertyownersController {
     async findAllOfMyCompany(
     @Request() req
     ): Promise<ResponsePropertyOwnerDto[]> {
-    return await this.propertyownersService.findAllOfMyCompany(req.user.userID, ['propertyOwnerCompany', 'realEstatesOwning']);
+        this.logger.log('GET /property-owners/in-my-company')
+        return await this.propertyownersService.findAllOfMyCompany(req.user.userID, ['propertyOwnerCompany', 'realEstatesOwning']);
     }
 
     @Get(':id')
@@ -75,7 +83,8 @@ export class PropertyownersController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
     ): Promise<ResponsePropertyOwnerDto> {
-    return await this.propertyownersService.findOne(id, req.user);
+        this.logger.log('GET /property-owners/:id')
+        return await this.propertyownersService.findOne(id, req.user);
     }
 
     //* ----- PROPERTY OWNER UPDATE ENDPOINTS ----- *//
@@ -94,11 +103,12 @@ export class PropertyownersController {
     @Body() updatePropertyOwnerDto: UpdatePropertyOwnerDto,
     @Request() req,
     ): Promise<ResponsePropertyOwnerDto> {
-    const ids = {
-        reqUser: req.user.userID,
-        propertyOwnerID: id,
-    }
-    return await this.propertyownersService.update(ids, updatePropertyOwnerDto);
+        this.logger.log('PATCH /property-owners/:id')
+        const ids = {
+            reqUser: req.user.userID,
+            propertyOwnerID: id,
+        }
+        return await this.propertyownersService.update(ids, updatePropertyOwnerDto);
     }
 
     //* ----- PROPERTY OWNER DELETION ENDPOINT ----- *//
@@ -112,6 +122,7 @@ export class PropertyownersController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
     ): Promise<void> {
-    return await this.propertyownersService.remove(id, req.user);
+        this.logger.log('DELETE /property-owners/:id')
+        return await this.propertyownersService.remove(id, req.user);
     }
 }
