@@ -1,4 +1,4 @@
-import { Body, Request, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Request, Controller, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Query, UseGuards, Inject } from '@nestjs/common';
 import { CompaniesService } from './companies.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ResponseCompanyDto } from './dto/response-company.dto';
@@ -10,17 +10,23 @@ import { UserValidatorService } from 'src/users/services/user-validator.service'
 import { RolesGuard } from 'src/rbac/rbac.guard';
 import { Roles } from 'src/rbac/role.decorator';
 import { Role } from 'src/rbac/role.enum';
+import type { LoggerService } from '@nestjs/common';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 @Controller('companies')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class CompaniesController {
     constructor(
+        @Inject(WINSTON_MODULE_NEST_PROVIDER)
+        private readonly logger: LoggerService,
+        
         private readonly companiesService: CompaniesService,
         private readonly usersService: UsersService,
         private readonly validator: CompanyValidatorService,
         private readonly usersValidator: UserValidatorService,
     ) {}
 
+    //* ----- COMPANY CREATION ENDPOINTS ----- *//
     @Post('create')
     @Roles(
         Role.ADM_DEV,
@@ -32,17 +38,20 @@ export class CompaniesController {
         @Body() createCompanyDto: CreateCompanyDto,
         @Request() req
     ): Promise<ResponseCompanyDto> {
+        this.logger.log('POST /companies/create')
         const reqUser = req.user
         const company = await this.companiesService.create(reqUser, createCompanyDto);
         return new ResponseCompanyDto(company);
     }
 
+    //* ----- COMPANY QUERY ENDPOINTS ----- *//
     @Get()
     @Roles(
         Role.ADM_DEV,
         Role.DEV
     )
     async findAll(): Promise<ResponseCompanyDto[]> {
+        this.logger.log('GET /companies')
         const companies = await this.companiesService.findAll();
         return companies.map(company => new ResponseCompanyDto(company));
     }
@@ -57,6 +66,7 @@ export class CompaniesController {
         @Param('id', ParseIntPipe) id: number,
         @Request() req
     ): Promise<ResponseCompanyDto> {
+        this.logger.log('GET /companies/:id')
         const user = await this.usersService.findOne(req.user.userID)
         const company = await this.companiesService.findOne(id);
 
@@ -75,6 +85,7 @@ export class CompaniesController {
         @Body() updateCompanyDto: UpdateCompanyDto,
         @Request() req
     ): Promise<ResponseCompanyDto> {
+        this.logger.log('PATCH /companies/:id')
         const ids = {
             companyID: companyID,
             userID: req.user.userID
@@ -96,6 +107,7 @@ export class CompaniesController {
         Role.COMPANY_OWNER
     )
     async viewPlans(): Promise<string> {
+        this.logger.log('GET /companies/plans-options')
         return `FREE, SINGLE, BUSINESS`
     }
 
@@ -110,7 +122,7 @@ export class CompaniesController {
         @Query('new-plan') newPlan: string,
         @Request() req
     ): Promise<ResponseCompanyDto> {
-
+        this.logger.log('GET /companies/sign-plan/:id')
         const user = await this.usersService.findOne(req.user.userID)
         const company = await this.companiesService.findOne(id);
         

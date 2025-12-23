@@ -210,7 +210,7 @@ export class UsersService {
       this.logger.debug(`Function called: findOne`, 'Users Service');
     }
 
-    const user = await this.userRepositoryService.findById(id, ['userCompany']);
+    const user = await this.userRepositoryService.findById(id, ['userCompany', 'underManagement']);
     
     if (!user) {
       this.logger.warn(`User not found: ${id}`);
@@ -218,7 +218,6 @@ export class UsersService {
     }
 
     this.logger.log(`User found: ${id}`, 'Users Service');
-
     return user;
   }
 
@@ -314,7 +313,6 @@ export class UsersService {
     this.userRepositoryService.save(userToUpdate);
 
     this.logger.log(`User updated successfully: ${userToUpdate.userID}`, 'Users Service');
-
     return userToUpdate
   }
 
@@ -384,6 +382,14 @@ export class UsersService {
       this.logger.debug(`Function called: validateCompanyMembership`, 'Users Service');
     }
     this.validator.validateCompanyMembership(user, company)
+  }
+
+  async save(user: User): Promise<void> {
+    if (this.logger.debug) {
+      this.logger.debug(`Saving user: ${user.userID}`, 'Users Service');
+    }
+
+    await this.userRepositoryService.save(user)
   }
 
   //* Allowed users generally:
