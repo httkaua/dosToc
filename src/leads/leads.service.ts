@@ -178,7 +178,7 @@ export class LeadsService {
         }
 
         if (lead.enabled == true) {
-            this.logger.log(`Lead already disabled: ${id}`, 'Leads Service')
+            this.logger.log(`Lead already enabled: ${id}`, 'Leads Service')
             return lead;
         }
 

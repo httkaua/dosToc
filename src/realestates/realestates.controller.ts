@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards, Request, Get, Query, Patch, Param, ParseIntPipe, Delete } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards, Request, Get, Patch, Param, ParseIntPipe, Delete, Inject } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RealestatesService } from './realestates.service';
 import { CreateRealestateDto } from './dto/create-realestate.dto';
@@ -7,12 +7,17 @@ import { UpdateRealestateDto } from './dto/update-realestate.dto';
 import { RolesGuard } from 'src/rbac/rbac.guard';
 import { Roles } from 'src/rbac/role.decorator';
 import { Role } from 'src/rbac/role.enum';
+import type { LoggerService } from '@nestjs/common';
+import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 
 @Controller('real-estates')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class RealestatesController {
     constructor(
       private readonly realestatesService: RealestatesService,
+
+      @Inject(WINSTON_MODULE_NEST_PROVIDER)
+      private readonly logger: LoggerService,
     ) {}
 
   //* ----- REAL ESTATE CREATION ENDPOINTS ----- *//
@@ -30,7 +35,8 @@ export class RealestatesController {
     @Body() createRealestateDto: CreateRealestateDto,
     @Request() req,
   ): Promise<ResponseRealestateDto> {
-    return await this.realestatesService.create(createRealestateDto, req.user);
+    this.logger.log('POST /real-estates/create')
+    return await this.realestatesService.create(createRealestateDto, req.user)
   }
 
   //* ----- REAL ESTATE QUERY ENDPOINTS ----- *//
@@ -41,7 +47,8 @@ export class RealestatesController {
   )
   @HttpCode(HttpStatus.OK)
   async findAll(): Promise<ResponseRealestateDto[]> {
-    return await this.realestatesService.findAll(['creatorUser', 'realEstateCompany']);
+    this.logger.log('GET /real-estates')
+    return await this.realestatesService.findAll(['creatorUser', 'realEstateCompany'])
   }
 
   @Get('in-my-company')
@@ -57,6 +64,7 @@ export class RealestatesController {
   async findAllOfMyCompany(
     @Request() req
   ): Promise<ResponseRealestateDto[]> {
+    this.logger.log('GET /real-estates/in-my-company')
     return await this.realestatesService.findAllOfMyCompany(req.user.userID, ['creatorUser', 'realEstateCompany']);
   }
 
@@ -74,6 +82,7 @@ export class RealestatesController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
   ): Promise<ResponseRealestateDto> {
+    this.logger.log('GET /real-estates/:id')
     return await this.realestatesService.findOne(id, req.user);
   }
 
@@ -93,6 +102,7 @@ export class RealestatesController {
     @Body() updateRealestateDto: UpdateRealestateDto,
     @Request() req,
   ): Promise<ResponseRealestateDto> {
+    this.logger.log('PATCH /real-estates/:id')
     const ids = {
       reqUser: req.user.userID,
       realestateID: id,
@@ -113,7 +123,8 @@ export class RealestatesController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
   ): Promise<ResponseRealestateDto> {
-    return await this.realestatesService.disable(id, req.user);
+    this.logger.log('PATCH /real-estates/:id/disable')
+    return await this.realestatesService.disable(id, req.user)
   }
 
   @Patch(':id/enable')
@@ -129,7 +140,8 @@ export class RealestatesController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
   ): Promise<ResponseRealestateDto> {
-    return await this.realestatesService.enable(id, req.user);
+    this.logger.log('PATCH /real-estates/:id/enable')
+    return await this.realestatesService.enable(id, req.user)
   }
 
   //* ----- REAL ESTATE DELETION ENDPOINT ----- *//
@@ -143,6 +155,7 @@ export class RealestatesController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
   ): Promise<void> {
-    return await this.realestatesService.remove(id, req.user);
+    this.logger.log('DELETE /real-estates/:id')
+    return await this.realestatesService.remove(id, req.user)
   }
 }

@@ -57,14 +57,9 @@ export class LeadRepositoryService {
 
     async findAll(relations: string[]): Promise<Lead[]> {
         const start = Date.now()
-        if (!relations) {
-            this.logger.warn(`Invalid attempt to find all leads with no relations: ${relations}`, 'Leads Repository Service')
-            throw new ForbiddenException('Leads relations forbidden.')
-        }
-
         const leads = await this.leadRepository.find({
-        relations,
-        order: { createdAt: 'DESC' }
+            relations,
+            order: { createdAt: 'DESC' }
         })
 
         if (this.logger.debug) {

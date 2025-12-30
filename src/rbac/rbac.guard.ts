@@ -39,7 +39,7 @@ export class RolesGuard implements CanActivate {
     if (hasRole) {
       this.logger.log(`Access granted.`, 'RBAC Guard')
     } else {
-      this.logger.warn(`User role '${user.role}' does not match required roles, access denied.`, 'RBAC Guard')
+      this.logger.warn(`User role '${ROLES_KEY[user.role]}' does not match required roles, access denied.`, 'RBAC Guard')
     }
 
     return hasRole;
