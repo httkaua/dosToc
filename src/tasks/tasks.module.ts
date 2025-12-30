@@ -7,7 +7,6 @@ import { Company } from 'src/companies/entities/company.entity';
 import { UsersModule } from 'src/users/users.module';
 import { CompaniesModule } from 'src/companies/companies.module';
 import { TaskRepositoryService } from './services/tasks-repository.service';
-import { TaskValidatorService } from './services/tasks-validator.service';
 import { LeadsModule } from 'src/leads/leads.module';
 import { Lead } from 'src/leads/entities/lead.entity';
 import { Task } from './entities/task.entity';
@@ -20,8 +19,7 @@ import { Task } from './entities/task.entity';
   ],
   providers: [
     TasksService,
-    TaskRepositoryService,
-    TaskValidatorService
+    TaskRepositoryService
   ],
   controllers: [TasksController]
 })

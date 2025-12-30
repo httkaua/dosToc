@@ -1,4 +1,4 @@
-import { Body, ClassSerializerInterceptor, Controller, HttpCode, HttpStatus, Post, UseGuards, UseInterceptors, Request, Get, Param, Delete, ParseIntPipe, Patch } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, HttpCode, HttpStatus, Post, UseGuards, UseInterceptors, Request, Get, Param, Delete, ParseIntPipe, Patch, Inject } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -7,6 +7,8 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { RolesGuard } from 'src/rbac/rbac.guard';
 import { Roles } from 'src/rbac/role.decorator';
 import { Role } from 'src/rbac/role.enum';
+import type { LoggerService } from '@nestjs/common';
+import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 
 @Controller('tasks')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -14,6 +16,9 @@ import { Role } from 'src/rbac/role.enum';
 export class TasksController {
     constructor(
         private readonly tasksService: TasksService,
+
+      @Inject(WINSTON_MODULE_NEST_PROVIDER)
+      private readonly logger: LoggerService,
     ) {}
 
     //* ----- TASK CREATION ENDPOINTS ----- *//
@@ -31,7 +36,8 @@ export class TasksController {
     @Body() createTaskDto: CreateTaskDto,
     @Request() req,
     ): Promise<ResponseTaskDto> {
-        return await this.tasksService.create(createTaskDto, req.user);
+        this.logger.log('POST /tasks/create')
+        return await this.tasksService.create(createTaskDto, req.user)
     }
 
     //* ----- TASK QUERY ENDPOINTS ----- *//
@@ -42,7 +48,8 @@ export class TasksController {
     )
     @HttpCode(HttpStatus.OK)
     async findAll(): Promise<ResponseTaskDto[]> {
-        return await this.tasksService.findAll(['creatorUser', 'responsibleUser', 'targetLead', 'taskCompany']);
+        this.logger.log('GET /tasks')
+        return await this.tasksService.findAll(['creatorUser', 'responsibleUser', 'targetLead', 'taskCompany'])
     }
 
     @Get('in-my-company')
@@ -55,7 +62,8 @@ export class TasksController {
     async findAllOfMyCompany(
     @Request() req
     ): Promise<ResponseTaskDto[]> {
-        return await this.tasksService.findAllOfMyCompany(req.user.userID, ['creatorUser', 'responsibleUser', 'targetLead', 'taskCompany']);
+        this.logger.log('GET /tasks/in-my-company')
+        return await this.tasksService.findAllOfMyCompany(req.user.userID, ['creatorUser', 'responsibleUser', 'targetLead', 'taskCompany'])
     }
 
     @Get('my-tasks')
@@ -71,7 +79,8 @@ export class TasksController {
     async findUserTasks(
     @Request() req
     ): Promise<ResponseTaskDto[]> {
-        return await this.tasksService.findAllOfUser(req.user.userID, ['creatorUser', 'responsibleUser', 'targetLead', 'taskCompany']);
+        this.logger.log('GET /tasks/my-tasks')
+        return await this.tasksService.findAllOfUser(req.user.userID, ['creatorUser', 'responsibleUser', 'targetLead', 'taskCompany'])
     }
 
     @Get(':id')
@@ -88,7 +97,8 @@ export class TasksController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
     ): Promise<ResponseTaskDto> {
-        return await this.tasksService.findOne(id, req.user);
+        this.logger.log('GET /tasks/:id')
+        return await this.tasksService.findOne(id, req.user)
     }
 
     //* ----- TASK UPDATE ENDPOINTS ----- *//
@@ -107,6 +117,7 @@ export class TasksController {
     @Body() updateTaskDto: UpdateTaskDto,
     @Request() req,
     ): Promise<ResponseTaskDto> {
+        this.logger.log('PATCH /tasks/:id')
         const ids = {
             reqUser: req.user.userID,
             taskID: id,
@@ -128,6 +139,7 @@ export class TasksController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
     ): Promise<ResponseTaskDto> {
+        this.logger.log('PATCH /tasks/:id/finish')
         return await this.tasksService.finishTask(id, req.user.userID);
     }
 
@@ -145,6 +157,7 @@ export class TasksController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
     ): Promise<ResponseTaskDto> {
+        this.logger.log('PATCH /tasks/:id/cancel')
         return await this.tasksService.cancelTask(id, req.user.userID);
     }
 
@@ -159,7 +172,7 @@ export class TasksController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
     ): Promise<void> {
+        this.logger.log('DELETE /tasks/:id')
         return await this.tasksService.remove(id, req.user.userID);
     }
-    
 }

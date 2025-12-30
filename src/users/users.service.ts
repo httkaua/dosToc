@@ -207,32 +207,32 @@ export class UsersService {
 
   async findOne(id: number): Promise<User> {
     if (this.logger.debug) {
-      this.logger.debug(`Function called: findOne`, 'Users Service');
+      this.logger.debug(`Function called: findOne`, 'Users Service')
     }
 
-    const user = await this.userRepositoryService.findById(id, ['userCompany', 'underManagement']);
+    const user = await this.userRepositoryService.findById(id, ['userCompany', 'underManagement'])
     
     if (!user) {
-      this.logger.warn(`User not found: ${id}`);
-      throw new NotFoundException(`User not found: ${id}`, 'Users Service');
+      this.logger.warn(`User not found: ${id}`, 'Users Service')
+      throw new NotFoundException(`User not found: ${id}`, 'Users Service')
     }
 
-    this.logger.log(`User found: ${id}`, 'Users Service');
-    return user;
+    this.logger.log(`User found: ${id}`, 'Users Service')
+    return user
   }
 
   async findOneByUsername(username: string): Promise<User | null> {
     if (this.logger.debug) {
-      this.logger.debug(`Function called: findOneByUsername`, 'Users Service');
+      this.logger.debug(`Function called: findOneByUsername`, 'Users Service')
     }
-    return this.userRepositoryService.findByUsername(username);
+    return this.userRepositoryService.findByUsername(username)
   }
 
   async findUserWithPasswordByEmail(email: string): Promise<User | null> {
     if (this.logger.debug) {
-      this.logger.debug(`Function called: findUserWithPasswordByEmail`, 'Users Service');
+      this.logger.debug(`Function called: findUserWithPasswordByEmail`, 'Users Service')
     }
-    const user = this.userRepositoryService.findUserWithPasswordByEmail(email);
+    const user = this.userRepositoryService.findUserWithPasswordByEmail(email)
 
     return user
   }

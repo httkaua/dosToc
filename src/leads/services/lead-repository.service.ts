@@ -108,11 +108,11 @@ export class LeadRepositoryService {
 
         if (!leads || leads.length === 0) {
             this.logger.warn(`No leads found. companyID: ${id}`, 'Leads Repository Service')
-            throw new NotFoundException(`No leads found for company with ID ${id}.`);
+            throw new NotFoundException(`No leads found for company`)
         }
 
         if (this.logger.debug) {
-            this.logger.debug(`LeadsRepository.findAllCompanyLeads executed, resultCount: ${leads.length}, durationMs: ${Date.now() - start}`, 'Leads Repository Service');
+            this.logger.debug(`LeadsRepository.findAllCompanyLeads executed, resultCount: ${leads.length}, durationMs: ${Date.now() - start}`, 'Leads Repository Service')
         }
 
         return leads
@@ -120,17 +120,21 @@ export class LeadRepositoryService {
 
     async findAllUserLeads(id: number, relations: string[]): Promise<Lead[]> {
         const start = Date.now()
-    const leads = await this.leadRepository.find({
-        where: { attendingUser: { userID: id } },
-        relations,
-        order: { createdAt: 'DESC' }
-    });
+        const leads = await this.leadRepository.find({
+            where: { attendingUser: { userID: id } },
+            relations,
+            order: { createdAt: 'DESC' }
+        })
 
-    if (!leads || leads.length === 0) {
-        this.logger.warn(`No leads found for user with ID ${id}`, 'Leads Repository Service')
-        throw new NotFoundException(`No leads found for user with ID ${id}.`);
-    }
+        if (!leads || leads.length === 0) {
+            this.logger.warn(`No leads found for user with ID ${id}`, 'Leads Repository Service')
+            throw new NotFoundException(`No leads found for user`)
+        }
 
-    return leads
+        if (this.logger.debug) {
+            this.logger.debug(`LeadsRepository.findAllUserLeads executed, resultCount: ${leads.length}, durationMs: ${Date.now() - start}`, 'Leads Repository Service')
+        }
+
+        return leads
     }
 }
